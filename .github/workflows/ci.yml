@@ -1,0 +1,100 @@
+# ==============================================================================
+# Flujo de Integración Continua (CI) - MPDW Backend
+# SAD Ref: K-04, §13.3, §16.1, Regla R8
+# ==============================================================================
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, staging, develop]
+  pull_request:
+    branches: [main, staging, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gates:
+    name: Puertas de Calidad, Tipos, Arquitectura y Pruebas
+    runs-on: ubuntu-24.04
+
+    services:
+      postgres:
+        image: postgres:16.6-alpine
+        env:
+          POSTGRES_DB: mpdw_test_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mpdw_test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.testing
+      DATABASE_URL: postgresql://postgres:postgres_ci_password@localhost:5432/mpdw_test_db
+      DJANGO_SECRET_KEY: ci-secret-key-for-testing-purposes-only-32-chars
+      JWT_SIGNING_KEY: ci-jwt-secret-key-for-testing-purposes-only-32-chars
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@4db96194c378173c656ce18a155ffc14a9fc4355 # v5.2.2
+        with:
+            version: "0.13.6"
+            enable-cache: true
+
+      - name: Configurar Python
+        run: uv python install 3.13.18
+
+      - name: Instalar dependencias congeladas (uv.lock)
+        run: uv sync --frozen
+
+      - name: Habilitar extensión pg_trgm en PostgreSQL
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          PGPASSWORD=postgres_ci_password psql -h localhost -U postgres -d mpdw_test_db -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+
+      - name: Puerta 1 - Linter y Estilo (Ruff)
+        run: uv run ruff check .
+
+      - name: Puerta 2 - Verificación de Tipos Estáticos (Mypy + django-stubs)
+        run: uv run mypy apps contratos config etl
+
+      - name: Puerta 3 - Verificación de Contratos de Capas (Import-Linter)
+        run: uv run lint-imports
+
+      - name: Puerta 4 - Pruebas Unitarias y Gate de Cobertura 100% en Negocio
+        run: >
+          uv run pytest tests/unit -m unit
+          --cov=apps
+          --cov=contratos
+          --cov-report=term-missing
+          --cov-report=xml:coverage.xml
+
+      - name: Aplicar migraciones sobre base de datos efímera
+        run: uv run python manage.py migrate
+
+      - name: Puerta 5 - Pruebas de Integración y Concurrencia (PostgreSQL Real)
+        run: uv run pytest tests/integration tests/concurrency
+
+      - name: Puerta 6 - Verificación de Contrato OpenAPI (Sin drift no declarado)
+        run: |
+          uv run python manage.py spectacular --file /tmp/openapi_generated.yaml
+          diff -u docs/openapi.yaml /tmp/openapi_generated.yaml || (echo "El contrato docs/openapi.yaml esta desactualizado. Ejecute spectacular." && exit 1)
+
+      - name: Puerta 7 - Análisis de Seguridad Estática (Bandit)
+        run: uv run bandit -r apps config etl contratos -x tests
+
+      - name: Puerta 8 - Auditoría de Vulnerabilidades en Dependencias (pip-audit)
+        run: uv run pip-audit
+
+      - name: Puerta 9 - Construcción de Imagen Docker Etiquetada con Commit
+        run: |
+          docker build --build-arg COMMIT_SHA=${{ github.sha }} -t mpdw-backend:${{ github.sha }} .
+

@@ -1,0 +1,331 @@
+[project]
+name = "mpdw-backend"
+version = "0.1.0"
+description = "Backend REST API y ETL de Mundo Pinturas Diana Web (MPDW)"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "django>=5.2a1,<5.3",
+    "djangorestframework>=3.15.2,<3.18",
+    "drf-spectacular>=0.28.0",
+    "psycopg[binary]>=3.2.3",
+    "argon2-cffi>=23.1.0",
+    "pyjwt>=2.10.0",
+    "pillow>=11.1.0",
+    "httpx>=0.28.1",
+    "gunicorn>=23.0.0",
+    "python-dotenv>=1.0.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-django>=4.9.0",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.9.3",
+    "mypy>=1.14.1",
+    "django-stubs[compatible-mypy]>=5.1.1",
+    "djangorestframework-stubs[compatible-mypy]>=3.15.1",
+    "bandit>=1.8.2",
+    "pip-audit>=2.7.3",
+    "import-linter>=2.1",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+exclude = ["migrations", ".venv", "build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B", "C4", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.13"
+mypy_path = "."
+explicit_package_bases = true
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+strict = false
+warn_unused_ignores = true
+warn_redundant_casts = true
+check_untyped_defs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+exclude = ["migrations"]
+
+[tool.django-stubs]
+django_settings_module = "config.settings.testing"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.testing"
+python_files = ["test_*.py", "*_test.py"]
+testpaths = ["tests"]
+addopts = "--strict-markers --tb=short"
+markers = [
+    "unit: pruebas unitarias puras sin base de datos",
+    "integration: pruebas de integracion con base de datos real",
+    "concurrency: pruebas de condiciones de carrera con multiples hilos",
+]
+
+[tool.coverage.run]
+source = ["apps", "contratos", "etl"]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/views.py",
+    "*/serializers.py",
+    "*/repositories.py",
+    "*/apps.py",
+    "*/models.py",
+    "*/authentication.py",
+    "*/permissions.py",
+    "*/middleware.py",
+    "*/pagination.py",
+    "*/throttling.py",
+    "*/health.py",
+    "*/urls.py",
+    "*/management/*",
+]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "@abstractmethod",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
+
+[tool.importlinter]
+root_packages = ["apps", "etl"]
+include_external_packages = true
+
+# ------------------------------------------------------------------------------
+# Contratos por App (M01-M12): Arquitectura en Capas Interna (SAD §6.5)
+# ------------------------------------------------------------------------------
+[[tool.importlinter.contracts]]
+name = "M01 Identidad: Capas internas (views -> services -> repositories)"
+type = "layers"
+layers = [
+    "apps.m01_identidad.views",
+    "apps.m01_identidad.services",
+    "apps.m01_identidad.repositories",
+]
+
+[[tool.importlinter.contracts]]
+name = "M02 Sedes: Capas internas (views -> services -> repositories)"
+type = "layers"
+layers = [
+    "apps.m02_sedes.views",
+    "apps.m02_sedes.services",
+    "apps.m02_sedes.repositories",
+]
+
+[[tool.importlinter.contracts]]
+name = "M03 Catalogo: Capas internas (views -> services -> repositories)"
+type = "layers"
+layers = [
+    "apps.m03_catalogo.views",
+    "apps.m03_catalogo.services",
+    "apps.m03_catalogo.repositories",
+]
+
+[[tool.importlinter.contracts]]
+name = "M04 Inventario: Capas internas (views -> services -> repositories)"
+type = "layers"
+layers = [
+    "apps.m04_inventario.views",
+    "apps.m04_inventario.services",
+    "apps.m04_inventario.repositories",
+]
+
+[[tool.importlinter.contracts]]
+name = "M05 Clientes: Capas internas (views -> services -> repositories)"
+type = "layers"
+layers = [
+    "apps.m05_clientes.views",
+    "apps.m05_clientes.services",
+    "apps.m05_clientes.repositories",
+]
+
+[[tool.importlinter.contracts]]
+name = "M06 Ventas: Capas internas (views -> services -> repositories)"
+type = "layers"
+layers = [
+    "apps.m06_ventas.views",
+    "apps.m06_ventas.services",
+    "apps.m06_ventas.repositories",
+]
+
+[[tool.importlinter.contracts]]
+name = "M07 Domicilios: Capas internas (views -> services -> repositories)"
+type = "layers"
+layers = [
+    "apps.m07_domicilios.views",
+    "apps.m07_domicilios.services",
+    "apps.m07_domicilios.repositories",
+]
+
+[[tool.importlinter.contracts]]
+name = "M08 Caja: Capas internas (views -> services -> repositories)"
+type = "layers"
+layers = [
+    "apps.m08_caja.views",
+    "apps.m08_caja.services",
+    "apps.m08_caja.repositories",
+]
+
+[[tool.importlinter.contracts]]
+name = "M09 Analitica: Capas internas (views -> services -> repositories)"
+type = "layers"
+layers = [
+    "apps.m09_analitica.views",
+    "apps.m09_analitica.services",
+    "apps.m09_analitica.repositories",
+]
+
+[[tool.importlinter.contracts]]
+name = "M10 Auditoria: Capas internas (services -> repositories)"
+type = "layers"
+layers = [
+    "apps.m10_auditoria.services",
+    "apps.m10_auditoria.repositories",
+]
+
+[[tool.importlinter.contracts]]
+name = "M11 Eventos: Capas internas (views -> services -> repositories)"
+type = "layers"
+layers = [
+    "apps.m11_eventos.views",
+    "apps.m11_eventos.services",
+    "apps.m11_eventos.repositories",
+]
+
+[[tool.importlinter.contracts]]
+name = "M12 Tienda Publica: Capas internas (views -> services -> repositories)"
+type = "layers"
+layers = [
+    "apps.m12_tienda_publica.views",
+    "apps.m12_tienda_publica.services",
+    "apps.m12_tienda_publica.repositories",
+]
+
+# ------------------------------------------------------------------------------
+# Contratos de Capas Transversales (SAD §6.5.4)
+# ------------------------------------------------------------------------------
+[[tool.importlinter.contracts]]
+name = "Views no importan repositories directamente (SAD §6.5)"
+type = "forbidden"
+# allow_indirect_imports = true es requerido porque views -> services -> repositories es la cadena de capas estándar.
+# Sin este flag, Import Linter prohíbe el camino indirecto legítimo a través de services.
+allow_indirect_imports = true
+source_modules = [
+    "apps.m01_identidad.views",
+    "apps.m02_sedes.views",
+    "apps.m03_catalogo.views",
+    "apps.m04_inventario.views",
+    "apps.m05_clientes.views",
+    "apps.m06_ventas.views",
+    "apps.m07_domicilios.views",
+    "apps.m08_caja.views",
+    "apps.m09_analitica.views",
+    "apps.m11_eventos.views",
+    "apps.m12_tienda_publica.views",
+]
+forbidden_modules = [
+    "apps.m01_identidad.repositories",
+    "apps.m02_sedes.repositories",
+    "apps.m03_catalogo.repositories",
+    "apps.m04_inventario.repositories",
+    "apps.m05_clientes.repositories",
+    "apps.m06_ventas.repositories",
+    "apps.m07_domicilios.repositories",
+    "apps.m08_caja.repositories",
+    "apps.m09_analitica.repositories",
+    "apps.m10_auditoria.repositories",
+    "apps.m11_eventos.repositories",
+    "apps.m12_tienda_publica.repositories",
+]
+
+[[tool.importlinter.contracts]]
+name = "Servicios no conocen HTTP (rest_framework ni django.http) (SAD §6.5)"
+type = "forbidden"
+source_modules = [
+    "apps.m01_identidad.services",
+    "apps.m02_sedes.services",
+    "apps.m03_catalogo.services",
+    "apps.m04_inventario.services",
+    "apps.m05_clientes.services",
+    "apps.m06_ventas.services",
+    "apps.m07_domicilios.services",
+    "apps.m08_caja.services",
+    "apps.m09_analitica.services",
+    "apps.m10_auditoria.services",
+    "apps.m11_eventos.services",
+    "apps.m12_tienda_publica.services",
+]
+forbidden_modules = [
+    "rest_framework",
+]
+
+[[tool.importlinter.contracts]]
+name = "ETL no conoce HTTP ni vistas (SAD §7.5)"
+type = "forbidden"
+source_modules = [
+    "etl",
+]
+forbidden_modules = [
+    "rest_framework",
+    "apps.m01_identidad.views",
+    "apps.m02_sedes.views",
+    "apps.m03_catalogo.views",
+    "apps.m04_inventario.views",
+    "apps.m05_clientes.views",
+    "apps.m06_ventas.views",
+    "apps.m07_domicilios.views",
+    "apps.m08_caja.views",
+    "apps.m09_analitica.views",
+    "apps.m11_eventos.views",
+    "apps.m12_tienda_publica.views",
+]
+
+[[tool.importlinter.contracts]]
+name = "M13 Plataforma adapters no conocen vistas (SAD §6.5)"
+type = "forbidden"
+source_modules = [
+    "apps.m13_plataforma.adapters",
+]
+forbidden_modules = [
+    "apps.m01_identidad.views",
+    "apps.m02_sedes.views",
+    "apps.m03_catalogo.views",
+    "apps.m04_inventario.views",
+    "apps.m05_clientes.views",
+    "apps.m06_ventas.views",
+    "apps.m07_domicilios.views",
+    "apps.m08_caja.views",
+    "apps.m09_analitica.views",
+    "apps.m11_eventos.views",
+    "apps.m12_tienda_publica.views",
+]
+
+[[tool.importlinter.contracts]]
+name = "Aislamiento de repositorios entre modulos (SAD §6.5.4)"
+type = "independence"
+modules = [
+    "apps.m01_identidad.repositories",
+    "apps.m02_sedes.repositories",
+    "apps.m03_catalogo.repositories",
+    "apps.m04_inventario.repositories",
+    "apps.m05_clientes.repositories",
+    "apps.m06_ventas.repositories",
+    "apps.m07_domicilios.repositories",
+    "apps.m08_caja.repositories",
+    "apps.m09_analitica.repositories",
+    "apps.m10_auditoria.repositories",
+    "apps.m11_eventos.repositories",
+    "apps.m12_tienda_publica.repositories",
+]
+

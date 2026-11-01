@@ -1,0 +1,686 @@
+openapi: 3.0.3
+info:
+  title: Mundo Pinturas Diana Web (MPDW) API
+  version: 1.0.0
+  description: API REST transaccional para la gestión comercial y multi-sede de MPDW
+paths:
+  /api/v1/auth/login:
+    post:
+      operationId: api_v1_auth_login_create
+      description: Autentica usuario y emite JWT corto y cookie HttpOnly con refresh
+        token.
+      summary: Inicio de sesion
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+          description: ''
+  /api/v1/auth/logout:
+    post:
+      operationId: api_v1_auth_logout_create
+      description: Revocacion de la familia de refresh tokens y borrado de cookie
+        (ADR-006).
+      summary: Cierre de sesion
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LogoutRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogoutRequestRequest'
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutResponse'
+          description: ''
+  /api/v1/auth/profile:
+    get:
+      operationId: api_v1_auth_profile_retrieve
+      description: Retorna el perfil del usuario autenticado segun JWT.
+      summary: Perfil de usuario
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /api/v1/auth/refresh:
+    post:
+      operationId: api_v1_auth_refresh_create
+      description: Rotacion opaca de refresh token (cookie HttpOnly o body) (ADR-006).
+      summary: Refresco de token de acceso
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RefreshRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RefreshRequestRequest'
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResponse'
+          description: ''
+  /api/v1/branches/:
+    get:
+      operationId: api_v1_branches_list
+      description: Consulta pública de sedes habilitadas.
+      summary: Listado de sedes
+      tags:
+      - api
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sede'
+          description: ''
+  /api/v1/health/live:
+    get:
+      operationId: api_v1_health_live_retrieve
+      description: Indica si el servidor web HTTP está respondiendo.
+      summary: Liveness Probe
+      tags:
+      - api
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveResponse'
+          description: ''
+  /api/v1/health/ready:
+    get:
+      operationId: api_v1_health_ready_retrieve
+      description: Verifica conectividad activa hacia PostgreSQL y Supabase Storage.
+      summary: Readiness Probe
+      tags:
+      - api
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyResponse'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotReadyResponse'
+          description: ''
+  /api/v1/inventory/:
+    get:
+      operationId: api_v1_inventory_list
+      description: Filtra existencias de inventario por producto y/o sede.
+      summary: Consulta de existencias
+      parameters:
+      - in: query
+        name: producto
+        schema:
+          type: integer
+        description: ID del producto
+      - in: query
+        name: sede
+        schema:
+          type: integer
+        description: ID de la sede
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Inventario'
+          description: ''
+  /api/v1/products/:
+    get:
+      operationId: api_v1_products_list
+      description: Búsqueda paginada con trigramas y filtrado por categoría.
+      summary: Listar o buscar productos
+      parameters:
+      - in: query
+        name: categoria
+        schema:
+          type: integer
+        description: ID de la categoría
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Término de búsqueda
+      - name: size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductoResponseList'
+          description: ''
+    post:
+      operationId: api_v1_products_create
+      description: Alta de producto atómica con registro de existencias iniciales
+        (TX-07).
+      summary: Crear producto
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductoCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductoCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductoResponse'
+          description: ''
+  /api/v1/products/{id}/price:
+    put:
+      operationId: api_v1_products_price_update
+      description: Actualización con concurrencia optimista y motivo obligatorio (TX-06,
+        TX-11).
+      summary: Actualización de precio (PUT)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoUpdatePrecioRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductoUpdatePrecioRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductoUpdatePrecioRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductoResponse'
+          description: ''
+    patch:
+      operationId: api_v1_products_price_partial_update
+      description: Actualización con concurrencia optimista y motivo obligatorio (TX-06,
+        TX-11).
+      summary: Actualización de precio (PATCH)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductoUpdatePrecioRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductoUpdatePrecioRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductoUpdatePrecioRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductoResponse'
+          description: ''
+components:
+  schemas:
+    Inventario:
+      type: object
+      properties:
+        id_inventario:
+          type: integer
+          readOnly: true
+        id_producto:
+          type: integer
+        id_sede:
+          type: integer
+        cantidad_actual:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+        cantidad_reservada:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - cantidad_actual
+      - cantidad_reservada
+      - id_inventario
+      - id_producto
+      - id_sede
+    LiveResponse:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+      - status
+    LoginRequestRequest:
+      type: object
+      description: Esquema de entrada para solicitud de inicio de sesión.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 128
+      required:
+      - email
+      - password
+    LogoutRequestRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+          minLength: 1
+    LogoutResponse:
+      type: object
+      properties:
+        mensaje:
+          type: string
+      required:
+      - mensaje
+    NotReadyResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        database:
+          type: string
+        storage:
+          type: string
+      required:
+      - database
+      - status
+      - storage
+    PaginatedProductoResponseList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductoResponse'
+    PatchedProductoUpdatePrecioRequest:
+      type: object
+      description: Esquema de entrada para actualización de precio con motivo y versión
+        (TX-06, TX-11).
+      properties:
+        nuevo_precio:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        motivo:
+          type: string
+          minLength: 3
+          maxLength: 500
+        version:
+          type: integer
+          minimum: 1
+    ProductoCreateRequest:
+      type: object
+      description: Validación y sanitización estricta para creación de productos.
+      properties:
+        codigo_producto:
+          type: string
+          minLength: 1
+          maxLength: 50
+        codigo_barras:
+          type: string
+          nullable: true
+          maxLength: 50
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 200
+        descripcion:
+          type: string
+          default: ''
+        precio_venta:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        id_categoria:
+          type: integer
+          minimum: 1
+        id_marca:
+          type: integer
+          nullable: true
+        id_tipo_producto:
+          type: integer
+          nullable: true
+        inventario_habilitado:
+          type: boolean
+          default: true
+        stocks_iniciales:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockInicialInputRequest'
+      required:
+      - codigo_producto
+      - id_categoria
+      - nombre
+      - precio_venta
+    ProductoResponse:
+      type: object
+      description: Representación pública y de backoffice del producto (whitelist
+        explícita).
+      properties:
+        id_producto:
+          type: integer
+          readOnly: true
+        codigo_producto:
+          type: string
+          maxLength: 50
+        codigo_barras:
+          type: string
+          nullable: true
+          maxLength: 50
+        nombre:
+          type: string
+          maxLength: 200
+        descripcion:
+          type: string
+        precio_venta:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        categoria_nombre:
+          type: string
+          readOnly: true
+        marca_nombre:
+          type: string
+          readOnly: true
+        inventario_habilitado:
+          type: boolean
+        version:
+          type: integer
+          readOnly: true
+        estado:
+          type: boolean
+        fecha_creacion:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - categoria_nombre
+      - codigo_producto
+      - fecha_creacion
+      - id_producto
+      - marca_nombre
+      - nombre
+      - precio_venta
+      - version
+    ProductoUpdatePrecioRequest:
+      type: object
+      description: Esquema de entrada para actualización de precio con motivo y versión
+        (TX-06, TX-11).
+      properties:
+        nuevo_precio:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        motivo:
+          type: string
+          minLength: 3
+          maxLength: 500
+        version:
+          type: integer
+          minimum: 1
+      required:
+      - motivo
+      - nuevo_precio
+      - version
+    ReadyResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        database:
+          type: string
+        storage:
+          type: string
+      required:
+      - database
+      - status
+      - storage
+    RefreshRequestRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+          minLength: 1
+    RefreshResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+      required:
+      - access_token
+      - token_type
+    Sede:
+      type: object
+      properties:
+        id_sede:
+          type: integer
+          readOnly: true
+        nombre:
+          type: string
+          maxLength: 100
+        direccion:
+          type: string
+          maxLength: 200
+        telefono:
+          type: string
+          maxLength: 20
+        ciudad:
+          type: string
+          maxLength: 50
+        estado:
+          type: boolean
+      required:
+      - direccion
+      - id_sede
+      - nombre
+    StockInicialInputRequest:
+      type: object
+      description: Stock de apertura por sede para el alta de producto.
+      properties:
+        id_sede:
+          type: integer
+          minimum: 1
+        cantidad_inicial:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - cantidad_inicial
+      - id_sede
+    TokenResponse:
+      type: object
+      description: Respuesta con token de acceso JWT y metadatos de usuario.
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          default: Bearer
+        expires_in_minutes:
+          type: integer
+          default: 15
+        id_usuario:
+          type: integer
+        email:
+          type: string
+        rol:
+          type: string
+        sedes_asignadas:
+          type: array
+          items:
+            type: integer
+      required:
+      - access_token
+      - email
+      - id_usuario
+      - rol
+      - sedes_asignadas
+    UserProfile:
+      type: object
+      description: Perfil del usuario autenticado (whitelist explícita).
+      properties:
+        id_usuario:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        documento:
+          type: string
+          readOnly: true
+        nombre:
+          type: string
+          maxLength: 150
+        rol_nombre:
+          type: string
+          readOnly: true
+        dosfa_habilitado:
+          type: boolean
+      required:
+      - documento
+      - email
+      - id_usuario
+      - nombre
+      - rol_nombre
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

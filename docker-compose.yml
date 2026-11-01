@@ -1,0 +1,95 @@
+# ==============================================================================
+# Docker Compose para Desarrollo Local y CI
+# SAD Ref: ADR-001, ADR-003, ADR-012, §13.1, Regla R4
+# ==============================================================================
+services:
+  db:
+    image: postgres:16.6-alpine
+    container_name: mpdw_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mpdw_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_dev_password}
+      MPDW_APP_PASSWORD: ${MPDW_APP_PASSWORD:-app_secret_123}
+      MPDW_ETL_PASSWORD: ${MPDW_ETL_PASSWORD:-etl_secret_123}
+      MPDW_MIGRATE_PASSWORD: ${MPDW_MIGRATE_PASSWORD:-migrate_secret_123}
+      MPDW_BI_PASSWORD: ${MPDW_BI_PASSWORD:-bi_secret_123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-mpdw_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mpdw_network
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mpdw_migrate
+    profiles:
+      - tools
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.development
+      - DATABASE_URL=postgresql://mpdw_migrate:${MPDW_MIGRATE_PASSWORD:-migrate_secret_123}@db:5432/${POSTGRES_DB:-mpdw_db}
+    command: python manage.py migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - mpdw_network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mpdw_api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PORT=8000
+      - DJANGO_SETTINGS_MODULE=config.settings.development
+    ports:
+      - "${PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - mpdw_network
+
+  etl:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mpdw_etl
+    profiles:
+      - etl
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.development
+    command: python manage.py run_etl
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - mpdw_network
+
+networks:
+  mpdw_network:
+    name: mpdw_network
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: mpdw_postgres_data
+
