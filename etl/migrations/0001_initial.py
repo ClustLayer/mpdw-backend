@@ -68,10 +68,16 @@ class Migration(migrations.Migration):
                 duracion_segundos NUMERIC(8,2)
             );
 
-            -- Permisos de lectura para el rol de BI
-            GRANT USAGE ON SCHEMA analitica TO mpdw_bi;
-            GRANT SELECT ON ALL TABLES IN SCHEMA analitica TO mpdw_bi;
-            ALTER DEFAULT PRIVILEGES IN SCHEMA analitica GRANT SELECT ON TABLES TO mpdw_bi;
+            -- Permisos de lectura para el rol de BI (si el rol existe en el cluster)
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'mpdw_bi') THEN
+                    GRANT USAGE ON SCHEMA analitica TO mpdw_bi;
+                    GRANT SELECT ON ALL TABLES IN SCHEMA analitica TO mpdw_bi;
+                    ALTER DEFAULT PRIVILEGES IN SCHEMA analitica GRANT SELECT ON TABLES TO mpdw_bi;
+                END IF;
+            END
+            $$;
             """,
             reverse_sql="""
             DROP SCHEMA IF EXISTS analitica CASCADE;

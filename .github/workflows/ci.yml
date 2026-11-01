@@ -57,10 +57,28 @@ jobs:
       - name: Instalar dependencias congeladas (uv.lock)
         run: uv sync --frozen
 
-      - name: Habilitar extensión pg_trgm en PostgreSQL
+      - name: Habilitar extensión pg_trgm y roles en PostgreSQL
         run: |
           sudo apt-get update && sudo apt-get install -y postgresql-client
-          PGPASSWORD=postgres_ci_password psql -h localhost -U postgres -d mpdw_test_db -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+          PGPASSWORD=postgres_ci_password psql -h localhost -U postgres -d mpdw_test_db -c "
+            CREATE EXTENSION IF NOT EXISTS pg_trgm;
+            DO \$\$
+            BEGIN
+                IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'mpdw_app') THEN
+                    CREATE ROLE mpdw_app WITH LOGIN CREATEDB PASSWORD 'test_app_password';
+                END IF;
+                IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'mpdw_etl') THEN
+                    CREATE ROLE mpdw_etl WITH LOGIN PASSWORD 'test_etl_password';
+                END IF;
+                IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'mpdw_migrate') THEN
+                    CREATE ROLE mpdw_migrate WITH LOGIN SUPERUSER CREATEDB PASSWORD 'test_migrate_password';
+                END IF;
+                IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'mpdw_bi') THEN
+                    CREATE ROLE mpdw_bi WITH LOGIN PASSWORD 'test_bi_password';
+                END IF;
+            END
+            \$\$;
+          "
 
       - name: Puerta 1 - Linter y Estilo (Ruff)
         run: uv run ruff check .
