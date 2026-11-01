@@ -6,12 +6,12 @@ info:
 paths:
   /api/v1/auth/login:
     post:
-      operationId: api_v1_auth_login_create
+      operationId: auth_login_create
       description: Autentica usuario y emite JWT corto y cookie HttpOnly con refresh
         token.
       summary: Inicio de sesion
       tags:
-      - api
+      - auth
       requestBody:
         content:
           application/json:
@@ -35,12 +35,12 @@ paths:
           description: ''
   /api/v1/auth/logout:
     post:
-      operationId: api_v1_auth_logout_create
+      operationId: auth_logout_create
       description: Revocacion de la familia de refresh tokens y borrado de cookie
         (ADR-006).
       summary: Cierre de sesion
       tags:
-      - api
+      - auth
       requestBody:
         content:
           application/json:
@@ -63,11 +63,11 @@ paths:
           description: ''
   /api/v1/auth/profile:
     get:
-      operationId: api_v1_auth_profile_retrieve
+      operationId: auth_profile_retrieve
       description: Retorna el perfil del usuario autenticado segun JWT.
       summary: Perfil de usuario
       tags:
-      - api
+      - auth
       security:
       - jwtAuth: []
       responses:
@@ -79,11 +79,11 @@ paths:
           description: ''
   /api/v1/auth/refresh:
     post:
-      operationId: api_v1_auth_refresh_create
+      operationId: auth_refresh_create
       description: Rotacion opaca de refresh token (cookie HttpOnly o body) (ADR-006).
       summary: Refresco de token de acceso
       tags:
-      - api
+      - auth
       requestBody:
         content:
           application/json:
@@ -106,11 +106,11 @@ paths:
           description: ''
   /api/v1/branches/:
     get:
-      operationId: api_v1_branches_list
+      operationId: branches_list
       description: Consulta pública de sedes habilitadas.
       summary: Listado de sedes
       tags:
-      - api
+      - branches
       security:
       - {}
       responses:
@@ -124,11 +124,11 @@ paths:
           description: ''
   /api/v1/health/live:
     get:
-      operationId: api_v1_health_live_retrieve
+      operationId: health_live_retrieve
       description: Indica si el servidor web HTTP está respondiendo.
       summary: Liveness Probe
       tags:
-      - api
+      - health
       security:
       - {}
       responses:
@@ -140,11 +140,11 @@ paths:
           description: ''
   /api/v1/health/ready:
     get:
-      operationId: api_v1_health_ready_retrieve
+      operationId: health_ready_retrieve
       description: Verifica conectividad activa hacia PostgreSQL y Supabase Storage.
       summary: Readiness Probe
       tags:
-      - api
+      - health
       security:
       - {}
       responses:
@@ -162,7 +162,7 @@ paths:
           description: ''
   /api/v1/inventory/:
     get:
-      operationId: api_v1_inventory_list
+      operationId: inventory_list
       description: Filtra existencias de inventario por producto y/o sede.
       summary: Consulta de existencias
       parameters:
@@ -177,7 +177,7 @@ paths:
           type: integer
         description: ID de la sede
       tags:
-      - api
+      - inventory
       security:
       - jwtAuth: []
       responses:
@@ -191,7 +191,7 @@ paths:
           description: ''
   /api/v1/products/:
     get:
-      operationId: api_v1_products_list
+      operationId: products_list
       description: Búsqueda paginada con trigramas y filtrado por categoría.
       summary: Listar o buscar productos
       parameters:
@@ -218,7 +218,7 @@ paths:
         schema:
           type: integer
       tags:
-      - api
+      - products
       security:
       - jwtAuth: []
       - {}
@@ -230,12 +230,12 @@ paths:
                 $ref: '#/components/schemas/PaginatedProductoResponseList'
           description: ''
     post:
-      operationId: api_v1_products_create
+      operationId: products_create
       description: Alta de producto atómica con registro de existencias iniciales
         (TX-07).
       summary: Crear producto
       tags:
-      - api
+      - products
       requestBody:
         content:
           application/json:
@@ -259,7 +259,7 @@ paths:
           description: ''
   /api/v1/products/{id}/price:
     put:
-      operationId: api_v1_products_price_update
+      operationId: products_price_update
       description: Actualización con concurrencia optimista y motivo obligatorio (TX-06,
         TX-11).
       summary: Actualización de precio (PUT)
@@ -270,7 +270,7 @@ paths:
           type: integer
         required: true
       tags:
-      - api
+      - products
       requestBody:
         content:
           application/json:
@@ -293,7 +293,7 @@ paths:
                 $ref: '#/components/schemas/ProductoResponse'
           description: ''
     patch:
-      operationId: api_v1_products_price_partial_update
+      operationId: products_price_partial_update
       description: Actualización con concurrencia optimista y motivo obligatorio (TX-06,
         TX-11).
       summary: Actualización de precio (PATCH)
@@ -304,7 +304,7 @@ paths:
           type: integer
         required: true
       tags:
-      - api
+      - products
       requestBody:
         content:
           application/json:
