@@ -28,11 +28,6 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
-        specs = [
-            ("Administrador", "DEMO_ADMIN_EMAIL", "DEMO_ADMIN_PASSWORD", "DEMO_ADMIN_NAME", "9000000001"),
-            ("Gerente", "DEMO_GERENTE_EMAIL", "DEMO_GERENTE_PASSWORD", "DEMO_GERENTE_NAME", "9000000002"),
-            ("Empleado", "DEMO_EMPLEADO_EMAIL", "DEMO_EMPLEADO_PASSWORD", "DEMO_EMPLEADO_NAME", "9000000003"),
-        ]
         defaults = {
             "DEMO_ADMIN_EMAIL": "admin.demo@mundopinturasdiana.com",
             "DEMO_GERENTE_EMAIL": "gerente.demo@mundopinturasdiana.com",
@@ -40,7 +35,19 @@ class Command(BaseCommand):
             "DEMO_ADMIN_NAME": "Admin Demo Epic1",
             "DEMO_GERENTE_NAME": "Gerente Demo Epic1",
             "DEMO_EMPLEADO_NAME": "Empleado Demo Epic1",
+            "DEMO_OWNER_NAME": "Administrador MPDW",
         }
+        specs = [
+            ("Administrador", "DEMO_ADMIN_EMAIL", "DEMO_ADMIN_PASSWORD", "DEMO_ADMIN_NAME", "9000000001"),
+            ("Gerente", "DEMO_GERENTE_EMAIL", "DEMO_GERENTE_PASSWORD", "DEMO_GERENTE_NAME", "9000000002"),
+            ("Empleado", "DEMO_EMPLEADO_EMAIL", "DEMO_EMPLEADO_PASSWORD", "DEMO_EMPLEADO_NAME", "9000000003"),
+        ]
+        if os.environ.get("DEMO_OWNER_EMAIL", "").strip():
+            specs.append(
+                ("Administrador", "DEMO_OWNER_EMAIL", "DEMO_OWNER_PASSWORD", "DEMO_OWNER_NAME", "9000000099"),
+            )
+
+        sync_passwords = os.environ.get("DEMO_SYNC_PASSWORDS", "").lower() in {"1", "true", "yes"}
 
         with transaction.atomic():
             sede_principal, _ = Sedes.objects.get_or_create(
@@ -54,9 +61,11 @@ class Command(BaseCommand):
             )
 
             for rol_nombre, email_key, pass_key, name_key, documento in specs:
-                email = os.environ.get(email_key, defaults[email_key])
+                email = os.environ.get(email_key, defaults.get(email_key, "")).strip()
                 password = os.environ.get(pass_key, "")
-                nombre = os.environ.get(name_key, defaults[name_key])
+                nombre = os.environ.get(name_key, defaults.get(name_key, rol_nombre))
+                if not email:
+                    raise CommandError(f"{email_key} no esta configurada.")
                 if not _password_ok(password):
                     raise CommandError(f"{pass_key} no esta configurada o no cumple la politica minima.")
 
@@ -84,5 +93,12 @@ class Command(BaseCommand):
                         estado=True,
                     )
                     self.stdout.write(self.style.SUCCESS(f"Creado {rol_nombre}: {email}"))
+                elif sync_passwords:
+                    usuario.set_password(password)
+                    usuario.nombre = nombre
+                    usuario.id_rol = rol
+                    usuario.estado = True
+                    usuario.save()
+                    self.stdout.write(self.style.SUCCESS(f"Actualizado {rol_nombre}: {email}"))
                 else:
                     self.stdout.write(self.style.WARNING(f"Ya existia {email}; no se modifico la contraseña."))
