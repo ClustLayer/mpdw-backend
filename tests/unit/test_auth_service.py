@@ -84,7 +84,7 @@ def test_login_exitoso_emite_tokens_y_auditoria():
 
     auth_service = AuthService(user_repo=user_repo, session_repo=session_repo, audit_port=audit_port)
 
-    access_token, refresh_token, ctx = auth_service.autenticar(
+    resultado = auth_service.autenticar(
         email="admin@diana.com",
         password="correct_password",
         ip="192.168.1.10",
@@ -92,15 +92,17 @@ def test_login_exitoso_emite_tokens_y_auditoria():
         id_correlacion="corr-123",
     )
 
-    assert access_token is not None
-    assert refresh_token is not None
-    assert isinstance(ctx, AuthContext)
-    assert ctx.id_usuario == 1
-    assert ctx.email == "admin@diana.com"
-    assert ctx.rol_nombre == "Administrador"
-    assert ctx.es_global is True
-    assert ctx.sedes_asignadas == (1, 2)
-    user_repo.restablecer_intentos_fallidos.assert_called_once_with(usuario)
+    assert resultado.access_token is not None
+    assert resultado.refresh_token is not None
+    assert isinstance(resultado.ctx, AuthContext)
+    assert resultado.ctx is not None
+    assert resultado.ctx.id_usuario == 1
+    assert resultado.ctx.email == "admin@diana.com"
+    assert resultado.ctx.rol_nombre == "Administrador"
+    assert resultado.ctx.es_global is True
+    assert resultado.ctx.sedes_asignadas == (1, 2)
+    assert resultado.mensaje == "Bienvenido(a), admin@diana.com."
+    user_repo.registrar_acceso_exitoso.assert_called_once_with(usuario)
     assert len(audit_port.eventos) == 1
     assert audit_port.eventos[0].accion == "LOGIN_EXITOSO"
 
@@ -113,10 +115,10 @@ def test_login_fallo_credenciales_invalidas_incrementa_intentos():
 
     auth_service = AuthService(user_repo=user_repo)
 
-    with pytest.raises(AutenticacionError, match="Credenciales invalidas"):
+    with pytest.raises(AutenticacionError, match="Credenciales no válidas"):
         auth_service.autenticar(email="user@diana.com", password="wrong_password")
 
-    user_repo.incrementar_intentos_fallidos.assert_called_once_with(usuario)
+    user_repo.incrementar_intentos_fallidos.assert_called_once()
 
 
 @pytest.mark.unit
@@ -127,8 +129,10 @@ def test_login_fallo_usuario_bloqueado():
 
     auth_service = AuthService(user_repo=user_repo)
 
-    with pytest.raises(AutenticacionError, match="Credenciales invalidas"):
+    with pytest.raises(AutenticacionError, match="Acceso temporalmente bloqueado"):
         auth_service.autenticar(email="locked@diana.com", password="correct_password")
+
+    user_repo.incrementar_intentos_fallidos.assert_not_called()
 
 
 @pytest.mark.unit
@@ -139,8 +143,10 @@ def test_login_fallo_usuario_inactivo():
 
     auth_service = AuthService(user_repo=user_repo)
 
-    with pytest.raises(AutenticacionError, match="Credenciales invalidas"):
+    with pytest.raises(AutenticacionError, match="Credenciales no válidas"):
         auth_service.autenticar(email="inactive@diana.com", password="correct_password")
+
+    user_repo.incrementar_intentos_fallidos.assert_not_called()
 
 
 @pytest.mark.unit
@@ -181,7 +187,7 @@ def test_rotacion_refresh_token_detecta_reuso_y_revoca_familia(monkeypatch):
 
     auth_service = AuthService(session_repo=session_repo, audit_port=audit_port)
 
-    with pytest.raises(AutenticacionError, match="reutilizacion"):
+    with pytest.raises(AutenticacionError, match="expirado"):
         auth_service.rotar_refresh_token("token_reutilizado")
 
     session_repo.revocar_familia.assert_called_once_with(familia_id)
@@ -230,7 +236,7 @@ def test_rotacion_token_no_existente():
 
     auth_service = AuthService(session_repo=session_repo)
 
-    with pytest.raises(AutenticacionError, match="invalido o revocado"):
+    with pytest.raises(AutenticacionError, match="expirado"):
         auth_service.rotar_refresh_token("token_fantasma")
 
 
@@ -257,22 +263,26 @@ def test_qa_06_bloqueo_cuenta_tras_5_intentos_fallidos():
     audit_port = FakeAuditPort()
     usuario = FakeUser(id_usuario=99, email="cajero_bloqueo@mpdw.com", password="real_password")
 
-    def simular_incremento(u):
-        u._bloqueado = True  # Al alcanzar el límite queda bloqueado
+    def simular_incremento(u, max_intentos=5, minutos_bloqueo=15):
+        u._bloqueado = True
+        return True
 
     user_repo.buscar_por_email.return_value = usuario
     user_repo.incrementar_intentos_fallidos.side_effect = simular_incremento
 
     auth_service = AuthService(user_repo=user_repo, audit_port=audit_port)
 
-    # Intento 1: falla credencial -> incrementa
-    with pytest.raises(AutenticacionError, match="Credenciales invalidas"):
+    with pytest.raises(AutenticacionError, match="Acceso temporalmente bloqueado"):
         auth_service.autenticar(email="cajero_bloqueo@mpdw.com", password="wrong")
 
-    user_repo.incrementar_intentos_fallidos.assert_called_with(usuario)
+    user_repo.incrementar_intentos_fallidos.assert_called_once()
     assert usuario.esta_bloqueado is True
+    assert len(audit_port.eventos) == 1
+    assert audit_port.eventos[0].accion == "BLOQUEO_POR_INTENTOS"
+    assert "password" not in (audit_port.eventos[0].datos_despues or {})
 
-    # Siguiente intento con clave correcta: debe ser rechazado por cuenta bloqueada
-    with pytest.raises(AutenticacionError, match="Credenciales invalidas"):
+    with pytest.raises(AutenticacionError, match="Acceso temporalmente bloqueado"):
         auth_service.autenticar(email="cajero_bloqueo@mpdw.com", password="real_password")
+
+    user_repo.incrementar_intentos_fallidos.assert_called_once()
 

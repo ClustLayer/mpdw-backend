@@ -39,6 +39,17 @@ def test_sendgrid_adapter_error_http_retorna_falso():
 
 
 @pytest.mark.unit
+def test_sendgrid_envia_codigo_2fa():
+    client_mock = MagicMock(spec=httpx.Client)
+    client_mock.post.return_value = httpx.Response(status_code=202)
+    adapter = SendGridEmailAdapter(api_key="SG.fake_key", client=client_mock)
+    assert adapter.enviar_codigo_2fa("u@test.com", "123456") is True
+    cuerpo = client_mock.post.call_args.kwargs["json"]["content"][0]["value"]
+    assert "123456" in cuerpo
+    assert "SG.fake_key" not in cuerpo
+
+
+@pytest.mark.unit
 def test_sendgrid_adapter_excepcion_red():
     client_mock = MagicMock(spec=httpx.Client)
     client_mock.post.side_effect = httpx.ConnectError("Connection refused")
