@@ -34,3 +34,20 @@
 
 ### No verificado en esta corrida
 - La suite de integracion con PostgreSQL no se ejecuto en esta maquina porque no habia un servicio local levantado. El pipeline de CI si la ejecuta.
+
+## Epica 2 — Administracion de usuarios y perfil
+**Status:** COMPLETED
+**Date:** 2026-11-05
+
+### Analysis (orchestrator)
+- project_mode: EXTEND_EXISTING en `m01_identidad`; FULL_STACK con contrato OpenAPI unico.
+- Orden de ejecucion: HU 07 (modelo y creacion) → HU 08 (listado) → HU 09–11 (detalle) → HU 12 (perfil propio reutiliza PATCH profile).
+
+### Backend
+- Migracion `0006_epic2_perfil_usuarios`; brecha B-18 resuelta con generacion aleatoria y correo `enviar_contrasena_inicial`.
+- `AdminUsuariosService` con `transaction.atomic`, bloqueo optimista por `version_fila` y auditoria sin secretos.
+- Vistas en `admin_views.py` montadas en `/api/v1/usuarios/`.
+
+### Evidencia
+- `make calidad`: 9 puertas en verde (cobertura unitaria >= 90%).
+- Pruebas: `tests/unit/test_epic2_usuarios.py`, `tests/integration/test_epic2_usuarios_api.py`.

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-05 — Epica 2, administracion de usuarios y perfil
+
+- Creacion de usuarios con rol, sede principal, contraseña inicial por correo y auditoria (HU 07).
+- Listado administrativo con busqueda, filtros y paginacion (HU 08).
+- Edicion de usuario con control de concurrencia optimista (HU 09).
+- Cambio de estado activo, inactivo y bloqueado con revocacion de sesiones (HU 10).
+- Generacion de contraseña temporal de un solo uso (HU 11).
+- Mi perfil: nombre, apellido y telefono editables; documento, correo y rol de solo lectura (HU 12).
+
 ## 2026-11-04 — Epica 1, autenticacion y seguridad de sesion
 
 - Inicio de sesion con mensajes literales, bloqueo configurable y auditoria sin secretos.

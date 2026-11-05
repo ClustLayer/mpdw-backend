@@ -17,3 +17,15 @@ El frontend consume los mismos caminos y los mismos textos que publica `GET /api
 
 ### Motivo de NOT_RUN
 No se levanto el par navegador-API contra la base de Supabase durante esta ejecucion. La logica de negocio y el contrato quedaron verificados con la suite unitaria y la compilacion del frontend. El siguiente paso operativo es `uv run python manage.py migrate` y `pnpm dev`, con el `.env` solo en la maquina local.
+
+## Epica 2
+**Date:** 2026-11-05
+**Status:** VERIFIED (contrato y suites locales)
+
+| Criterio | Capa | Evidencia |
+| --- | --- | --- |
+| CRUD administrativo y permiso `usuarios/T` | Backend | test_epic2_usuarios.py, test_epic2_usuarios_api.py |
+| Mensajes literales CA 5–6 | Frontend | features/usuarios/messages.ts, logic.test.ts |
+| Listado, filtros 300 ms debounce | Frontend | panel-usuarios-page.tsx |
+| OpenAPI sin drift | Contrato | docs/openapi.yaml + test_openapi_contract |
+| Calidad completa | Ambos | make calidad, npm exec pnpm run calidad |

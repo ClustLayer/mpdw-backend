@@ -32,7 +32,11 @@ from apps.m01_identidad.services import (
 from apps.m13_plataforma.adapters.correo_factory import construir_adaptador_correo
 from apps.m13_plataforma.adapters.email_smtp import SmtpEmailAdapter
 from apps.m13_plataforma.adapters.fakes import FakeEmailAdapter
-from apps.m13_plataforma.adapters.plantillas_correo import html_codigo_2fa, html_recuperacion
+from apps.m13_plataforma.adapters.plantillas_correo import (
+    html_codigo_2fa,
+    html_contrasena_inicial,
+    html_recuperacion,
+)
 from contratos.excepciones import AutenticacionError, ReglaNegocioError
 
 
@@ -231,12 +235,13 @@ def test_2fa_codigo_invalido_expirado_y_exitoso():
 
 
 @pytest.mark.unit
-@pytest.mark.unit
 def test_plantillas_y_smtp_no_filtran_configuracion(monkeypatch):
     html = html_recuperacion("https://app.local/nueva-contrasena#rt=abc")
     codigo = html_codigo_2fa("654321")
+    acceso = html_contrasena_inicial("Ana", "ClaveSegura#1")
     assert "Restablecer contraseña" in html
     assert "654321" in codigo
+    assert "ClaveSegura#1" in acceso
     enviados: list[object] = []
 
     class FalsoSMTP:
@@ -262,6 +267,7 @@ def test_plantillas_y_smtp_no_filtran_configuracion(monkeypatch):
     monkeypatch.setattr("apps.m13_plataforma.adapters.email_smtp.smtplib.SMTP", FalsoSMTP)
     adapter = SmtpEmailAdapter(host="smtp.local", port=587, user="user", password="no-se-registra", use_tls=True)
     assert adapter.enviar_codigo_2fa("persona@mpdw.test", "654321") is True
+    assert adapter.enviar_contrasena_inicial("persona@mpdw.test", "Ana", "ClaveSegura#1") is True
     assert enviados
 
     monkeypatch.setattr("apps.m13_plataforma.adapters.correo_factory.settings.SENDGRID_API_KEY", "")

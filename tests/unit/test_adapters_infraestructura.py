@@ -39,6 +39,14 @@ def test_sendgrid_adapter_error_http_retorna_falso():
 
 
 @pytest.mark.unit
+def test_sendgrid_envia_contrasena_inicial():
+    client_mock = MagicMock(spec=httpx.Client)
+    client_mock.post.return_value = httpx.Response(status_code=202)
+    adapter = SendGridEmailAdapter(api_key="SG.fake_key", client=client_mock)
+    assert adapter.enviar_contrasena_inicial("u@test.com", "Ana", "ClaveSegura#1") is True
+
+
+@pytest.mark.unit
 def test_sendgrid_envia_codigo_2fa():
     client_mock = MagicMock(spec=httpx.Client)
     client_mock.post.return_value = httpx.Response(status_code=202)
