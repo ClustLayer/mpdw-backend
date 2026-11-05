@@ -32,6 +32,7 @@ from apps.m01_identidad.serializers import (
     MensajeResponseSerializer,
     PoliticaSesionSerializer,
     RecuperarRequestSerializer,
+    Reenviar2FARequestSerializer,
     RestablecerRequestSerializer,
     TokenResponseSerializer,
     UserProfileSerializer,
@@ -113,6 +114,18 @@ def _refresh_entrante(request: Request) -> str | None:
     return request.COOKIES.get("refresh_token") or cuerpo
 
 
+def _origen_confiable(request: Request) -> bool:
+    """Valida Origin/Referer para operaciones con cookie refresh (CSRF)."""
+    origen = (request.headers.get("Origin") or "").strip()
+    referer = (request.headers.get("Referer") or "").strip()
+    candidato = origen or referer
+    if not candidato:
+        return True
+    permitidos = {settings.FRONTEND_URL.rstrip("/")}
+    permitidos.update(o.rstrip("/") for o in getattr(settings, "CORS_ALLOWED_ORIGINS", []) if o)
+    return any(candidato.startswith(base) for base in permitidos)
+
+
 class LoginView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -181,6 +194,8 @@ class TokenRefreshView(APIView):
         responses={200: inline_serializer("RefreshResponse", fields={"access_token": serializers.CharField(), "token_type": serializers.CharField(), "mensaje": serializers.CharField()})},
     )
     def post(self, request: Request) -> Response:
+        if not _origen_confiable(request):
+            return _error("ORIGEN_NO_PERMITIDO", "Origen no autorizado para renovar la sesión.", status.HTTP_403_FORBIDDEN, request)
         refresh = _refresh_entrante(request)
         if not refresh:
             return _error("SESION_EXPIRADA", MSG_SESION_EXPIRADA, status.HTTP_401_UNAUTHORIZED, request)
@@ -210,6 +225,8 @@ class LogoutView(APIView):
         responses={200: MensajeResponseSerializer},
     )
     def post(self, request: Request) -> Response:
+        if not _origen_confiable(request):
+            return _error("ORIGEN_NO_PERMITIDO", "Origen no autorizado para cerrar la sesión.", status.HTTP_403_FORBIDDEN, request)
         refresh = _refresh_entrante(request)
         if not refresh:
             response = _error("SESION_EXPIRADA", MSG_SESION_EXPIRADA, status.HTTP_401_UNAUTHORIZED, request)
@@ -220,14 +237,10 @@ class LogoutView(APIView):
         except AutenticacionError:
             raise
         except DominioError as exc:
-            response = _error(exc.codigo, exc.mensaje, status.HTTP_500_INTERNAL_SERVER_ERROR, request)
-            _quitar_refresh(response)
-            return response
+            return _error(exc.codigo, exc.mensaje, status.HTTP_500_INTERNAL_SERVER_ERROR, request)
         except Exception:
             logger.exception("Fallo no anticipado al cerrar sesion")
-            response = _error("LOGOUT_FALLO", "No fue posible cerrar la sesión en el servidor. Intente nuevamente.", 500, request)
-            _quitar_refresh(response)
-            return response
+            return _error("LOGOUT_FALLO", "No fue posible cerrar la sesión en el servidor. Intente nuevamente.", 500, request)
         response = Response({"mensaje": mensaje}, status=status.HTTP_200_OK)
         _quitar_refresh(response)
         return response
@@ -321,7 +334,7 @@ class CambiarContrasenaView(APIView):
         data = request.data if isinstance(request.data, dict) else {}
         payload = getattr(request, "jwt_payload", {})
         try:
-            acceso, mensaje, sigue_2fa = ContrasenaService(auth=_auth(), audit_port=AuditService()).cambiar(
+            acceso, mensaje, sigue_2fa, desafio = ContrasenaService(auth=_auth(), audit_port=AuditService()).cambiar(
                 usuario=request.user,
                 actual=str(data.get("password_actual") or ""),
                 nueva=str(data.get("password") or ""),
@@ -338,10 +351,16 @@ class CambiarContrasenaView(APIView):
             logger.exception("Fallo no anticipado al cambiar contraseña")
             return _error("ERROR_CAMBIO", MSG_CAMBIO_ERROR, status.HTTP_500_INTERNAL_SERVER_ERROR, request)
         redireccion = "verificacion-2fa" if sigue_2fa else "inicio"
-        return Response(
-            {"access_token": acceso, "token_type": "Bearer", "mensaje": mensaje, "requiere_2fa": sigue_2fa, "redireccion": redireccion},
-            status=status.HTTP_200_OK,
-        )
+        cuerpo = {
+            "access_token": acceso,
+            "token_type": "Bearer",
+            "mensaje": mensaje,
+            "requiere_2fa": sigue_2fa,
+            "redireccion": redireccion,
+        }
+        if desafio:
+            cuerpo["desafio_token"] = desafio
+        return Response(cuerpo, status=status.HTTP_200_OK)
 
 
 class Verificar2FAView(APIView):
@@ -396,16 +415,18 @@ class Reenviar2FAView(APIView):
 
     @extend_schema(
         summary="Reenviar codigo de segundo factor",
-        request=Codigo2FARequestSerializer,
-        responses={200: MensajeResponseSerializer},
+        request=Reenviar2FARequestSerializer,
+        responses={200: inline_serializer("Reenviar2FAResponse", fields={"mensaje": serializers.CharField(), "desafio_token": serializers.CharField()})},
     )
     def post(self, request: Request) -> Response:
-        data = request.data if isinstance(request.data, dict) else {}
+        serializer = Reenviar2FARequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return _error("DATOS_INVALIDOS", _primer_mensaje(serializer.errors), status.HTTP_400_BAD_REQUEST, request)
         usuario = request.user if getattr(request.user, "is_authenticated", False) else None
         try:
-            mensaje = Verificacion2FAService(auth=_auth(), email_port=_correo()).reenviar(
+            mensaje, desafio = Verificacion2FAService(auth=_auth(), email_port=_correo()).reenviar(
                 usuario=usuario,
-                desafio_token=str(data.get("desafio_token") or ""),
+                desafio_token=str(serializer.validated_data["desafio_token"]),
             )
         except (ReglaNegocioError, AutenticacionError):
             raise
@@ -414,7 +435,7 @@ class Reenviar2FAView(APIView):
         except Exception:
             logger.exception("Fallo no anticipado al reenviar 2FA")
             return _error("ERROR_2FA", MSG_2FA_ERROR, status.HTTP_500_INTERNAL_SERVER_ERROR, request)
-        return Response({"mensaje": mensaje}, status=status.HTTP_200_OK)
+        return Response({"mensaje": mensaje, "desafio_token": desafio}, status=status.HTTP_200_OK)
 
 
 class ContratoAuthView(APIView):

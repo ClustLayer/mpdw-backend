@@ -3,9 +3,11 @@
 # SAD Ref: M01, ADR-006, ADR-007, §10.3, §10.4
 # ==============================================================================
 import hashlib
+import hmac
 from datetime import timedelta
 from uuid import UUID
 
+from django.db import transaction
 from django.utils import timezone
 
 from apps.m01_identidad.models import (
@@ -53,6 +55,18 @@ class UserRepository:
         usuario.bloqueado_hasta = None
         usuario.ultimo_acceso = timezone.now()
         usuario.save(update_fields=["intentos_fallidos", "bloqueado_hasta", "ultimo_acceso"])
+
+    def bloquear_para_emision_2fa(self, id_usuario: int) -> Usuarios:
+        """Bloqueo pessimista del usuario para serializar emision de codigos 2FA."""
+        return Usuarios.objects.select_for_update().select_related("id_rol").get(pk=id_usuario)
+
+    def incrementar_credential_version(self, usuario: Usuarios) -> int:
+        with transaction.atomic():
+            bloqueado = Usuarios.objects.select_for_update().get(pk=usuario.pk)
+            bloqueado.credential_version = int(bloqueado.credential_version or 1) + 1
+            bloqueado.save(update_fields=["credential_version"])
+            usuario.credential_version = bloqueado.credential_version
+            return bloqueado.credential_version
 
     def obtener_sedes_asignadas_ids(self, id_usuario: int) -> tuple[int, ...]:
         return tuple(
@@ -192,6 +206,27 @@ class RecuperacionRepository:
         registro.usado = True
         registro.save(update_fields=["usado"])
 
+    def consumir_token_atomico(self, token: str) -> Tokens_recuperacion | None:
+        """Marca el token como usado solo si sigue pendiente (una fila afectada)."""
+        token_hash = SessionRepository.calcular_hash(token)
+        with transaction.atomic():
+            registro = (
+                Tokens_recuperacion.objects.select_for_update()
+                .select_related("id_usuario", "id_usuario__id_rol")
+                .filter(token_hash=token_hash, usado=False)
+                .first()
+            )
+            if registro is None:
+                return None
+            expira = getattr(registro, "expira_en", None)
+            if not expira or timezone.now() > expira:
+                return None
+            actualizados = Tokens_recuperacion.objects.filter(pk=registro.pk, usado=False).update(usado=True)
+            if actualizados != 1:
+                return None
+            registro.usado = True
+            return registro
+
 
 class Codigo2FARepository:
     """Codigos de segundo factor. Solo se persiste el hash."""
@@ -216,13 +251,64 @@ class Codigo2FARepository:
         )
 
     def registrar_fallo(self, registro: Codigos_2fa, max_intentos: int) -> int:
-        registro.intentos += 1
-        if registro.intentos >= max_intentos:
-            registro.usado = True
-        registro.save(update_fields=["intentos", "usado"])
-        return registro.intentos
+        with transaction.atomic():
+            bloqueado = Codigos_2fa.objects.select_for_update().get(pk=registro.pk)
+            bloqueado.intentos += 1
+            if bloqueado.intentos >= max_intentos:
+                bloqueado.usado = True
+            bloqueado.save(update_fields=["intentos", "usado"])
+            registro.intentos = bloqueado.intentos
+            registro.usado = bloqueado.usado
+            return bloqueado.intentos
 
     def marcar_usado(self, registro: Codigos_2fa) -> None:
-        registro.usado = True
-        registro.save(update_fields=["usado"])
+        with transaction.atomic():
+            Codigos_2fa.objects.filter(pk=registro.pk, usado=False).update(usado=True)
+            registro.usado = True
+
+    def crear_serializado(self, id_usuario: int, codigo: str, minutos: int) -> None:
+        """Invalida vigentes y crea un unico codigo bajo bloqueo del usuario."""
+        with transaction.atomic():
+            Usuarios.objects.select_for_update().get(pk=id_usuario)
+            Codigos_2fa.objects.filter(id_usuario_id=id_usuario, usado=False).update(usado=True)
+            Codigos_2fa.objects.create(
+                id_usuario_id=id_usuario,
+                codigo_hash=SessionRepository.calcular_hash(codigo),
+                expira_en=timezone.now() + timedelta(minutes=minutos),
+                usado=False,
+                intentos=0,
+            )
+
+    def intentar_consumir_codigo(self, id_usuario: int, codigo: str, max_intentos: int) -> tuple[str, Codigos_2fa | None]:
+        """
+        Retorna ('ok', registro), ('invalido', registro) o ('expirado', None).
+        Serializa verificacion y conteo de fallos sobre la fila del codigo vigente.
+        """
+        esperado = SessionRepository.calcular_hash(codigo.strip())
+        with transaction.atomic():
+            Usuarios.objects.select_for_update().get(pk=id_usuario)
+            registro = (
+                Codigos_2fa.objects.select_for_update()
+                .filter(id_usuario_id=id_usuario, usado=False)
+                .order_by("-id_codigo")
+                .first()
+            )
+            if registro is None:
+                return "expirado", None
+            expira = getattr(registro, "expira_en", None)
+            if not expira or timezone.now() > expira:
+                registro.usado = True
+                registro.save(update_fields=["usado"])
+                return "expirado", None
+            if not hmac.compare_digest(esperado, registro.codigo_hash):
+                registro.intentos += 1
+                if registro.intentos >= max_intentos:
+                    registro.usado = True
+                registro.save(update_fields=["intentos", "usado"])
+                if registro.usado:
+                    return "expirado", registro
+                return "invalido", registro
+            registro.usado = True
+            registro.save(update_fields=["usado"])
+            return "ok", registro
 

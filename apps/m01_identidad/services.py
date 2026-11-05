@@ -2,7 +2,6 @@
 # Servicios de Autenticación y Autorización - MPDW
 # HU_MPDW_01_01 a HU_MPDW_01_06. SAD Ref: M01, ADR-006, ADR-007
 # ==============================================================================
-import hmac
 import secrets
 import time
 import uuid
@@ -12,6 +11,7 @@ from typing import Any
 
 import jwt
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 
 from apps.m01_identidad.mensajes import (
@@ -69,11 +69,13 @@ def emitir_codigo_2fa(
     email_port: EmailPort | None,
     usuario: Any,
     mensaje_fallo: str,
+    minutos_vigencia: int | None = None,
 ) -> None:
     """Genera un codigo de 6 digitos, guarda solo su hash y lo envia por correo."""
     codigo = f"{secrets.randbelow(1_000_000):06d}"
-    codigos.invalidar_vigentes(usuario.id_usuario)
-    codigos.crear(usuario, codigo, int(settings.CODIGO_2FA_MINUTOS))
+    minutos = minutos_vigencia if minutos_vigencia is not None else int(settings.CODIGO_2FA_MINUTOS)
+    minutos = max(1, minutos)
+    codigos.crear_serializado(usuario.id_usuario, codigo, minutos)
     enviado = bool(email_port and email_port.enviar_codigo_2fa(usuario.email, codigo))
     if not enviado:
         raise AutenticacionError(mensaje_fallo, codigo="ERROR_CORREO")
@@ -182,19 +184,35 @@ class AuthService:
             payload["mcp"] = True
         if mfa_pendiente:
             payload["mfa_pendiente"] = True
+        payload["cv"] = int(getattr(usuario, "credential_version", 1) or 1)
         return self._firmar(payload)
 
-    def emitir_desafio(self, usuario: Any) -> str:
+    def emitir_desafio(self, usuario: Any, exp_epoch: int | None = None) -> str:
         ahora = int(time.time())
         minutos = int(settings.CODIGO_2FA_MINUTOS)
+        exp = exp_epoch if exp_epoch is not None else ahora + (minutos * 60)
         payload = {
             "sub": str(usuario.id_usuario),
             "typ": "2fa",
             "jti": str(uuid.uuid4()),
             "iat": ahora,
-            "exp": ahora + (minutos * 60),
+            "exp": exp,
         }
         return self._firmar(payload)
+
+    def segundos_restantes_desafio(self, desafio_token: str) -> int:
+        try:
+            payload = jwt.decode(
+                desafio_token,
+                settings.JWT_SIGNING_KEY,
+                algorithms=["HS256"],
+                options={"verify_exp": False},
+            )
+        except jwt.PyJWTError:
+            return 0
+        if payload.get("typ") != "2fa":
+            return 0
+        return max(0, int(payload.get("exp", 0)) - int(time.time()))
 
     def usuario_desde_desafio(self, desafio_token: str) -> Any:
         try:
@@ -427,15 +445,16 @@ class RecuperacionService:
         if nueva != confirmar:
             raise ReglaNegocioError(MSG_PASSWORD_DISTINTA, codigo="PASSWORD_NO_COINCIDE")
         validar_politica_password(nueva)
-        registro = self._tokens.buscar_por_token(token)
-        if registro is None or not self._vigente(registro):
+        registro = self._tokens.consumir_token_atomico(token)
+        if registro is None:
             raise ReglaNegocioError(MSG_RESET_INVALIDO, codigo="TOKEN_RECUPERACION_INVALIDO")
         usuario = registro.id_usuario
-        usuario.set_password(nueva)
-        usuario.debe_cambiar_password = False
-        self._guardar_usuario(usuario)
-        self._tokens.marcar_usado(registro)
-        self._sessions.revocar_usuario(usuario.id_usuario)
+        with transaction.atomic():
+            usuario.set_password(nueva)
+            usuario.debe_cambiar_password = False
+            usuario.credential_version = int(getattr(usuario, "credential_version", 1) or 1) + 1
+            usuario.save(update_fields=["password", "debe_cambiar_password", "credential_version"])
+            self._sessions.revocar_usuario(usuario.id_usuario)
         return MSG_RESET_OK
 
     def _vigente(self, registro: Any) -> bool:
@@ -471,7 +490,7 @@ class ContrasenaService:
         ip: str,
         user_agent: str,
         id_correlacion: str,
-    ) -> tuple[str, str, bool]:
+    ) -> tuple[str, str, bool, str | None]:
         if not actual or not nueva or not confirmar:
             raise ReglaNegocioError(MSG_CAMPOS_OBLIGATORIOS, codigo="CAMPOS_OBLIGATORIOS")
         if not usuario.check_password(actual):
@@ -480,28 +499,36 @@ class ContrasenaService:
             raise ReglaNegocioError(MSG_PASSWORD_DISTINTA, codigo="PASSWORD_NO_COINCIDE")
         validar_politica_password(nueva, password_actual=actual)
         antes = {"debe_cambiar_password": bool(getattr(usuario, "debe_cambiar_password", False))}
-        usuario.set_password(nueva)
-        usuario.debe_cambiar_password = False
-        if hasattr(usuario, "save"):
-            usuario.save(update_fields=["password", "debe_cambiar_password"])
-        if self._audit:
-            self._audit.registrar(
-                AuditoriaDTO(
-                    id_usuario=usuario.id_usuario,
-                    accion="CAMBIO_PASSWORD",
-                    entidad="Usuarios",
-                    id_entidad=usuario.id_usuario,
-                    datos_antes=antes,
-                    datos_despues={"debe_cambiar_password": False, "password": "[omitido]"},
-                    motivo="Cambio de contraseña",
-                    id_correlacion=id_correlacion,
-                    ip=ip,
-                    user_agent=user_agent,
+        codigo_repo = self._auth._codigos
+        email_port = self._auth._email
+        desafio_token: str | None = None
+        with transaction.atomic():
+            usuario.set_password(nueva)
+            usuario.debe_cambiar_password = False
+            usuario.credential_version = int(getattr(usuario, "credential_version", 1) or 1) + 1
+            if hasattr(usuario, "save"):
+                usuario.save(update_fields=["password", "debe_cambiar_password", "credential_version"])
+            if self._audit:
+                self._audit.registrar(
+                    AuditoriaDTO(
+                        id_usuario=usuario.id_usuario,
+                        accion="CAMBIO_PASSWORD",
+                        entidad="Usuarios",
+                        id_entidad=usuario.id_usuario,
+                        datos_antes=antes,
+                        datos_despues={"debe_cambiar_password": False, "password": "[omitido]"},
+                        motivo="Cambio de contraseña",
+                        id_correlacion=id_correlacion,
+                        ip=ip,
+                        user_agent=user_agent,
+                    )
                 )
-            )
         sigue_2fa = bool(mfa_pendiente and _requiere_2fa(usuario))
+        if sigue_2fa:
+            emitir_codigo_2fa(codigo_repo, email_port, usuario, MSG_2FA_ERROR)
+            desafio_token = self._auth.emitir_desafio(usuario)
         access = self._auth.emitir_access(usuario, id_sesion, mfa_pendiente=sigue_2fa)
-        return access, MSG_CAMBIO_OK, sigue_2fa
+        return access, MSG_CAMBIO_OK, sigue_2fa, desafio_token
 
 
 class Verificacion2FAService:
@@ -536,12 +563,27 @@ class Verificacion2FAService:
         except Exception as exc:
             raise DominioError(MSG_2FA_ERROR, codigo="ERROR_2FA") from exc
 
-    def reenviar(self, usuario: Any | None, desafio_token: str) -> str:
+    def reenviar(self, usuario: Any | None, desafio_token: str) -> tuple[str, str]:
         try:
             if usuario is None:
                 usuario = self._auth.usuario_desde_desafio(desafio_token)
-            emitir_codigo_2fa(self._codigos, self._email, usuario, MSG_2FA_ERROR)
-            return MSG_2FA_REENVIADO
+            restantes = self._auth.segundos_restantes_desafio(desafio_token)
+            if restantes <= 0:
+                raise ReglaNegocioError(MSG_2FA_EXPIRADO, codigo="CODIGO_2FA_EXPIRADO")
+            minutos_codigo = max(1, (restantes + 59) // 60)
+            emitir_codigo_2fa(self._codigos, self._email, usuario, MSG_2FA_ERROR, minutos_vigencia=minutos_codigo)
+            try:
+                payload = jwt.decode(
+                    desafio_token,
+                    settings.JWT_SIGNING_KEY,
+                    algorithms=["HS256"],
+                    options={"verify_exp": False},
+                )
+                exp = int(payload.get("exp", int(time.time()) + restantes))
+            except jwt.PyJWTError:
+                exp = int(time.time()) + restantes
+            nuevo_desafio = self._auth.emitir_desafio(usuario, exp_epoch=exp)
+            return MSG_2FA_REENVIADO, nuevo_desafio
         except (ReglaNegocioError, AutenticacionError):
             raise
         except Exception as exc:
@@ -588,22 +630,16 @@ class Verificacion2FAService:
         )
 
     def _consumir_codigo(self, usuario: Any, codigo: str) -> None:
-        registro = self._codigos.buscar_vigente(usuario.id_usuario)
-        if registro is None or not self._codigo_vigente(registro):
-            raise ReglaNegocioError(MSG_2FA_EXPIRADO, codigo="CODIGO_2FA_EXPIRADO")
-        esperado = SessionRepository.calcular_hash(codigo.strip())
-        if not hmac.compare_digest(esperado, registro.codigo_hash):
-            intentos = self._codigos.registrar_fallo(registro, int(settings.MAX_INTENTOS_2FA))
-            if intentos >= int(settings.MAX_INTENTOS_2FA):
-                raise ReglaNegocioError(MSG_2FA_EXPIRADO, codigo="CODIGO_2FA_EXPIRADO")
+        estado, _ = self._codigos.intentar_consumir_codigo(
+            usuario.id_usuario,
+            codigo,
+            int(settings.MAX_INTENTOS_2FA),
+        )
+        if estado == "ok":
+            return
+        if estado == "invalido":
             raise ReglaNegocioError(MSG_2FA_INVALIDO, codigo="CODIGO_2FA_INVALIDO")
-        self._codigos.marcar_usado(registro)
-
-    def _codigo_vigente(self, registro: Any) -> bool:
-        if registro is None or registro.usado:
-            return False
-        expira = getattr(registro, "expira_en", None)
-        return bool(expira and timezone.now() <= expira)
+        raise ReglaNegocioError(MSG_2FA_EXPIRADO, codigo="CODIGO_2FA_EXPIRADO")
 
 
 class PermissionService:

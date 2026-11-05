@@ -49,6 +49,7 @@ def _usuario(**kwargs: object) -> SimpleNamespace:
         "esta_bloqueado": False,
         "dosfa_habilitado": True,
         "debe_cambiar_password": False,
+        "credential_version": 1,
         "id_rol": _rol(),
         "password": "hash",
     }
@@ -100,7 +101,10 @@ def test_recuperacion_envia_enlace_con_fragmento_y_no_guarda_token_en_claro():
 
 
 @pytest.mark.unit
-def test_restablecer_marca_uso_revoca_sesiones_y_guarda_hash():
+def test_restablecer_marca_uso_revoca_sesiones_y_guarda_hash(monkeypatch):
+    from contextlib import nullcontext
+
+    monkeypatch.setattr("apps.m01_identidad.services.transaction.atomic", nullcontext)
     usuario = _usuario()
     registro = SimpleNamespace(
         usado=False,
@@ -108,14 +112,15 @@ def test_restablecer_marca_uso_revoca_sesiones_y_guarda_hash():
         id_usuario=usuario,
     )
     tokens = MagicMock()
-    tokens.buscar_por_token.return_value = registro
+    tokens.consumir_token_atomico.return_value = registro
     sessions = MagicMock()
     servicio = RecuperacionService(token_repo=tokens, session_repo=sessions)
     mensaje = servicio.restablecer("secreto", "NuevaClave#1", "NuevaClave#1")
     assert mensaje == MSG_RESET_OK
     assert usuario.password.startswith("hash:")
     assert usuario.debe_cambiar_password is False
-    tokens.marcar_usado.assert_called_once_with(registro)
+    assert usuario.credential_version == 2
+    tokens.consumir_token_atomico.assert_called_once_with("secreto")
     sessions.revocar_usuario.assert_called_once_with(usuario.id_usuario)
 
 
@@ -123,7 +128,7 @@ def test_restablecer_marca_uso_revoca_sesiones_y_guarda_hash():
 def test_restablecer_token_vencido():
     registro = SimpleNamespace(usado=False, expira_en=timezone.now() - timedelta(minutes=1), id_usuario=_usuario())
     tokens = MagicMock()
-    tokens.buscar_por_token.return_value = registro
+    tokens.consumir_token_atomico.return_value = None
     servicio = RecuperacionService(token_repo=tokens)
     with pytest.raises(ReglaNegocioError, match=MSG_RESET_INVALIDO):
         servicio.restablecer("x", "NuevaClave#1", "NuevaClave#1")
@@ -146,18 +151,24 @@ def test_cambio_password_mensajes_de_negocio():
 
 
 @pytest.mark.unit
-def test_cambio_password_exitoso_no_audita_el_secreto():
+def test_cambio_password_exitoso_no_audita_el_secreto(monkeypatch):
+    from contextlib import nullcontext
+
+    monkeypatch.setattr("apps.m01_identidad.services.transaction.atomic", nullcontext)
     usuario = _usuario(debe_cambiar_password=True)
     auth = MagicMock()
     auth.emitir_access.return_value = "jwt-nuevo"
     audit = MagicMock()
     servicio = ContrasenaService(auth=auth, audit_port=audit)
-    acceso, mensaje, sigue = servicio.cambiar(
+    auth._codigos = MagicMock()
+    auth._email = MagicMock()
+    acceso, mensaje, sigue, desafio = servicio.cambiar(
         usuario, "Actual#1", "NuevaClave#1", "NuevaClave#1", 4, False, "10.0.0.8", "ua", "corr"
     )
     assert acceso == "jwt-nuevo"
     assert mensaje == MSG_CAMBIO_OK
     assert sigue is False
+    assert desafio is None
     evento = audit.registrar.call_args.args[0]
     assert evento.datos_despues["password"] == "[omitido]"
     assert "NuevaClave#1" not in str(evento.datos_despues)
@@ -180,7 +191,7 @@ def test_login_administrador_2fa_no_emite_sesion_ni_registra_el_codigo():
     assert resultado.desafio_token
     sessions.registrar_sesion.assert_not_called()
     assert email.enviados[0]["codigo"] not in (resultado.desafio_token or "")
-    codigos.crear.assert_called_once()
+    codigos.crear_serializado.assert_called_once()
 
 
 @pytest.mark.unit
@@ -197,8 +208,11 @@ def test_2fa_codigo_invalido_expirado_y_exitoso():
         intentos=0,
     )
     codigos = MagicMock()
-    codigos.buscar_vigente.return_value = registro
-    codigos.registrar_fallo.return_value = 1
+    codigos.intentar_consumir_codigo.side_effect = [
+        ("invalido", registro),
+        ("expirado", None),
+        ("ok", registro),
+    ]
     sessions = MagicMock()
     sessions.registrar_sesion.return_value = SimpleNamespace(id_sesion=3, mfa_verificada=True)
     auth = AuthService(user_repo=users, session_repo=sessions, codigo_repo=codigos)
@@ -207,17 +221,14 @@ def test_2fa_codigo_invalido_expirado_y_exitoso():
     with pytest.raises(ReglaNegocioError, match=MSG_2FA_INVALIDO):
         servicio.verificar(None, desafio, "000000", None, "127.0.0.1", "ua", "c")
 
-    registro.usado = True
     with pytest.raises(ReglaNegocioError, match=MSG_2FA_EXPIRADO):
         servicio.verificar(None, desafio, codigo, None, "127.0.0.1", "ua", "c")
 
-    registro.usado = False
-    registro.expira_en = datetime.now(UTC) + timedelta(minutes=5)
     resultado = servicio.verificar(None, desafio, codigo, None, "127.0.0.1", "ua", "c")
     assert resultado.mensaje == MSG_2FA_OK
     assert resultado.access_token
     assert resultado.refresh_token
-    codigos.marcar_usado.assert_called_once()
+    assert codigos.intentar_consumir_codigo.call_count == 3
 
 
 @pytest.mark.unit
@@ -239,7 +250,8 @@ def test_plantillas_y_smtp_no_filtran_configuracion(monkeypatch):
         def __exit__(self, *args: object) -> None:
             return None
 
-        def starttls(self) -> None:
+        def starttls(self, context=None) -> None:
+            assert context is not None
             return None
 
         def login(self, user: str, password: str) -> None:

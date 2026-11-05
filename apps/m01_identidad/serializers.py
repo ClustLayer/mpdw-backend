@@ -66,11 +66,16 @@ class CambiarContrasenaResponseSerializer(serializers.Serializer):
     mensaje = serializers.CharField()
     requiere_2fa = serializers.BooleanField()
     redireccion = serializers.CharField()
+    desafio_token = serializers.CharField(required=False, allow_null=True)
 
 
 class Codigo2FARequestSerializer(serializers.Serializer):
     codigo = serializers.CharField(min_length=6, max_length=6)
     desafio_token = serializers.CharField(required=False, allow_blank=True)
+
+
+class Reenviar2FARequestSerializer(serializers.Serializer):
+    desafio_token = serializers.CharField()
 
 
 class PoliticaSesionSerializer(serializers.Serializer):

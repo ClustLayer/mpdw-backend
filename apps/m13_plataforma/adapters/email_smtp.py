@@ -3,6 +3,7 @@
 # ==============================================================================
 import logging
 import smtplib
+import ssl
 from email.message import EmailMessage
 
 from django.conf import settings
@@ -51,7 +52,7 @@ class SmtpEmailAdapter(EmailPort):
         try:
             with smtplib.SMTP(self._host, self._port, timeout=15) as smtp:
                 if self._use_tls:
-                    smtp.starttls()
+                    smtp.starttls(context=ssl.create_default_context())
                 if self._user:
                     smtp.login(self._user, self._password)
                 smtp.send_message(mensaje)

@@ -29,7 +29,11 @@ def archivos_versionados() -> list[Path]:
 def main() -> int:
     hallazgos: list[str] = []
     for path in archivos_versionados():
-        if path.name == ".env" or (path.name.startswith(".env.") and path.name != ".env.example"):
+        nombre = path.name
+        if nombre == ".env":
+            hallazgos.append(f"archivo de entorno versionado: {path.relative_to(ROOT)}")
+            continue
+        if nombre.startswith(".env.") and not nombre.endswith(".example"):
             hallazgos.append(f"archivo de entorno versionado: {path.relative_to(ROOT)}")
             continue
         if path.suffix.lower() in BINARIOS or not path.is_file():

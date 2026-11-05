@@ -52,6 +52,11 @@ class JWTAuthentication(BaseAuthentication):
         if not user.estado or user.esta_bloqueado:
             raise AuthenticationFailed("Usuario inactivo o bloqueado.")
 
+        token_cv = payload.get("cv")
+        user_cv = int(getattr(user, "credential_version", 1) or 1)
+        if token_cv is not None and int(token_cv) != user_cv:
+            raise AuthenticationFailed("El token de acceso fue revocado.")
+
         sedes = tuple(
             Usuario_sede.objects.filter(id_usuario=user, estado=True).values_list("id_sede_id", flat=True)
         )

@@ -87,6 +87,7 @@ class Usuarios(AbstractBaseUser):
     bloqueado_hasta = models.DateTimeField(null=True, blank=True, db_column="bloqueado_hasta")
     dosfa_habilitado = models.BooleanField(default=False, db_column="dosfa_habilitado")  # G-13
     debe_cambiar_password = models.BooleanField(default=False, db_column="debe_cambiar_password")
+    credential_version = models.PositiveIntegerField(default=1, db_column="credential_version")
     ultimo_acceso = models.DateTimeField(null=True, blank=True, db_column="ultimo_acceso")
     fecha_actualizacion = models.DateTimeField(auto_now=True, null=True, blank=True, db_column="fecha_actualizacion")
     fecha_creacion = models.DateTimeField(auto_now_add=True, db_column="fecha_creacion")

@@ -172,13 +172,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Codigo2FARequestRequest'
+              $ref: '#/components/schemas/Reenviar2FARequestRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Codigo2FARequestRequest'
+              $ref: '#/components/schemas/Reenviar2FARequestRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Codigo2FARequestRequest'
+              $ref: '#/components/schemas/Reenviar2FARequestRequest'
         required: true
       security:
       - jwtAuth: []
@@ -188,7 +188,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MensajeResponse'
+                $ref: '#/components/schemas/Reenviar2FAResponse'
           description: ''
   /api/v1/auth/refresh:
     post:
@@ -525,6 +525,9 @@ components:
           type: boolean
         redireccion:
           type: string
+        desafio_token:
+          type: string
+          nullable: true
       required:
       - access_token
       - mensaje
@@ -823,6 +826,24 @@ components:
           maxLength: 255
       required:
       - email
+    Reenviar2FARequestRequest:
+      type: object
+      properties:
+        desafio_token:
+          type: string
+          minLength: 1
+      required:
+      - desafio_token
+    Reenviar2FAResponse:
+      type: object
+      properties:
+        mensaje:
+          type: string
+        desafio_token:
+          type: string
+      required:
+      - desafio_token
+      - mensaje
     RefreshRequestRequest:
       type: object
       properties:
