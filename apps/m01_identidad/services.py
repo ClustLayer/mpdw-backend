@@ -2,6 +2,7 @@
 # Servicios de Autenticación y Autorización - MPDW
 # HU_MPDW_01_01 a HU_MPDW_01_06. SAD Ref: M01, ADR-006, ADR-007
 # ==============================================================================
+import logging
 import secrets
 import time
 import uuid
@@ -49,6 +50,8 @@ from contratos.dtos import AuditoriaDTO, AuthContext
 from contratos.excepciones import AutenticacionError, DominioError, ReglaNegocioError
 from contratos.puertos.auditoria import AuditPort
 from contratos.puertos.correo import EmailPort
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -434,7 +437,10 @@ class RecuperacionService:
                 self._tokens.crear(usuario, token, int(settings.RECUPERACION_MINUTOS))
                 enlace = f"{settings.FRONTEND_URL}/nueva-contrasena#rt={token}"
                 if self._email:
-                    self._email.enviar_recuperacion_password(usuario.email, enlace)
+                    try:
+                        self._email.enviar_recuperacion_password(usuario.email, enlace)
+                    except Exception:
+                        logger.exception("Fallo al enviar correo de recuperacion")
             return MSG_RECUPERACION_OK
         except Exception as exc:
             raise DominioError(MSG_ERROR_SOLICITUD, codigo="ERROR_RECUPERACION") from exc
