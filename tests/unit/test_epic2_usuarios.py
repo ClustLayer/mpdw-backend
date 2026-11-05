@@ -20,7 +20,7 @@ from apps.m01_identidad.politicas import (
 from apps.m02_sedes.models import Sedes
 from apps.m13_plataforma.adapters.fakes import FakeEmailAdapter
 from contratos.dtos import AuthContext
-from contratos.excepciones import ReglaNegocioError
+from contratos.excepciones import DominioError, ReglaNegocioError
 
 
 @pytest.fixture
@@ -288,14 +288,44 @@ def test_cambiar_estado_activar_y_bloquear(admin_ctx, sede_activa):
         },
     )
     uid = detalle["id_usuario"]
+    usuario = Usuarios.objects.get(pk=uid)
+    cv_inicial = int(usuario.credential_version or 1)
     servicio.cambiar_estado(admin_ctx, uid, "bloquear")
+    usuario.refresh_from_db()
+    assert int(usuario.credential_version or 1) == cv_inicial + 1
     servicio.cambiar_estado(admin_ctx, uid, "activar")
     servicio.cambiar_estado(admin_ctx, uid, "desactivar")
+    usuario.refresh_from_db()
+    assert usuario.bloqueado_hasta is None
+    assert int(usuario.credential_version or 1) == cv_inicial + 2
     pagina = servicio.listar("", None, "inactivo", 1, 20, "-ultimo_acceso")
     assert pagina.total >= 1
 
 
 @pytest.mark.unit
+@pytest.mark.django_db
+def test_crear_falla_si_correo_no_entrega(admin_ctx, sede_activa):
+    class CorreoFallido(FakeEmailAdapter):
+        def enviar_contrasena_inicial(self, destinatario: str, nombre: str, contrasena_plana: str) -> bool:
+            return False
+
+    rol, _ = Roles.objects.get_or_create(nombre="Empleado", defaults={"es_rol_base": True, "estado": True})
+    servicio = AdminUsuariosService(email_port=CorreoFallido())
+    with pytest.raises(DominioError, match="correo"):
+        servicio.crear(
+            admin_ctx,
+            {
+                "nombre": "Sin",
+                "apellido": "Correo",
+                "documento": "100012345678",
+                "telefono": "",
+                "email": "sin.correo@test.local",
+                "id_rol": rol.id_rol,
+                "sedes": [{"id_sede": sede_activa.id_sede, "es_principal": True}],
+            },
+        )
+
+
 @pytest.mark.unit
 @pytest.mark.django_db
 def test_crear_documento_duplicado(admin_ctx, sede_activa):

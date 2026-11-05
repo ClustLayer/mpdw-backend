@@ -10,7 +10,7 @@ from typing import Any
 
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.utils import timezone
 
 from apps.m01_identidad.mensajes import (
@@ -21,6 +21,7 @@ from apps.m01_identidad.mensajes import (
     MSG_CONTRASENA_TEMP_PROPIA,
     MSG_DOCUMENTO_DUPLICADO,
     MSG_EMAIL_DUPLICADO,
+    MSG_EMAIL_ENTREGA_FALLIDA,
     MSG_EMAIL_INVALIDO,
     MSG_ESTADO_ACTUALIZADO,
     MSG_ESTADO_ERROR,
@@ -35,6 +36,7 @@ from apps.m01_identidad.mensajes import (
     MSG_USUARIO_ACTUALIZAR_ERROR,
     MSG_USUARIO_CREADO,
     MSG_USUARIO_CREAR_ERROR,
+    MSG_USUARIO_NO_ENCONTRADO,
 )
 from apps.m01_identidad.models import Roles, Usuario_sede, Usuarios
 from apps.m01_identidad.politicas import (
@@ -105,7 +107,10 @@ class AdminUsuariosService:
         page_size: int,
         ordering: str,
     ) -> PaginaUsuarios:
-        qs = Usuarios.objects.select_related("id_rol").all()
+        sede_principal_qs = Usuario_sede.objects.filter(estado=True, es_principal=True).select_related("id_sede")
+        qs = Usuarios.objects.select_related("id_rol").prefetch_related(
+            Prefetch("sedes_usuario", queryset=sede_principal_qs, to_attr="sedes_principales")
+        )
         texto = (q or "").strip()
         if texto:
             qs = qs.filter(
@@ -147,13 +152,13 @@ class AdminUsuariosService:
     def obtener_detalle(self, id_usuario: int) -> dict[str, Any]:
         usuario = self._users.buscar_por_id(id_usuario)
         if not usuario:
-            raise ReglaNegocioError("Usuario no encontrado.", codigo="USUARIO_NO_ENCONTRADO")
+            raise ReglaNegocioError(MSG_USUARIO_NO_ENCONTRADO, codigo="USUARIO_NO_ENCONTRADO")
         return self._detalle(usuario)
 
     def crear(self, ctx: AuthContext, datos: dict[str, Any]) -> tuple[str, dict[str, Any]]:
         try:
             return self._crear(ctx, datos)
-        except ReglaNegocioError:
+        except (ReglaNegocioError, DominioError):
             raise
         except Exception as exc:
             logger.exception("Fallo al crear usuario")
@@ -196,16 +201,16 @@ class AdminUsuariosService:
             raise ReglaNegocioError(MSG_EMAIL_INVALIDO, codigo="EMAIL_INVALIDO")
         exigir_documento(documento)
         exigir_telefono(str(datos.get("telefono") or ""))
-        if Usuarios.objects.filter(email__iexact=email).exists():
-            raise ReglaNegocioError(MSG_EMAIL_DUPLICADO, codigo="EMAIL_DUPLICADO")
-        if Usuarios.objects.filter(documento=documento).exists():
-            raise ReglaNegocioError(MSG_DOCUMENTO_DUPLICADO, codigo="DOCUMENTO_DUPLICADO")
         rol = self._rol_activo(int(datos["id_rol"]))
         sedes = _sedes_payload(datos.get("sedes"))
         self._validar_sedes(sedes)
         clave = generar_contrasena_inicial()
         expira = timezone.now() + timedelta(hours=24)
         with transaction.atomic():
+            if Usuarios.objects.select_for_update().filter(email__iexact=email).exists():
+                raise ReglaNegocioError(MSG_EMAIL_DUPLICADO, codigo="EMAIL_DUPLICADO")
+            if Usuarios.objects.filter(documento=documento).exists():
+                raise ReglaNegocioError(MSG_DOCUMENTO_DUPLICADO, codigo="DOCUMENTO_DUPLICADO")
             usuario = Usuarios.objects.create(
                 email=email,
                 documento=documento,
@@ -225,9 +230,15 @@ class AdminUsuariosService:
             self._auditar(ctx, "CREAR_USUARIO", usuario.id_usuario, None, despues)
         if self._email:
             try:
-                self._email.enviar_contrasena_inicial(email, nombre_completo(usuario), clave)
-            except Exception:
+                entregado = self._email.enviar_contrasena_inicial(email, nombre_completo(usuario), clave)
+                if not entregado:
+                    logger.error("Adaptador de correo reporto fallo al enviar contrasena inicial a %s", email)
+                    raise DominioError(MSG_EMAIL_ENTREGA_FALLIDA, codigo="EMAIL_NO_ENTREGADO")
+            except DominioError:
+                raise
+            except Exception as exc:
                 logger.exception("No se pudo enviar correo de contrasena inicial")
+                raise DominioError(MSG_EMAIL_ENTREGA_FALLIDA, codigo="EMAIL_NO_ENTREGADO") from exc
         return MSG_USUARIO_CREADO, self._detalle(usuario)
 
     def _actualizar(self, ctx: AuthContext, id_usuario: int, datos: dict[str, Any]) -> tuple[str, dict[str, Any]]:
@@ -239,15 +250,15 @@ class AdminUsuariosService:
             raise ReglaNegocioError(MSG_EMAIL_INVALIDO, codigo="EMAIL_INVALIDO")
         exigir_documento(documento)
         exigir_telefono(str(datos.get("telefono") or ""))
-        if Usuarios.objects.filter(email__iexact=email).exclude(pk=id_usuario).exists():
-            raise ReglaNegocioError(MSG_EMAIL_DUPLICADO, codigo="EMAIL_DUPLICADO")
-        if Usuarios.objects.filter(documento=documento).exclude(pk=id_usuario).exists():
-            raise ReglaNegocioError(MSG_DOCUMENTO_DUPLICADO, codigo="DOCUMENTO_DUPLICADO")
         rol = self._rol_activo(int(datos["id_rol"]))
         sedes = _sedes_payload(datos.get("sedes"))
         self._validar_sedes(sedes)
         with transaction.atomic():
-            usuario = Usuarios.objects.select_for_update().select_related("id_rol").get(pk=id_usuario)
+            usuario = self._usuario_con_bloqueo(id_usuario)
+            if Usuarios.objects.filter(email__iexact=email).exclude(pk=id_usuario).exists():
+                raise ReglaNegocioError(MSG_EMAIL_DUPLICADO, codigo="EMAIL_DUPLICADO")
+            if Usuarios.objects.filter(documento=documento).exclude(pk=id_usuario).exists():
+                raise ReglaNegocioError(MSG_DOCUMENTO_DUPLICADO, codigo="DOCUMENTO_DUPLICADO")
             if int(usuario.version_fila) != version:
                 raise ReglaNegocioError(MSG_CONCURRENCIA, codigo="CONCURRENCIA")
             antes = snapshot_usuario(usuario)
@@ -281,11 +292,14 @@ class AdminUsuariosService:
             raise ReglaNegocioError(MSG_ESTADO_ERROR, codigo="ACCION_INVALIDA")
         horas = int(getattr(settings, "BLOQUEO_MANUAL_HORAS", 24))
         with transaction.atomic():
-            usuario = Usuarios.objects.select_for_update().select_related("id_rol").get(pk=id_usuario)
+            usuario = self._usuario_con_bloqueo(id_usuario)
             antes = snapshot_usuario(usuario)
+            revocar_tokens = False
             if accion == "desactivar":
                 usuario.estado = False
+                usuario.bloqueado_hasta = None
                 self._sessions.revocar_usuario(usuario.id_usuario)
+                revocar_tokens = True
             elif accion == "activar":
                 usuario.estado = True
                 usuario.bloqueado_hasta = None
@@ -293,10 +307,14 @@ class AdminUsuariosService:
             else:
                 usuario.bloqueado_hasta = timezone.now() + timedelta(hours=horas)
                 self._sessions.revocar_usuario(usuario.id_usuario)
+                revocar_tokens = True
+            if revocar_tokens:
+                usuario.credential_version = int(usuario.credential_version or 1) + 1
             usuario.version_fila = int(usuario.version_fila) + 1
-            usuario.save(
-                update_fields=["estado", "bloqueado_hasta", "intentos_fallidos", "version_fila", "fecha_actualizacion"]
-            )
+            campos = ["estado", "bloqueado_hasta", "intentos_fallidos", "version_fila", "fecha_actualizacion"]
+            if revocar_tokens:
+                campos.append("credential_version")
+            usuario.save(update_fields=campos)
             despues = snapshot_usuario(usuario)
             self._auditar(ctx, "CAMBIAR_ESTADO_USUARIO", usuario.id_usuario, antes, despues)
         return MSG_ESTADO_ACTUALIZADO
@@ -305,7 +323,7 @@ class AdminUsuariosService:
         clave = generar_contrasena_inicial(12)
         expira = timezone.now() + timedelta(hours=24)
         with transaction.atomic():
-            usuario = Usuarios.objects.select_for_update().get(pk=id_usuario)
+            usuario = self._usuario_con_bloqueo(id_usuario)
             antes = snapshot_usuario(usuario, incluir_sedes=False)
             usuario.set_password(clave)
             usuario.debe_cambiar_password = True
@@ -368,13 +386,18 @@ class AdminUsuariosService:
             ]
         )
 
+    def _usuario_con_bloqueo(self, id_usuario: int) -> Usuarios:
+        try:
+            return Usuarios.objects.select_for_update().select_related("id_rol").get(pk=id_usuario)
+        except Usuarios.DoesNotExist as err:
+            raise ReglaNegocioError(MSG_USUARIO_NO_ENCONTRADO, codigo="USUARIO_NO_ENCONTRADO") from err
+
     def _fila_listado(self, usuario: Usuarios) -> dict[str, Any]:
-        sede_principal = (
-            Usuario_sede.objects.filter(id_usuario=usuario, es_principal=True, estado=True)
-            .select_related("id_sede")
-            .first()
-        )
-        sede_nombre = sede_principal.id_sede.nombre if sede_principal else ""
+        principales = getattr(usuario, "sedes_principales", None)
+        if principales:
+            sede_nombre = principales[0].id_sede.nombre
+        else:
+            sede_nombre = ""
         return {
             "id_usuario": usuario.id_usuario,
             "nombre_completo": nombre_completo(usuario),
@@ -434,19 +457,31 @@ class PerfilPropioService:
     def actualizar(self, ctx: AuthContext, usuario: Usuarios, datos: dict[str, Any]) -> str:
         if datos.get("id_rol") is not None or datos.get("rol_nombre"):
             raise ReglaNegocioError(MSG_ROL_PROPIO, codigo="ROL_PROPIO")
-        nombre = str(datos.get("nombre") or "").strip()
-        apellido = str(datos.get("apellido") or "").strip()
+        nombre = str(datos.get("nombre") if datos.get("nombre") is not None else usuario.nombre).strip()
+        apellido = str(datos.get("apellido") if datos.get("apellido") is not None else usuario.apellido).strip()
         if not nombre or not apellido:
             raise ReglaNegocioError(MSG_CAMPOS_OBLIGATORIOS, codigo="CAMPOS_OBLIGATORIOS")
-        telefono = str(datos.get("telefono") or "").strip()
+        telefono = str(datos.get("telefono") if "telefono" in datos else usuario.telefono or "").strip()
         exigir_telefono(telefono)
-        tipo_sangre = str(datos.get("tipo_sangre") or "").strip()
+        tipo_sangre = str(
+            datos.get("tipo_sangre") if "tipo_sangre" in datos else getattr(usuario, "tipo_sangre", "") or ""
+        ).strip()
         exigir_tipo_sangre(tipo_sangre)
-        fecha_nac = datos.get("fecha_nacimiento")
+        fecha_nac = datos.get("fecha_nacimiento") if "fecha_nacimiento" in datos else usuario.fecha_nacimiento
         exigir_fecha_nacimiento(fecha_nac)
-        direccion = str(datos.get("direccion") or "").strip()
-        contacto_nombre = str(datos.get("contacto_emergencia_nombre") or "").strip()
-        contacto_tel = str(datos.get("contacto_emergencia_telefono") or "").strip()
+        direccion = str(datos.get("direccion") if "direccion" in datos else getattr(usuario, "direccion", "") or "").strip()
+        contacto_nombre = str(
+            datos.get("contacto_emergencia_nombre")
+            if "contacto_emergencia_nombre" in datos
+            else getattr(usuario, "contacto_emergencia_nombre", "")
+            or ""
+        ).strip()
+        contacto_tel = str(
+            datos.get("contacto_emergencia_telefono")
+            if "contacto_emergencia_telefono" in datos
+            else getattr(usuario, "contacto_emergencia_telefono", "")
+            or ""
+        ).strip()
         exigir_telefono_emergencia(contacto_tel)
         try:
             with transaction.atomic():

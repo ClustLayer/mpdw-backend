@@ -42,6 +42,11 @@ MSG_FECHA_NACIMIENTO_INVALIDA = "La fecha de nacimiento ingresada no es válida.
 MSG_TELEFONO_EMERGENCIA_INVALIDO = "El teléfono de emergencia ingresado no tiene un formato válido."
 MSG_USUARIO_CREADO = "Usuario creado correctamente."
 MSG_USUARIO_CREAR_ERROR = "No fue posible crear el usuario. Intente nuevamente."
+MSG_EMAIL_ENTREGA_FALLIDA = (
+    "No fue posible enviar el correo con la contraseña inicial. "
+    "Genere una contraseña temporal o intente nuevamente."
+)
+MSG_USUARIO_NO_ENCONTRADO = "Usuario no encontrado."
 MSG_USUARIO_ACTUALIZADO = "Usuario actualizado correctamente."
 MSG_USUARIO_ACTUALIZAR_ERROR = "No fue posible actualizar el usuario. Intente nuevamente."
 MSG_ESTADO_ACTUALIZADO = "El estado del usuario se actualizó correctamente."

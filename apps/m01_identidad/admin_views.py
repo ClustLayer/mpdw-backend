@@ -12,8 +12,10 @@ from rest_framework.views import APIView
 
 from apps.m01_identidad.admin_serializers import (
     CambiarEstadoRequestSerializer,
+    ContrasenaTemporalResponseSerializer,
     CrearUsuarioRequestSerializer,
     EditarUsuarioRequestSerializer,
+    RolesCatalogoResponseSerializer,
     UsuarioDetalleSerializer,
     UsuarioListResponseSerializer,
 )
@@ -56,6 +58,8 @@ def _dominio(exc: ReglaNegocioError | DominioError, request: Request) -> Respons
         http_status_code = status.HTTP_404_NOT_FOUND
     elif exc.codigo in {"NO_AUTORIZADO", "CONTRASENA_TEMP_PROPIA", "ROL_PROPIO"}:
         http_status_code = status.HTTP_403_FORBIDDEN
+    elif exc.codigo in {"EMAIL_NO_ENTREGADO"}:
+        http_status_code = status.HTTP_502_BAD_GATEWAY
     return _error(exc.codigo, exc.mensaje, http_status_code, request)
 
 
@@ -194,7 +198,8 @@ class UsuarioContrasenaTemporalView(APIView):
     @extend_schema(
         operation_id="usuarios_admin_contrasena_temporal",
         summary="Generar contraseña temporal",
-        responses={200: MensajeResponseSerializer},
+        request=None,
+        responses={200: ContrasenaTemporalResponseSerializer},
     )
     def post(self, request: Request, id_usuario: int) -> Response:
         try:
@@ -213,7 +218,11 @@ class RolesCatalogoView(APIView):
     permission_classes = [IsAuthenticated, HasDynamicPermission]
     required_permission = ("usuarios", "T")
 
-    @extend_schema(operation_id="usuarios_roles_catalogo", summary="Roles activos para formularios de usuario")
+    @extend_schema(
+        operation_id="usuarios_roles_catalogo",
+        summary="Roles activos para formularios de usuario",
+        responses={200: RolesCatalogoResponseSerializer},
+    )
     def get(self, request: Request) -> Response:
         roles = Roles.objects.filter(estado=True).order_by("nombre").values("id_rol", "nombre")
         return Response({"items": list(roles)}, status=status.HTTP_200_OK)

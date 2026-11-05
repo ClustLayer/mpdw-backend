@@ -25,8 +25,10 @@ class CambiarEstadoRequestSerializer(serializers.Serializer):
 
 
 class PerfilUpdateRequestSerializer(serializers.Serializer):
-    nombre = serializers.CharField(max_length=255)
-    apellido = serializers.CharField(max_length=255)
+    """Campos opcionales en PATCH; el servicio completa con el perfil actual."""
+
+    nombre = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    apellido = serializers.CharField(max_length=255, required=False, allow_blank=True)
     telefono = serializers.CharField(max_length=20, required=False, allow_blank=True, default="")
     tipo_sangre = serializers.CharField(max_length=5, required=False, allow_blank=True, default="")
     fecha_nacimiento = serializers.DateField(required=False, allow_null=True)
@@ -71,3 +73,38 @@ class UsuarioDetalleSerializer(serializers.Serializer):
     acciones_estado = serializers.ListField(child=serializers.CharField())
     puede_contrasena_temporal = serializers.BooleanField()
     mensaje = serializers.CharField(required=False)
+
+
+class ContrasenaTemporalResponseSerializer(serializers.Serializer):
+    mensaje = serializers.CharField()
+    contrasena_temporal = serializers.CharField()
+    leyenda = serializers.CharField()
+
+
+class RolCatalogoItemSerializer(serializers.Serializer):
+    id_rol = serializers.IntegerField()
+    nombre = serializers.CharField()
+
+
+class RolesCatalogoResponseSerializer(serializers.Serializer):
+    items = RolCatalogoItemSerializer(many=True)
+
+
+class PerfilUpdateResponseSerializer(serializers.Serializer):
+    mensaje = serializers.CharField()
+    id_usuario = serializers.IntegerField()
+    email = serializers.EmailField()
+    documento = serializers.CharField()
+    nombre = serializers.CharField()
+    apellido = serializers.CharField()
+    telefono = serializers.CharField()
+    tipo_sangre = serializers.CharField()
+    fecha_nacimiento = serializers.DateField(allow_null=True)
+    direccion = serializers.CharField()
+    contacto_emergencia_nombre = serializers.CharField()
+    contacto_emergencia_telefono = serializers.CharField()
+    rol_nombre = serializers.CharField()
+    dosfa_habilitado = serializers.BooleanField()
+    debe_cambiar_password = serializers.BooleanField()
+    ultimo_acceso = serializers.DateTimeField(allow_null=True)
+    version_fila = serializers.IntegerField()

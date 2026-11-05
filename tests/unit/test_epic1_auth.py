@@ -239,9 +239,12 @@ def test_plantillas_y_smtp_no_filtran_configuracion(monkeypatch):
     html = html_recuperacion("https://app.local/nueva-contrasena#rt=abc")
     codigo = html_codigo_2fa("654321")
     acceso = html_contrasena_inicial("Ana", "ClaveSegura#1")
+    escapado = html_contrasena_inicial("<script>alert(1)</script>", "p&ss#1")
     assert "Restablecer contraseña" in html
     assert "654321" in codigo
     assert "ClaveSegura#1" in acceso
+    assert "<script>" not in escapado
+    assert "p&amp;ss#1" in escapado
     enviados: list[object] = []
 
     class FalsoSMTP:

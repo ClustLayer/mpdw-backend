@@ -12,7 +12,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.m01_identidad.admin_serializers import PerfilUpdateRequestSerializer
+from apps.m01_identidad.admin_serializers import (
+    PerfilUpdateRequestSerializer,
+    PerfilUpdateResponseSerializer,
+)
 from apps.m01_identidad.mensajes import (
     MSG_2FA_ERROR,
     MSG_CAMBIO_ERROR,
@@ -262,13 +265,13 @@ class ProfileView(APIView):
         operation_id="auth_profile_update",
         summary="Actualizar perfil propio (HU 12)",
         request=PerfilUpdateRequestSerializer,
-        responses={200: UserProfileSerializer},
+        responses={200: PerfilUpdateResponseSerializer},
     )
     def patch(self, request: Request) -> Response:
         from apps.m01_identidad.admin_usuarios_service import PerfilPropioService
         from apps.m01_identidad.admin_views import _ctx, _dominio
 
-        serializer = PerfilUpdateRequestSerializer(data=request.data)
+        serializer = PerfilUpdateRequestSerializer(data=request.data, partial=True)
         if not serializer.is_valid():
             return _dominio(ReglaNegocioError(str(serializer.errors), codigo="DATOS_INVALIDOS"), request)
         from apps.m01_identidad.models import Usuarios

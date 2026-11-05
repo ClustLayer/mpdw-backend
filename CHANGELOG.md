@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-05 — Deuda tecnica Copilot (Epic 2)
+
+- Admin usuarios: unicidad de email bajo bloqueo, revocacion JWT al desactivar/bloquear, N+1 en sede principal, 404 uniforme y entrega de correo verificada.
+- OpenAPI: respuestas de contraseña temporal, catalogo de roles y PATCH de perfil parcial.
+- Plantilla de correo con escape HTML.
+
 ## 2026-11-05 — Correccion Mi perfil e integracion Epic 2
 
 - Campos de perfil alineados con la demo: tipo de sangre, fecha de nacimiento, direccion y contacto de emergencia (migracion 0007).

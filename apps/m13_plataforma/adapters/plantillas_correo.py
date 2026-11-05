@@ -1,5 +1,7 @@
 """Plantillas HTML transaccionales. No incluyen secretos de configuración."""
 
+from html import escape
+
 
 def _marco(titulo: str, cuerpo: str) -> str:
     return f"""<!DOCTYPE html>
@@ -43,12 +45,13 @@ def html_codigo_2fa(codigo: str) -> str:
 
 
 def html_contrasena_inicial(nombre: str, contrasena: str) -> str:
-    saludo = nombre.strip() or "colaborador(a)"
+    saludo = escape(nombre.strip() or "colaborador(a)")
+    clave = escape(contrasena)
     cuerpo = (
         f"<p>Hola {saludo},</p>"
         "<p>Se creó su acceso a Mundo Pinturas Diana. Use la contraseña temporal siguiente "
         "y cámbiela en el primer inicio de sesión.</p>"
-        f'<p style="font-size:22px;font-weight:800;color:#4a154b;letter-spacing:2px;">{contrasena}</p>'
+        f'<p style="font-size:22px;font-weight:800;color:#4a154b;letter-spacing:2px;">{clave}</p>'
         "<p>La contraseña temporal vence en 24 horas.</p>"
     )
     return _marco("Acceso al sistema", cuerpo)

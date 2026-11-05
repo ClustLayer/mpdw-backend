@@ -158,7 +158,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserProfile'
+                $ref: '#/components/schemas/PerfilUpdateResponse'
           description: ''
   /api/v1/auth/recuperar:
     post:
@@ -629,7 +629,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MensajeResponse'
+                $ref: '#/components/schemas/ContrasenaTemporalResponse'
           description: ''
   /api/v1/usuarios/{id_usuario}/estado:
     post:
@@ -674,7 +674,11 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolesCatalogoResponse'
+          description: ''
 components:
   schemas:
     AccionEnum:
@@ -745,6 +749,19 @@ components:
           type: string
       required:
       - codigo
+    ContrasenaTemporalResponse:
+      type: object
+      properties:
+        mensaje:
+          type: string
+        contrasena_temporal:
+          type: string
+        leyenda:
+          type: string
+      required:
+      - contrasena_temporal
+      - leyenda
+      - mensaje
     ContratoAuth:
       type: object
       properties:
@@ -928,14 +945,14 @@ components:
           minimum: 1
     PatchedPerfilUpdateRequestRequest:
       type: object
+      description: Campos opcionales en PATCH; el servicio completa con el perfil
+        actual.
       properties:
         nombre:
           type: string
-          minLength: 1
           maxLength: 255
         apellido:
           type: string
-          minLength: 1
           maxLength: 255
         telefono:
           type: string
@@ -977,6 +994,66 @@ components:
         version:
           type: integer
           minimum: 1
+    PerfilUpdateResponse:
+      type: object
+      properties:
+        mensaje:
+          type: string
+        id_usuario:
+          type: integer
+        email:
+          type: string
+          format: email
+        documento:
+          type: string
+        nombre:
+          type: string
+        apellido:
+          type: string
+        telefono:
+          type: string
+        tipo_sangre:
+          type: string
+        fecha_nacimiento:
+          type: string
+          format: date
+          nullable: true
+        direccion:
+          type: string
+        contacto_emergencia_nombre:
+          type: string
+        contacto_emergencia_telefono:
+          type: string
+        rol_nombre:
+          type: string
+        dosfa_habilitado:
+          type: boolean
+        debe_cambiar_password:
+          type: boolean
+        ultimo_acceso:
+          type: string
+          format: date-time
+          nullable: true
+        version_fila:
+          type: integer
+      required:
+      - apellido
+      - contacto_emergencia_nombre
+      - contacto_emergencia_telefono
+      - debe_cambiar_password
+      - direccion
+      - documento
+      - dosfa_habilitado
+      - email
+      - fecha_nacimiento
+      - id_usuario
+      - mensaje
+      - nombre
+      - rol_nombre
+      - telefono
+      - tipo_sangre
+      - ultimo_acceso
+      - version_fila
     PoliticaSesion:
       type: object
       properties:
@@ -1190,6 +1267,25 @@ components:
       - confirmar
       - password
       - token
+    RolCatalogoItem:
+      type: object
+      properties:
+        id_rol:
+          type: integer
+        nombre:
+          type: string
+      required:
+      - id_rol
+      - nombre
+    RolesCatalogoResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RolCatalogoItem'
+      required:
+      - items
     Sede:
       type: object
       properties:
