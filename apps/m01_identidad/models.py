@@ -78,7 +78,7 @@ class Usuarios(AbstractBaseUser):
     """Entidad principal de usuarios del sistema (SAD §8.1, BR-08, BR-09)."""
 
     id_usuario = models.BigAutoField(primary_key=True, db_column="id_usuario")
-    email = models.EmailField(max_length=150, unique=True, db_column="email")  # RI-01
+    email = models.EmailField(max_length=255, unique=True, db_column="email")  # RI-01, HU 01 CA 2.1
     documento = models.CharField(max_length=20, unique=True, db_column="documento")  # RI-01
     nombre = models.CharField(max_length=150, db_column="nombre")
     id_rol = models.ForeignKey(Roles, on_delete=models.PROTECT, db_column="id_rol", related_name="usuarios")
@@ -86,6 +86,9 @@ class Usuarios(AbstractBaseUser):
     intentos_fallidos = models.IntegerField(default=0, db_column="intentos_fallidos")
     bloqueado_hasta = models.DateTimeField(null=True, blank=True, db_column="bloqueado_hasta")
     dosfa_habilitado = models.BooleanField(default=False, db_column="dosfa_habilitado")  # G-13
+    debe_cambiar_password = models.BooleanField(default=False, db_column="debe_cambiar_password")
+    ultimo_acceso = models.DateTimeField(null=True, blank=True, db_column="ultimo_acceso")
+    fecha_actualizacion = models.DateTimeField(auto_now=True, null=True, blank=True, db_column="fecha_actualizacion")
     fecha_creacion = models.DateTimeField(auto_now_add=True, db_column="fecha_creacion")
 
     objects = CustomUserManager()
@@ -101,6 +104,11 @@ class Usuarios(AbstractBaseUser):
         if self.bloqueado_hasta and self.bloqueado_hasta > timezone.now():
             return True
         return False
+
+    @property
+    def password_hash(self) -> str:
+        """Hash almacenado por Django. Nunca es la contraseña en claro."""
+        return self.password
 
     def __str__(self) -> str:
         return f"{self.email} ({self.id_rol.nombre})"
@@ -153,6 +161,8 @@ class Sesiones_usuario(models.Model):
     ultimo_uso = models.DateTimeField(auto_now=True, db_column="ultimo_uso")
     ip_origen = models.GenericIPAddressField(default="127.0.0.1", db_column="ip_origen")
     fecha_expiracion_absoluta = models.DateTimeField(db_column="fecha_expiracion_absoluta")  # G-13
+    fecha_revocacion = models.DateTimeField(null=True, blank=True, db_column="fecha_revocacion")
+    mfa_verificada = models.BooleanField(default=True, db_column="mfa_verificada")
     revocada = models.BooleanField(default=False, db_column="revocada")
 
     class Meta:
@@ -162,6 +172,11 @@ class Sesiones_usuario(models.Model):
             models.Index(fields=["id_usuario"], name="idx_sesiones_usuario"),
         ]
 
+    @property
+    def fecha_expiracion(self):
+        """Nombre de dominio de HU 01. La columna física sigue siendo fecha_expiracion_absoluta."""
+        return self.fecha_expiracion_absoluta
+
 
 class Tokens_recuperacion(models.Model):
     """Tokens de un solo uso para recuperación de contraseña (SAD §10.3)."""
@@ -169,11 +184,16 @@ class Tokens_recuperacion(models.Model):
     id_token = models.BigAutoField(primary_key=True, db_column="id_token")
     id_usuario = models.ForeignKey(Usuarios, on_delete=models.CASCADE, db_column="id_usuario")
     token_hash = models.CharField(max_length=64, unique=True, db_column="token_hash")
+    fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, db_column="fecha_creacion")
     expira_en = models.DateTimeField(db_column="expira_en")
     usado = models.BooleanField(default=False, db_column="usado")
 
     class Meta:
         db_table = "Tokens_recuperacion"
+
+    @property
+    def fecha_expiracion(self):
+        return self.expira_en
 
 
 class Codigos_2fa(models.Model):
@@ -183,9 +203,14 @@ class Codigos_2fa(models.Model):
     id_usuario = models.ForeignKey(Usuarios, on_delete=models.CASCADE, db_column="id_usuario")
     codigo_hash = models.CharField(max_length=64, db_column="codigo_hash")
     intentos = models.IntegerField(default=0, db_column="intentos")
+    fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, db_column="fecha_creacion")
     expira_en = models.DateTimeField(db_column="expira_en")
     usado = models.BooleanField(default=False, db_column="usado")
 
     class Meta:
         db_table = "Codigos_2fa"
+
+    @property
+    def fecha_expiracion(self):
+        return self.expira_en
 

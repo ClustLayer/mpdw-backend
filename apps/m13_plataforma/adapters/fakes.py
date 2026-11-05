@@ -14,6 +14,10 @@ class FakeEmailAdapter(EmailPort):
         self.enviados.append({"destinatario": destinatario, "enlace": enlace})
         return True
 
+    def enviar_codigo_2fa(self, destinatario: str, codigo: str) -> bool:
+        self.enviados.append({"destinatario": destinatario, "codigo": codigo})
+        return True
+
 
 class FakeStorageAdapter(FileStoragePort):
     def __init__(self) -> None:

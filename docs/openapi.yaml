@@ -4,6 +4,49 @@ info:
   version: 1.0.0
   description: API REST transaccional para la gestión comercial y multi-sede de MPDW
 paths:
+  /api/v1/auth/cambiar-contrasena:
+    post:
+      operationId: auth_cambiar_contrasena_create
+      summary: Cambiar contraseña autenticado
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarContrasenaRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CambiarContrasenaRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CambiarContrasenaRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CambiarContrasenaResponse'
+          description: ''
+  /api/v1/auth/contrato:
+    get:
+      operationId: auth_contrato_retrieve
+      description: Contrato legible para el frontend. No expone secretos.
+      summary: Contrato de autenticacion para el frontend
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContratoAuth'
+          description: ''
   /api/v1/auth/login:
     post:
       operationId: auth_login_create
@@ -59,7 +102,22 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LogoutResponse'
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/auth/politica-sesion:
+    get:
+      operationId: auth_politica_sesion_retrieve
+      summary: Politica publica de vigencia de sesion
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoliticaSesion'
           description: ''
   /api/v1/auth/profile:
     get:
@@ -77,11 +135,65 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserProfile'
           description: ''
+  /api/v1/auth/recuperar:
+    post:
+      operationId: auth_recuperar_create
+      summary: Solicitar enlace de recuperacion
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecuperarRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecuperarRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecuperarRequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/auth/reenviar-2fa:
+    post:
+      operationId: auth_reenviar_2fa_create
+      summary: Reenviar codigo de segundo factor
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Codigo2FARequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Codigo2FARequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Codigo2FARequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
   /api/v1/auth/refresh:
     post:
       operationId: auth_refresh_create
-      description: Rotacion opaca de refresh token (cookie HttpOnly o body) (ADR-006).
-      summary: Refresco de token de acceso
+      summary: Continuar sesion
       tags:
       - auth
       requestBody:
@@ -103,6 +215,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RefreshResponse'
+          description: ''
+  /api/v1/auth/restablecer:
+    post:
+      operationId: auth_restablecer_create
+      summary: Restablecer contraseña con enlace de un solo uso
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestablecerRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RestablecerRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RestablecerRequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/auth/verificar-2fa:
+    post:
+      operationId: auth_verificar_2fa_create
+      summary: Verificar codigo de segundo factor
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Codigo2FARequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Codigo2FARequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Codigo2FARequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
           description: ''
   /api/v1/branches/:
     get:
@@ -327,6 +494,66 @@ paths:
           description: ''
 components:
   schemas:
+    CambiarContrasenaRequestRequest:
+      type: object
+      properties:
+        password_actual:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+          maxLength: 64
+        confirmar:
+          type: string
+          minLength: 1
+          maxLength: 64
+      required:
+      - confirmar
+      - password
+      - password_actual
+    CambiarContrasenaResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+        mensaje:
+          type: string
+        requiere_2fa:
+          type: boolean
+        redireccion:
+          type: string
+      required:
+      - access_token
+      - mensaje
+      - redireccion
+      - requiere_2fa
+      - token_type
+    Codigo2FARequestRequest:
+      type: object
+      properties:
+        codigo:
+          type: string
+          minLength: 6
+          maxLength: 6
+        desafio_token:
+          type: string
+      required:
+      - codigo
+    ContratoAuth:
+      type: object
+      properties:
+        endpoints:
+          type: object
+          additionalProperties: {}
+        mensajes:
+          type: object
+          additionalProperties: {}
+      required:
+      - endpoints
+      - mensajes
     Inventario:
       type: object
       properties:
@@ -362,17 +589,13 @@ components:
       - status
     LoginRequestRequest:
       type: object
-      description: Esquema de entrada para solicitud de inicio de sesión.
       properties:
         email:
           type: string
-          format: email
-          minLength: 1
-          maxLength: 150
+          maxLength: 255
         password:
           type: string
           writeOnly: true
-          minLength: 1
           maxLength: 128
       required:
       - email
@@ -383,7 +606,7 @@ components:
         refresh_token:
           type: string
           minLength: 1
-    LogoutResponse:
+    MensajeResponse:
       type: object
       properties:
         mensaje:
@@ -442,6 +665,28 @@ components:
         version:
           type: integer
           minimum: 1
+    PoliticaSesion:
+      type: object
+      properties:
+        access_minutos:
+          type: integer
+        refresh_dias:
+          type: integer
+        inactividad_minutos:
+          type: integer
+        aviso_minutos:
+          type: integer
+        intentos_maximos:
+          type: integer
+        bloqueo_minutos:
+          type: integer
+      required:
+      - access_minutos
+      - aviso_minutos
+      - bloqueo_minutos
+      - inactividad_minutos
+      - intentos_maximos
+      - refresh_dias
     ProductoCreateRequest:
       type: object
       description: Validación y sanitización estricta para creación de productos.
@@ -569,6 +814,15 @@ components:
       - database
       - status
       - storage
+    RecuperarRequestRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+      - email
     RefreshRequestRequest:
       type: object
       properties:
@@ -582,9 +836,30 @@ components:
           type: string
         token_type:
           type: string
+        mensaje:
+          type: string
       required:
       - access_token
+      - mensaje
       - token_type
+    RestablecerRequestRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+          maxLength: 64
+        confirmar:
+          type: string
+          minLength: 1
+          maxLength: 64
+      required:
+      - confirmar
+      - password
+      - token
     Sede:
       type: object
       properties:
@@ -625,10 +900,10 @@ components:
       - id_sede
     TokenResponse:
       type: object
-      description: Respuesta con token de acceso JWT y metadatos de usuario.
       properties:
         access_token:
           type: string
+          nullable: true
         token_type:
           type: string
           default: Bearer
@@ -639,21 +914,27 @@ components:
           type: integer
         email:
           type: string
+        nombre:
+          type: string
         rol:
           type: string
         sedes_asignadas:
           type: array
           items:
             type: integer
-      required:
-      - access_token
-      - email
-      - id_usuario
-      - rol
-      - sedes_asignadas
+        mensaje:
+          type: string
+        debe_cambiar_password:
+          type: boolean
+        requiere_2fa:
+          type: boolean
+        redireccion:
+          type: string
+        desafio_token:
+          type: string
+          nullable: true
     UserProfile:
       type: object
-      description: Perfil del usuario autenticado (whitelist explícita).
       properties:
         id_usuario:
           type: integer
@@ -673,12 +954,24 @@ components:
           readOnly: true
         dosfa_habilitado:
           type: boolean
+          readOnly: true
+        debe_cambiar_password:
+          type: boolean
+          readOnly: true
+        ultimo_acceso:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
       required:
+      - debe_cambiar_password
       - documento
+      - dosfa_habilitado
       - email
       - id_usuario
       - nombre
       - rol_nombre
+      - ultimo_acceso
   securitySchemes:
     jwtAuth:
       type: http

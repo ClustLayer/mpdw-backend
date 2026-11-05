@@ -13,8 +13,15 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
 
-# Base de datos de prueba (SQLite en memoria si no hay Postgres configurado)
-if not os.environ.get("DATABASE_URL"):
+# Las pruebas locales nunca deben usar la base en nube del .env de desarrollo.
+# CI/GitHub Actions define MPDW_TEST_USE_POSTGRES=true y DATABASE_URL efímera.
+_use_postgres = os.environ.get("MPDW_TEST_USE_POSTGRES", "").lower() in {
+    "1",
+    "true",
+    "yes",
+} or os.environ.get("GITHUB_ACTIONS") == "true"
+
+if not _use_postgres:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -32,4 +39,3 @@ if not os.environ.get("DATABASE_URL"):
 
 # Desactivar throttling en pruebas automáticas
 REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"] = []  # noqa: F405
-

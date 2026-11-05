@@ -8,6 +8,20 @@ from urllib.parse import urlparse
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+try:
+    from dotenv import load_dotenv
+
+    _settings_module = os.environ.get("DJANGO_SETTINGS_MODULE", "")
+    if _settings_module.endswith("testing"):
+        load_dotenv(BASE_DIR / ".env.test", override=True)
+    else:
+        load_dotenv(BASE_DIR / ".env", override=False)
+except ImportError:  # pragma: no cover
+    pass
+
+if not os.environ.get("DATABASE_URL") and os.environ.get("database_url"):
+    os.environ["DATABASE_URL"] = os.environ["database_url"]
+
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
     "django-insecure-dev-key-change-in-production-only-for-local-testing",
@@ -217,7 +231,24 @@ JWT_KEY_ID = os.environ.get("JWT_KEY_ID", "k1")
 ACCESS_TOKEN_LIFETIME_MINUTES = int(os.environ.get("ACCESS_TOKEN_LIFETIME_MINUTES", "15"))
 REFRESH_TOKEN_LIFETIME_DAYS = int(os.environ.get("REFRESH_TOKEN_LIFETIME_DAYS", "7"))
 INACTIVITY_TIMEOUT_MINUTES = int(os.environ.get("INACTIVITY_TIMEOUT_MINUTES", "60"))
+SESSION_WARNING_MINUTES = int(os.environ.get("SESSION_WARNING_MINUTES", "5"))
+MAX_INTENTOS_FALLIDOS = int(os.environ.get("MAX_INTENTOS_FALLIDOS", "5"))
+BLOQUEO_MINUTOS = int(os.environ.get("BLOQUEO_MINUTOS", "15"))
+RECUPERACION_MINUTOS = int(os.environ.get("RECUPERACION_MINUTOS", "60"))
+CODIGO_2FA_MINUTOS = int(os.environ.get("CODIGO_2FA_MINUTOS", "10"))
+MAX_INTENTOS_2FA = int(os.environ.get("MAX_INTENTOS_2FA", "3"))
 COOKIE_DOMAIN = os.environ.get("COOKIE_DOMAIN", "localhost")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+
+SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "no-reply@mundopinturasdiana.com")
+SMTP_HOST = os.environ.get("SMTP_HOST", "")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+SMTP_USER = os.environ.get("SMTP_USER", "")
+SMTP_PASS = os.environ.get("SMTP_PASS", "")
+SMTP_FROM_EMAIL = os.environ.get("SMTP_FROM_EMAIL", DEFAULT_FROM_EMAIL)
+SMTP_FROM_NAME = os.environ.get("SMTP_FROM_NAME", "Mundo Pinturas Diana")
+SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "true").lower() in {"1", "true", "yes"}
 
 # Orígenes CORS permitidos (SAD TB-2, T-12, AD-11)
 CORS_ALLOWED_ORIGINS = [

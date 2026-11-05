@@ -30,6 +30,7 @@ class CorsAndSecurityHeadersMiddleware:
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
         self.get_response = get_response
         self._allowed_origins = getattr(settings, "CORS_ALLOWED_ORIGINS", [])
+        self._allow_all = bool(getattr(settings, "CORS_ALLOW_ALL_ORIGINS", False))
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
         origin = request.headers.get("Origin")
@@ -37,7 +38,7 @@ class CorsAndSecurityHeadersMiddleware:
         # Manejar preflight OPTIONS antes de que llegue a DRF
         if request.method == "OPTIONS" and origin:
             response = HttpResponse(status=200)
-            if origin in self._allowed_origins or "*" in self._allowed_origins:
+            if self._origen_permitido(origin):
                 response["Access-Control-Allow-Origin"] = origin
                 response["Access-Control-Allow-Credentials"] = "true"
                 response["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
@@ -50,7 +51,7 @@ class CorsAndSecurityHeadersMiddleware:
         response = self.get_response(request)
 
         # Aplicar CORS si el origen está en lista blanca
-        if origin and (origin in self._allowed_origins or "*" in self._allowed_origins):
+        if origin and self._origen_permitido(origin):
             response["Access-Control-Allow-Origin"] = origin
             response["Access-Control-Allow-Credentials"] = "true"
             response["Access-Control-Expose-Headers"] = "ETag, X-Correlation-ID"
@@ -59,7 +60,11 @@ class CorsAndSecurityHeadersMiddleware:
         response["X-Content-Type-Options"] = "nosniff"
         response["X-Frame-Options"] = "DENY"
         response["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
 
         return response
+
+    def _origen_permitido(self, origin: str) -> bool:
+        return self._allow_all or origin in self._allowed_origins or "*" in self._allowed_origins
 
 
