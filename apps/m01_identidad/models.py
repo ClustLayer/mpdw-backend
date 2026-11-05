@@ -83,6 +83,15 @@ class Usuarios(AbstractBaseUser):
     nombre = models.CharField(max_length=255, db_column="nombre")
     apellido = models.CharField(max_length=255, blank=True, default="", db_column="apellido")
     telefono = models.CharField(max_length=20, blank=True, default="", db_column="telefono")
+    tipo_sangre = models.CharField(max_length=5, blank=True, default="", db_column="tipo_sangre")
+    fecha_nacimiento = models.DateField(null=True, blank=True, db_column="fecha_nacimiento")
+    direccion = models.CharField(max_length=255, blank=True, default="", db_column="direccion")
+    contacto_emergencia_nombre = models.CharField(
+        max_length=255, blank=True, default="", db_column="contacto_emergencia_nombre"
+    )
+    contacto_emergencia_telefono = models.CharField(
+        max_length=20, blank=True, default="", db_column="contacto_emergencia_telefono"
+    )
     id_rol = models.ForeignKey(Roles, on_delete=models.PROTECT, db_column="id_rol", related_name="usuarios")
     estado = models.BooleanField(default=True, db_column="estado")  # RI-24
     intentos_fallidos = models.IntegerField(default=0, db_column="intentos_fallidos")

@@ -12,6 +12,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.m01_identidad.admin_serializers import PerfilUpdateRequestSerializer
 from apps.m01_identidad.mensajes import (
     MSG_2FA_ERROR,
     MSG_CAMBIO_ERROR,
@@ -260,11 +261,10 @@ class ProfileView(APIView):
     @extend_schema(
         operation_id="auth_profile_update",
         summary="Actualizar perfil propio (HU 12)",
-        request=UserProfileSerializer,
+        request=PerfilUpdateRequestSerializer,
         responses={200: UserProfileSerializer},
     )
     def patch(self, request: Request) -> Response:
-        from apps.m01_identidad.admin_serializers import PerfilUpdateRequestSerializer
         from apps.m01_identidad.admin_usuarios_service import PerfilPropioService
         from apps.m01_identidad.admin_views import _ctx, _dominio
 

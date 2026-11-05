@@ -3,13 +3,19 @@
 import re
 import secrets
 import string
+from datetime import date
 
 from apps.m01_identidad.mensajes import (
     MSG_DOCUMENTO_INVALIDO,
+    MSG_FECHA_NACIMIENTO_INVALIDA,
     MSG_PASSWORD_POLITICA,
+    MSG_TELEFONO_EMERGENCIA_INVALIDO,
     MSG_TELEFONO_INVALIDO,
+    MSG_TIPO_SANGRE_INVALIDO,
 )
 from contratos.excepciones import ReglaNegocioError
+
+TIPOS_SANGRE = frozenset({"O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"})
 
 _ESPECIALES = set("!@#$%^&*")
 
@@ -56,6 +62,27 @@ def exigir_documento(documento: str) -> None:
 def exigir_telefono(telefono: str) -> None:
     if not telefono_valido(telefono):
         raise ReglaNegocioError(MSG_TELEFONO_INVALIDO, codigo="TELEFONO_INVALIDO")
+
+
+def exigir_tipo_sangre(tipo: str) -> None:
+    valor = (tipo or "").strip()
+    if valor and valor not in TIPOS_SANGRE:
+        raise ReglaNegocioError(MSG_TIPO_SANGRE_INVALIDO, codigo="TIPO_SANGRE_INVALIDO")
+
+
+def exigir_fecha_nacimiento(valor: date | None) -> None:
+    if valor is None:
+        return
+    if valor > date.today():
+        raise ReglaNegocioError(MSG_FECHA_NACIMIENTO_INVALIDA, codigo="FECHA_NACIMIENTO_INVALIDA")
+
+
+def exigir_telefono_emergencia(telefono: str) -> None:
+    valor = (telefono or "").strip()
+    if not valor:
+        return
+    if len(valor) > 20 or not re.fullmatch(r"^[0-9+\s()-]{7,20}$", valor):
+        raise ReglaNegocioError(MSG_TELEFONO_EMERGENCIA_INVALIDO, codigo="TELEFONO_EMERGENCIA_INVALIDO")
 
 
 def generar_contrasena_inicial(longitud: int = 12) -> str:

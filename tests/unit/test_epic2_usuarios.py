@@ -154,9 +154,19 @@ def test_perfil_propio_actualiza_nombre(admin_ctx):
     msg = PerfilPropioService(audit_port=MagicMock()).actualizar(
         admin_ctx,
         admin,
-        {"nombre": "Admin", "apellido": "Epic2", "telefono": "3009998877"},
+        {
+            "nombre": "Admin",
+            "apellido": "Epic2",
+            "telefono": "3009998877",
+            "tipo_sangre": "O+",
+            "direccion": "Calle 10",
+            "contacto_emergencia_nombre": "Contacto",
+            "contacto_emergencia_telefono": "3001112233",
+        },
     )
     assert "actualizado" in msg.lower()
+    admin.refresh_from_db()
+    assert admin.tipo_sangre == "O+"
 
 
 @pytest.mark.unit

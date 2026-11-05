@@ -40,7 +40,10 @@ from apps.m01_identidad.models import Roles, Usuario_sede, Usuarios
 from apps.m01_identidad.politicas import (
     correo_valido,
     exigir_documento,
+    exigir_fecha_nacimiento,
     exigir_telefono,
+    exigir_telefono_emergencia,
+    exigir_tipo_sangre,
     generar_contrasena_inicial,
 )
 from apps.m01_identidad.repositories import SessionRepository, UserRepository
@@ -437,6 +440,14 @@ class PerfilPropioService:
             raise ReglaNegocioError(MSG_CAMPOS_OBLIGATORIOS, codigo="CAMPOS_OBLIGATORIOS")
         telefono = str(datos.get("telefono") or "").strip()
         exigir_telefono(telefono)
+        tipo_sangre = str(datos.get("tipo_sangre") or "").strip()
+        exigir_tipo_sangre(tipo_sangre)
+        fecha_nac = datos.get("fecha_nacimiento")
+        exigir_fecha_nacimiento(fecha_nac)
+        direccion = str(datos.get("direccion") or "").strip()
+        contacto_nombre = str(datos.get("contacto_emergencia_nombre") or "").strip()
+        contacto_tel = str(datos.get("contacto_emergencia_telefono") or "").strip()
+        exigir_telefono_emergencia(contacto_tel)
         try:
             with transaction.atomic():
                 bloqueado = Usuarios.objects.select_for_update().get(pk=usuario.pk)
@@ -444,8 +455,26 @@ class PerfilPropioService:
                 bloqueado.nombre = nombre
                 bloqueado.apellido = apellido
                 bloqueado.telefono = telefono
+                bloqueado.tipo_sangre = tipo_sangre
+                bloqueado.fecha_nacimiento = fecha_nac
+                bloqueado.direccion = direccion
+                bloqueado.contacto_emergencia_nombre = contacto_nombre
+                bloqueado.contacto_emergencia_telefono = contacto_tel
                 bloqueado.version_fila = int(bloqueado.version_fila) + 1
-                bloqueado.save(update_fields=["nombre", "apellido", "telefono", "version_fila", "fecha_actualizacion"])
+                bloqueado.save(
+                    update_fields=[
+                        "nombre",
+                        "apellido",
+                        "telefono",
+                        "tipo_sangre",
+                        "fecha_nacimiento",
+                        "direccion",
+                        "contacto_emergencia_nombre",
+                        "contacto_emergencia_telefono",
+                        "version_fila",
+                        "fecha_actualizacion",
+                    ]
+                )
                 despues = snapshot_usuario(bloqueado, incluir_sedes=False)
                 if self._audit:
                     self._audit.registrar(

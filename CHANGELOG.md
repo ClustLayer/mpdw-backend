@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-05 — Correccion Mi perfil e integracion Epic 2
+
+- Campos de perfil alineados con la demo: tipo de sangre, fecha de nacimiento, direccion y contacto de emergencia (migracion 0007).
+- Pruebas de integracion Epic 2 autentican con JWT Bearer (corrige 403 por `auth_context` ausente).
+
 ## 2026-11-05 — Epica 2, administracion de usuarios y perfil
 
 - Creacion de usuarios con rol, sede principal, contraseña inicial por correo y auditoria (HU 07).

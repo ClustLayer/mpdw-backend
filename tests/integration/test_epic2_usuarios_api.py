@@ -1,10 +1,27 @@
 """Integracion API Epic 2 - administracion de usuarios."""
 
+from unittest.mock import MagicMock
+
 import pytest
 from rest_framework.test import APIClient
 
 from apps.m01_identidad.models import Roles, Usuarios
+from apps.m01_identidad.services import AuthService
 from apps.m02_sedes.models import Sedes
+from apps.m13_plataforma.adapters.fakes import FakeEmailAdapter
+
+
+def _cliente_jwt(usuario: Usuarios, password: str = "Admin#2026demo") -> APIClient:
+    login = AuthService(audit_port=MagicMock(), email_port=FakeEmailAdapter()).autenticar(
+        usuario.email,
+        password,
+        "127.0.0.1",
+        "pytest-integration",
+        "corr-epic2",
+    )
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.access_token}")
+    return client
 
 
 @pytest.fixture
@@ -28,8 +45,7 @@ def sede(db):
 @pytest.mark.integration
 @pytest.mark.django_db
 def test_listar_usuarios_como_admin(admin_user, sede):
-    client = APIClient()
-    client.force_authenticate(user=admin_user)
+    client = _cliente_jwt(admin_user)
     resp = client.get("/api/v1/usuarios/?page=1")
     assert resp.status_code == 200
     body = resp.json()
@@ -41,8 +57,7 @@ def test_listar_usuarios_como_admin(admin_user, sede):
 @pytest.mark.django_db
 def test_crear_usuario_via_api(admin_user, sede):
     rol, _ = Roles.objects.get_or_create(nombre="Empleado", defaults={"es_rol_base": True, "estado": True})
-    client = APIClient()
-    client.force_authenticate(user=admin_user)
+    client = _cliente_jwt(admin_user)
     resp = client.post(
         "/api/v1/usuarios/",
         {

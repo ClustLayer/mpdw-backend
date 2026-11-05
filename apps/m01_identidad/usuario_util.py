@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
 
 from django.utils import timezone
 
 from apps.m01_identidad.models import Usuario_sede, Usuarios
+
+
+def _fecha_iso(valor: date | None) -> str | None:
+    return valor.isoformat() if valor is not None else None
 
 
 def nombre_completo(usuario: Usuarios) -> str:
@@ -30,6 +35,11 @@ def snapshot_usuario(usuario: Usuarios, *, incluir_sedes: bool = True) -> dict[s
         "apellido": getattr(usuario, "apellido", ""),
         "documento": usuario.documento,
         "telefono": getattr(usuario, "telefono", ""),
+        "tipo_sangre": getattr(usuario, "tipo_sangre", ""),
+        "fecha_nacimiento": _fecha_iso(getattr(usuario, "fecha_nacimiento", None)),
+        "direccion": getattr(usuario, "direccion", ""),
+        "contacto_emergencia_nombre": getattr(usuario, "contacto_emergencia_nombre", ""),
+        "contacto_emergencia_telefono": getattr(usuario, "contacto_emergencia_telefono", ""),
         "email": usuario.email,
         "id_rol": usuario.id_rol_id,
         "rol": usuario.id_rol.nombre if usuario.id_rol_id else None,
