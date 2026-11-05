@@ -40,3 +40,15 @@ def html_codigo_2fa(codigo: str) -> str:
         f'<p style="font-size:32px;letter-spacing:8px;font-weight:800;color:#4a154b;">{codigo}</p>'
     )
     return _marco("Código de verificación", cuerpo)
+
+
+def html_contrasena_inicial(nombre: str, contrasena: str) -> str:
+    saludo = nombre.strip() or "colaborador(a)"
+    cuerpo = (
+        f"<p>Hola {saludo},</p>"
+        "<p>Se creó su acceso a Mundo Pinturas Diana. Use la contraseña temporal siguiente "
+        "y cámbiela en el primer inicio de sesión.</p>"
+        f'<p style="font-size:22px;font-weight:800;color:#4a154b;letter-spacing:2px;">{contrasena}</p>'
+        "<p>La contraseña temporal vence en 24 horas.</p>"
+    )
+    return _marco("Acceso al sistema", cuerpo)
