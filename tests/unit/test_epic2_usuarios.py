@@ -17,10 +17,25 @@ from apps.m01_identidad.politicas import (
     generar_contrasena_inicial,
     telefono_valido,
 )
+from apps.m01_identidad.services import AuthService
 from apps.m02_sedes.models import Sedes
 from apps.m13_plataforma.adapters.fakes import FakeEmailAdapter
 from contratos.dtos import AuthContext
 from contratos.excepciones import DominioError, ReglaNegocioError
+
+
+def _cliente_jwt_admin(admin_ctx: AuthContext) -> APIClient:
+    admin = Usuarios.objects.get(pk=admin_ctx.id_usuario)
+    login = AuthService(audit_port=MagicMock(), email_port=FakeEmailAdapter()).autenticar(
+        admin.email,
+        "Admin#2026demo",
+        "127.0.0.1",
+        "pytest",
+        "corr-api",
+    )
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.access_token}")
+    return client
 
 
 @pytest.fixture
@@ -211,18 +226,7 @@ def test_actualizar_usuario_y_contrasena_temporal(admin_ctx, sede_activa):
 @pytest.mark.django_db
 def test_api_usuarios_y_perfil(admin_ctx, sede_activa):
     admin = Usuarios.objects.get(pk=admin_ctx.id_usuario)
-    from apps.m01_identidad.services import AuthService
-
-    login = AuthService(audit_port=MagicMock(), email_port=FakeEmailAdapter()).autenticar(
-        admin.email,
-        "Admin#2026demo",
-        "127.0.0.1",
-        "pytest",
-        "corr-api",
-    )
-    client = APIClient()
-    assert login.access_token
-    client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.access_token}")
+    client = _cliente_jwt_admin(admin_ctx)
     assert client.get("/api/v1/usuarios/roles").status_code == 200
     listado = client.get("/api/v1/usuarios/")
     assert listado.status_code == 200
@@ -252,6 +256,71 @@ def test_api_usuarios_y_perfil(admin_ctx, sede_activa):
     assert client.post(f"/api/v1/usuarios/{uid}/estado", {"accion": "bloquear"}, format="json").status_code == 200
     assert client.post(f"/api/v1/usuarios/{uid}/contrasena-temporal", {}, format="json").status_code == 200
     assert client.get("/api/v1/usuarios/999999").status_code == 404
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_api_crear_usuario_correo_fallido_502(admin_ctx, sede_activa, monkeypatch):
+    class CorreoFallido(FakeEmailAdapter):
+        def enviar_contrasena_inicial(self, destinatario: str, nombre: str, contrasena_plana: str) -> bool:
+            return False
+
+    monkeypatch.setattr("apps.m01_identidad.admin_views._correo", lambda: CorreoFallido())
+    client = _cliente_jwt_admin(admin_ctx)
+    rol, _ = Roles.objects.get_or_create(nombre="Empleado", defaults={"es_rol_base": True, "estado": True})
+    resp = client.post(
+        "/api/v1/usuarios/",
+        {
+            "nombre": "Correo",
+            "apellido": "Fallo",
+            "documento": "100013456789",
+            "telefono": "",
+            "email": "correo.fallo@test.local",
+            "id_rol": rol.id_rol,
+            "sedes": [{"id_sede": sede_activa.id_sede, "es_principal": True}],
+        },
+        format="json",
+    )
+    assert resp.status_code == 502
+    assert resp.json()["codigo"] == "EMAIL_NO_ENTREGADO"
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_api_admin_vistas_errores_y_filtros(admin_ctx, sede_activa, monkeypatch):
+    client = _cliente_jwt_admin(admin_ctx)
+    assert client.get("/api/v1/usuarios/?page=abc&page_size=xyz&id_rol=nan").status_code == 200
+    assert client.get("/api/v1/usuarios/?estado=activo&ordering=nombre").status_code == 200
+    patch = client.patch(
+        "/api/v1/usuarios/999998",
+        {
+            "nombre": "X",
+            "apellido": "Y",
+            "documento": "100014567890",
+            "email": "x@test.local",
+            "id_rol": admin_ctx.id_rol,
+            "sedes": [{"id_sede": sede_activa.id_sede, "es_principal": True}],
+            "version_fila": 1,
+        },
+        format="json",
+    )
+    assert patch.status_code == 404
+    assert client.post("/api/v1/usuarios/", {}, format="json").status_code == 400
+
+    def _listado_falla(*_args, **_kwargs):
+        raise RuntimeError("fallo simulado")
+
+    monkeypatch.setattr(AdminUsuariosService, "listar", _listado_falla)
+    assert client.get("/api/v1/usuarios/").status_code == 500
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_api_perfil_patch_parcial(admin_ctx):
+    client = _cliente_jwt_admin(admin_ctx)
+    resp = client.patch("/api/v1/auth/profile", {"telefono": "3005550011"}, format="json")
+    assert resp.status_code == 200
+    assert resp.json()["telefono"] == "3005550011"
 
 
 @pytest.mark.unit
