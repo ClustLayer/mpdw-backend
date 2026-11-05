@@ -1,6 +1,6 @@
 """Pruebas de HU 03, HU 04 y HU 06 sobre servicios de identidad."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -126,7 +126,6 @@ def test_restablecer_marca_uso_revoca_sesiones_y_guarda_hash(monkeypatch):
 
 @pytest.mark.unit
 def test_restablecer_token_vencido():
-    registro = SimpleNamespace(usado=False, expira_en=timezone.now() - timedelta(minutes=1), id_usuario=_usuario())
     tokens = MagicMock()
     tokens.consumir_token_atomico.return_value = None
     servicio = RecuperacionService(token_repo=tokens)
