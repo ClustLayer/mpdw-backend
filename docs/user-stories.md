@@ -98,3 +98,21 @@
 
 **Received:** 2026-11-04
 **Status:** COMPLETED
+
+## HU_MPDW_01_07 — Crear usuario
+**Status:** COMPLETED — **Received:** 2026-11-05
+
+## HU_MPDW_01_08 — Listado de usuarios
+**Status:** COMPLETED — **Received:** 2026-11-05
+
+## HU_MPDW_01_09 — Editar usuario
+**Status:** COMPLETED — **Received:** 2026-11-05
+
+## HU_MPDW_01_10 — Cambiar estado
+**Status:** COMPLETED — **Received:** 2026-11-05
+
+## HU_MPDW_01_11 — Generar contraseña temporal
+**Status:** COMPLETED — **Received:** 2026-11-05
+
+## HU_MPDW_01_12 — Mi perfil
+**Status:** COMPLETED — **Received:** 2026-11-05

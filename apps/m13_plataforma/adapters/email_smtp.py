@@ -8,7 +8,11 @@ from email.message import EmailMessage
 
 from django.conf import settings
 
-from apps.m13_plataforma.adapters.plantillas_correo import html_codigo_2fa, html_recuperacion
+from apps.m13_plataforma.adapters.plantillas_correo import (
+    html_codigo_2fa,
+    html_contrasena_inicial,
+    html_recuperacion,
+)
 from contratos.puertos.correo import EmailPort
 
 logger = logging.getLogger(__name__)
@@ -38,6 +42,13 @@ class SmtpEmailAdapter(EmailPort):
 
     def enviar_codigo_2fa(self, destinatario: str, codigo: str) -> bool:
         return self._enviar(destinatario, "Código de verificación - Mundo Pinturas Diana", html_codigo_2fa(codigo))
+
+    def enviar_contrasena_inicial(self, destinatario: str, nombre: str, contrasena_plana: str) -> bool:
+        return self._enviar(
+            destinatario,
+            "Acceso al sistema - Mundo Pinturas Diana",
+            html_contrasena_inicial(nombre, contrasena_plana),
+        )
 
     def _enviar(self, destinatario: str, asunto: str, html: str) -> bool:
         if not self._host:

@@ -230,7 +230,12 @@ class AuthService:
         return usuario
 
     def _credenciales_validas(self, usuario: Any, password: str) -> bool:
-        return bool(usuario and usuario.estado and usuario.check_password(password))
+        if not usuario or not usuario.estado or not usuario.check_password(password):
+            return False
+        expira = getattr(usuario, "contrasena_temporal_expira", None)
+        if expira is not None and timezone.now() > expira:
+            return False
+        return True
 
     def _registrar_fallo(self, usuario: Any, ip: str, user_agent: str, id_correlacion: str) -> None:
         if not usuario or not usuario.estado:
@@ -458,8 +463,11 @@ class RecuperacionService:
         with transaction.atomic():
             usuario.set_password(nueva)
             usuario.debe_cambiar_password = False
+            usuario.contrasena_temporal_expira = None
             usuario.credential_version = int(getattr(usuario, "credential_version", 1) or 1) + 1
-            usuario.save(update_fields=["password", "debe_cambiar_password", "credential_version"])
+            usuario.save(
+                update_fields=["password", "debe_cambiar_password", "contrasena_temporal_expira", "credential_version"]
+            )
             self._sessions.revocar_usuario(usuario.id_usuario)
         return MSG_RESET_OK
 
@@ -511,9 +519,17 @@ class ContrasenaService:
         with transaction.atomic():
             usuario.set_password(nueva)
             usuario.debe_cambiar_password = False
+            usuario.contrasena_temporal_expira = None
             usuario.credential_version = int(getattr(usuario, "credential_version", 1) or 1) + 1
             if hasattr(usuario, "save"):
-                usuario.save(update_fields=["password", "debe_cambiar_password", "credential_version"])
+                usuario.save(
+                    update_fields=[
+                        "password",
+                        "debe_cambiar_password",
+                        "contrasena_temporal_expira",
+                        "credential_version",
+                    ]
+                )
             if self._audit:
                 self._audit.registrar(
                     AuditoriaDTO(

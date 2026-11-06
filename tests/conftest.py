@@ -45,6 +45,17 @@ class FakeInventoryPort(InventoryPort):
         return Decimal("100.00")
 
 
+@pytest.fixture(autouse=True)
+def correo_falso_en_vistas_admin(monkeypatch):
+    """Evita SMTP/SendGrid real en pruebas; las vistas admin usan FakeEmailAdapter."""
+    from apps.m13_plataforma.adapters.fakes import FakeEmailAdapter
+
+    monkeypatch.setattr(
+        "apps.m01_identidad.admin_views._correo",
+        lambda: FakeEmailAdapter(),
+    )
+
+
 @pytest.fixture
 def auth_context_admin() -> AuthContext:
     return AuthContext(

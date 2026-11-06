@@ -97,10 +97,18 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "email",
             "documento",
             "nombre",
+            "apellido",
+            "telefono",
+            "tipo_sangre",
+            "fecha_nacimiento",
+            "direccion",
+            "contacto_emergencia_nombre",
+            "contacto_emergencia_telefono",
             "rol_nombre",
             "dosfa_habilitado",
             "debe_cambiar_password",
             "ultimo_acceso",
+            "version_fila",
         )
         read_only_fields = (
             "id_usuario",
@@ -110,4 +118,5 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "dosfa_habilitado",
             "debe_cambiar_password",
             "ultimo_acceso",
+            "version_fila",
         )

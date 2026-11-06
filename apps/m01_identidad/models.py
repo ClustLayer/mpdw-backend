@@ -80,7 +80,18 @@ class Usuarios(AbstractBaseUser):
     id_usuario = models.BigAutoField(primary_key=True, db_column="id_usuario")
     email = models.EmailField(max_length=255, unique=True, db_column="email")  # RI-01, HU 01 CA 2.1
     documento = models.CharField(max_length=20, unique=True, db_column="documento")  # RI-01
-    nombre = models.CharField(max_length=150, db_column="nombre")
+    nombre = models.CharField(max_length=255, db_column="nombre")
+    apellido = models.CharField(max_length=255, blank=True, default="", db_column="apellido")
+    telefono = models.CharField(max_length=20, blank=True, default="", db_column="telefono")
+    tipo_sangre = models.CharField(max_length=5, blank=True, default="", db_column="tipo_sangre")
+    fecha_nacimiento = models.DateField(null=True, blank=True, db_column="fecha_nacimiento")
+    direccion = models.CharField(max_length=255, blank=True, default="", db_column="direccion")
+    contacto_emergencia_nombre = models.CharField(
+        max_length=255, blank=True, default="", db_column="contacto_emergencia_nombre"
+    )
+    contacto_emergencia_telefono = models.CharField(
+        max_length=20, blank=True, default="", db_column="contacto_emergencia_telefono"
+    )
     id_rol = models.ForeignKey(Roles, on_delete=models.PROTECT, db_column="id_rol", related_name="usuarios")
     estado = models.BooleanField(default=True, db_column="estado")  # RI-24
     intentos_fallidos = models.IntegerField(default=0, db_column="intentos_fallidos")
@@ -88,6 +99,8 @@ class Usuarios(AbstractBaseUser):
     dosfa_habilitado = models.BooleanField(default=False, db_column="dosfa_habilitado")  # G-13
     debe_cambiar_password = models.BooleanField(default=False, db_column="debe_cambiar_password")
     credential_version = models.PositiveIntegerField(default=1, db_column="credential_version")
+    contrasena_temporal_expira = models.DateTimeField(null=True, blank=True, db_column="contrasena_temporal_expira")
+    version_fila = models.PositiveIntegerField(default=1, db_column="version_fila")
     ultimo_acceso = models.DateTimeField(null=True, blank=True, db_column="ultimo_acceso")
     fecha_actualizacion = models.DateTimeField(auto_now=True, null=True, blank=True, db_column="fecha_actualizacion")
     fecha_creacion = models.DateTimeField(auto_now_add=True, db_column="fecha_creacion")

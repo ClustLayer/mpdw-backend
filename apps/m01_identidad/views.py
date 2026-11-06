@@ -12,6 +12,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.m01_identidad.admin_serializers import (
+    PerfilUpdateRequestSerializer,
+    PerfilUpdateResponseSerializer,
+)
 from apps.m01_identidad.mensajes import (
     MSG_2FA_ERROR,
     MSG_CAMBIO_ERROR,
@@ -256,6 +260,35 @@ class ProfileView(APIView):
     )
     def get(self, request: Request) -> Response:
         return Response(UserProfileSerializer(request.user).data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        operation_id="auth_profile_update",
+        summary="Actualizar perfil propio (HU 12)",
+        request=PerfilUpdateRequestSerializer,
+        responses={200: PerfilUpdateResponseSerializer},
+    )
+    def patch(self, request: Request) -> Response:
+        from apps.m01_identidad.admin_usuarios_service import PerfilPropioService
+        from apps.m01_identidad.admin_views import _ctx, _dominio
+
+        serializer = PerfilUpdateRequestSerializer(data=request.data, partial=True)
+        if not serializer.is_valid():
+            return _dominio(ReglaNegocioError(str(serializer.errors), codigo="DATOS_INVALIDOS"), request)
+        from apps.m01_identidad.models import Usuarios
+
+        if not isinstance(request.user, Usuarios):
+            return _error("NO_AUTORIZADO", "Usuario no autenticado.", status.HTTP_401_UNAUTHORIZED, request)
+        try:
+            mensaje = PerfilPropioService(audit_port=AuditService()).actualizar(
+                _ctx(request), request.user, serializer.validated_data
+            )
+        except (ReglaNegocioError, DominioError) as exc:
+            return _dominio(exc, request)
+        usuario = Usuarios.objects.select_related("id_rol").get(pk=request.user.pk)
+        return Response(
+            {"mensaje": mensaje, **UserProfileSerializer(usuario).data},
+            status=status.HTTP_200_OK,
+        )
 
 
 class PoliticaSesionView(APIView):

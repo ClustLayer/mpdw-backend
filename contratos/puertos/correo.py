@@ -18,3 +18,8 @@ class EmailPort(ABC):
         """Envía el código de un solo uso del segundo factor. No registra el código."""
         pass
 
+    @abstractmethod
+    def enviar_contrasena_inicial(self, destinatario: str, nombre: str, contrasena_plana: str) -> bool:
+        """Entrega la contraseña inicial por correo. No debe registrarse contrasena_plana en logs ni auditoria."""
+        pass
+
