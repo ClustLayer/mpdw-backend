@@ -17,7 +17,7 @@ class Auditoria(models.Model):
         blank=True,
         related_name="auditorias",
     )
-    accion = models.CharField(max_length=100, db_column="accion")
+    accion = models.CharField(max_length=50, db_column="accion")
     entidad = models.CharField(max_length=100, db_column="entidad")
     id_entidad = models.BigIntegerField(db_column="id_entidad")
     datos_antes = models.JSONField(null=True, blank=True, db_column="datos_antes")
@@ -25,7 +25,7 @@ class Auditoria(models.Model):
     motivo = models.TextField(db_column="motivo")
     resultado = models.CharField(max_length=20, default="EXITO", db_column="resultado")
     id_correlacion = models.CharField(max_length=64, blank=True, default="", db_column="id_correlacion")
-    ip = models.GenericIPAddressField(default="127.0.0.1", db_column="ip")
+    ip = models.CharField(max_length=45, default="127.0.0.1", db_column="ip")
     user_agent = models.TextField(blank=True, default="", db_column="user_agent")
     fecha_hora = models.DateTimeField(auto_now_add=True, db_column="fecha_hora")
 
