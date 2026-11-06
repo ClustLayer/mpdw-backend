@@ -4,7 +4,7 @@
 # ==============================================================================
 import os
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -110,11 +110,14 @@ def parse_db_url(url_string: str) -> dict:
         return {}
     parsed = urlparse(url_string)
     db_name = parsed.path.lstrip("/")
+    # urlparse decodifica la contraseña una sola vez. psycopg vuelve a tratar
+    # '%' como escape, así que un '%2F' del .env llega a Postgres como '/'.
+    password = unquote(parsed.password) if parsed.password else ""
     return {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": db_name or "mpdw_db",
-        "USER": parsed.username or "postgres",
-        "PASSWORD": parsed.password or "",
+        "USER": unquote(parsed.username) if parsed.username else "postgres",
+        "PASSWORD": password,
         "HOST": parsed.hostname or "localhost",
         "PORT": str(parsed.port or 5432),
     }
