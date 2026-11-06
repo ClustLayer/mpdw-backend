@@ -74,3 +74,17 @@
 - `permiso_eval`, `PermissionRepository`, `eliminar_rol`, OpenAPI `DELETE` rol.
 - Cobertura unitaria 90.24% (210 tests).
 - `docs/correcciones-iteracion-7.md`.
+
+## Cierre Sprint 1 — Épicas 13 y 18 (v1.1.5)
+**Status:** COMPLETED  
+**Date:** 2026-11-06  
+**Branch:** `epica-13-18-cierre-sprint1`
+
+### Alcance
+- **Épica 13 (HU 82):** API de solo lectura para bitácora con filtros, validación estricta de paginación y fechas, sanitización de secretos en persistencia de auditoría, permiso de consulta para gerente vía datos semilla.
+- **Épica 18 (backend):** coherencia de `ConflictoVersionError` → HTTP 409; motivo obligatorio en operaciones críticas de usuario donde aplica; mensajes alineados con HU 96/97 en capa dominio.
+
+### Evidencia
+- `make calidad`: 9 puertas en verde; cobertura unitaria ≥90%.
+- Pruebas: `tests/unit/test_epic13_bitacora_service.py`, `test_epic13_auditoria_sanitize.py`; ajustes en `test_epic2_usuarios.py`, `test_epic4_sedes.py`.
+- OpenAPI: `docs/openapi.yaml` regenerado.

@@ -53,3 +53,16 @@ No se levanto el par navegador-API contra la base de Supabase durante esta ejecu
 | Sesión tras F5 | Frontend | `session-storage`, bootstrap `providers` |
 | Guards UI | Frontend | `AccesosProvider`, `logic.ts` |
 | QA manual/automation | Docs | `docs/qa-epic-2.md`, `qa-epic-3.md` (frontend) |
+
+## Cierre Sprint 1 — Épicas 13 y 18 (2026-11-06)
+**Status:** VERIFIED (pipelines locales + contrato)
+
+| Criterio | Capa | Evidencia |
+| --- | --- | --- |
+| Bitácora lectura + filtros | API | `GET /api/v1/auditoria/bitacora/`, `test_epic13_bitacora_service.py` |
+| Opciones usuario filtro | API | `GET .../bitacora/usuarios/` |
+| Sin secretos en JSON de auditoría | Dominio | `sanitize.py`, `test_epic13_auditoria_sanitize.py` |
+| 409 conflicto versión | API | `ConflictoVersionError`, pruebas usuarios/sedes |
+| Migraciones Supabase | Ops | `0002_ep13_auditoria_campos`, `0011_gerente_auditoria_consultar` |
+| Cliente integrado | Frontend | `mpdw-frontend` rama homónima, `pnpm run calidad` |
+| QA manual | Docs | `docs/qa-sprint1-closing.md` |

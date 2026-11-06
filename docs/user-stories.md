@@ -139,3 +139,14 @@ Migración: `0008_epic3_roles_permisos`. OpenAPI: `docs/openapi.yaml`.
 | HU_MPDW_01_21 Consolidado por sede | PARTIAL | `GET /api/v1/sedes/consolidado/` (estructura; agregados cuando haya datos) |
 
 Migraciones: `0002_epic4_sedes_horarios`, permisos demo `0009`/`0010`, seed `0003`. Iteraciones 8–9 en `docs/correcciones-iteracion-*.md`.
+
+## Épica 13 — Auditoría y trazabilidad (2026-11-06) — **v1.1.5**
+
+| Historia | Estado | Evidencia |
+|----------|--------|-----------|
+| HU_MPDW_01_82 Bitácora de auditoría | COMPLETED | `GET /api/v1/auditoria/bitacora/`, `GET /api/v1/auditoria/bitacora/usuarios/`, `BitacoraAuditoriaService`, `sanitize.py`, migración `0002_ep13_auditoria_campos`, permiso gerente `0011_gerente_auditoria_consultar` |
+
+## Épica 18 — Comportamientos transversales (2026-11-06) — **v1.1.5**
+
+- **HU 96 / 97 (API y dominio):** revalidación de permisos en servidor; HTTP 409 ante conflicto de versión; motivo obligatorio en cambios críticos de usuario donde aplica; mensajes `mensajes.py` / excepciones.
+- **Frontend:** implementado en el repositorio `mpdw-frontend` (diálogos y conflictos de edición).
