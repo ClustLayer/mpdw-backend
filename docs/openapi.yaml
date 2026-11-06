@@ -4,6 +4,20 @@ info:
   version: 1.0.0
   description: API REST transaccional para la gestión comercial y multi-sede de MPDW
 paths:
+  /api/v1/auth/accesos-panel:
+    get:
+      operationId: auth_accesos_panel
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccesosPanelResponse'
+          description: ''
   /api/v1/auth/cambiar-contrasena:
     post:
       operationId: auth_cambiar_contrasena_create
@@ -517,6 +531,246 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProductoResponse'
           description: ''
+  /api/v1/roles-permisos/matriz:
+    get:
+      operationId: matriz_get
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuardarMatrizRequest'
+          description: ''
+    put:
+      operationId: matriz_save
+      tags:
+      - roles-permisos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuardarMatrizRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GuardarMatrizRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GuardarMatrizRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/roles-permisos/permisos:
+    get:
+      operationId: permisos_catalog_list
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermisoListResponse'
+          description: ''
+    post:
+      operationId: permisos_create
+      tags:
+      - roles-permisos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearPermisoRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CrearPermisoRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CrearPermisoRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/roles-permisos/permisos/{id_permiso}:
+    patch:
+      operationId: permisos_update
+      parameters:
+      - in: path
+        name: id_permiso
+        schema:
+          type: integer
+        required: true
+      tags:
+      - roles-permisos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarPermisoRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarPermisoRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarPermisoRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermisoListItem'
+          description: ''
+  /api/v1/roles-permisos/permisos/catalogos:
+    get:
+      operationId: permisos_catalogos
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogosPermisoResponse'
+          description: ''
+  /api/v1/roles-permisos/roles:
+    get:
+      operationId: roles_list
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolListResponse'
+          description: ''
+    post:
+      operationId: roles_create
+      tags:
+      - roles-permisos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearRolRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CrearRolRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CrearRolRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolDetalleResponse'
+          description: ''
+  /api/v1/roles-permisos/roles/{id_rol}:
+    get:
+      operationId: roles_detail
+      parameters:
+      - in: path
+        name: id_rol
+        schema:
+          type: integer
+        required: true
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolDetalleResponse'
+          description: ''
+    patch:
+      operationId: roles_update
+      parameters:
+      - in: path
+        name: id_rol
+        schema:
+          type: integer
+        required: true
+      tags:
+      - roles-permisos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarRolRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarRolRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarRolRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolDetalleResponse'
+          description: ''
+  /api/v1/roles-permisos/roles/catalogo/activos:
+    get:
+      operationId: roles_activos_catalogo
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolesCatalogoResponse'
+          description: ''
+  /api/v1/roles-permisos/usuarios-activos:
+    get:
+      operationId: usuarios_activos_matriz
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolesCatalogoResponse'
+          description: ''
   /api/v1/usuarios/:
     get:
       operationId: usuarios_admin_list
@@ -681,6 +935,22 @@ paths:
           description: ''
 components:
   schemas:
+    AccesosPanelResponse:
+      type: object
+      properties:
+        modulos:
+          type: array
+          items:
+            type: string
+        acciones_por_modulo:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+      - acciones_por_modulo
+      - modulos
     AccionEnum:
       enum:
       - activar
@@ -738,6 +1008,21 @@ components:
           $ref: '#/components/schemas/AccionEnum'
       required:
       - accion
+    CatalogosPermisoResponse:
+      type: object
+      properties:
+        modulos:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        acciones:
+          type: array
+          items:
+            type: string
+      required:
+      - acciones
+      - modulos
     Codigo2FARequestRequest:
       type: object
       properties:
@@ -774,6 +1059,40 @@ components:
       required:
       - endpoints
       - mensajes
+    CrearPermisoRequestRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 100
+        modulo:
+          type: string
+          minLength: 1
+          maxLength: 100
+        accion:
+          type: string
+          minLength: 1
+          maxLength: 50
+        descripcion:
+          type: string
+          default: ''
+      required:
+      - accion
+      - modulo
+      - nombre
+    CrearRolRequestRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 30
+        descripcion:
+          type: string
+          default: ''
+      required:
+      - nombre
     CrearUsuarioRequestRequest:
       type: object
       properties:
@@ -813,6 +1132,36 @@ components:
       - id_rol
       - nombre
       - sedes
+    GuardarMatrizRequest:
+      type: object
+      properties:
+        tipo:
+          $ref: '#/components/schemas/TipoEnum'
+        id_destino:
+          type: integer
+        cambios:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatrizCambio'
+      required:
+      - cambios
+      - id_destino
+      - tipo
+    GuardarMatrizRequestRequest:
+      type: object
+      properties:
+        tipo:
+          $ref: '#/components/schemas/TipoEnum'
+        id_destino:
+          type: integer
+        cambios:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatrizCambioRequest'
+      required:
+      - cambios
+      - id_destino
+      - tipo
     Inventario:
       type: object
       properties:
@@ -865,6 +1214,32 @@ components:
         refresh_token:
           type: string
           minLength: 1
+    MatrizCambio:
+      type: object
+      properties:
+        id_permiso:
+          type: integer
+        permitido:
+          type: boolean
+        eliminar_excepcion:
+          type: boolean
+          default: false
+      required:
+      - id_permiso
+      - permitido
+    MatrizCambioRequest:
+      type: object
+      properties:
+        id_permiso:
+          type: integer
+        permitido:
+          type: boolean
+        eliminar_excepcion:
+          type: boolean
+          default: false
+      required:
+      - id_permiso
+      - permitido
     MensajeResponse:
       type: object
       properties:
@@ -908,6 +1283,40 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ProductoResponse'
+    PatchedEditarPermisoRequestRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 100
+        modulo:
+          type: string
+          minLength: 1
+          maxLength: 100
+        accion:
+          type: string
+          minLength: 1
+          maxLength: 50
+        descripcion:
+          type: string
+        estado:
+          type: boolean
+        version_fila:
+          type: integer
+    PatchedEditarRolRequestRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 30
+        descripcion:
+          type: string
+        estado:
+          type: boolean
+        version_fila:
+          type: integer
     PatchedEditarUsuarioRequestRequest:
       type: object
       properties:
@@ -1054,6 +1463,52 @@ components:
       - tipo_sangre
       - ultimo_acceso
       - version_fila
+    PermisoListItem:
+      type: object
+      properties:
+        id_permiso:
+          type: integer
+        nombre:
+          type: string
+        modulo:
+          type: string
+        accion:
+          type: string
+        descripcion:
+          type: string
+        estado:
+          type: boolean
+        version_fila:
+          type: integer
+      required:
+      - accion
+      - descripcion
+      - estado
+      - id_permiso
+      - modulo
+      - nombre
+      - version_fila
+    PermisoListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermisoListItem'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        mensaje:
+          type: string
+      required:
+      - items
+      - mensaje
+      - page
+      - page_size
+      - total
     PoliticaSesion:
       type: object
       properties:
@@ -1277,6 +1732,73 @@ components:
       required:
       - id_rol
       - nombre
+    RolDetalleResponse:
+      type: object
+      properties:
+        id_rol:
+          type: integer
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        estado:
+          type: boolean
+        es_rol_base:
+          type: boolean
+        version_fila:
+          type: integer
+        mensaje:
+          type: string
+      required:
+      - descripcion
+      - es_rol_base
+      - estado
+      - id_rol
+      - nombre
+      - version_fila
+    RolListItem:
+      type: object
+      properties:
+        id_rol:
+          type: integer
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        estado:
+          type: boolean
+        es_rol_base:
+          type: boolean
+        version_fila:
+          type: integer
+      required:
+      - descripcion
+      - es_rol_base
+      - estado
+      - id_rol
+      - nombre
+      - version_fila
+    RolListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RolListItem'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        mensaje:
+          type: string
+      required:
+      - items
+      - mensaje
+      - page
+      - page_size
+      - total
     RolesCatalogoResponse:
       type: object
       properties:
@@ -1346,6 +1868,14 @@ components:
       required:
       - cantidad_inicial
       - id_sede
+    TipoEnum:
+      enum:
+      - rol
+      - usuario
+      type: string
+      description: |-
+        * `rol` - rol
+        * `usuario` - usuario
     TokenResponse:
       type: object
       properties:

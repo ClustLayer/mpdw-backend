@@ -6,9 +6,9 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main, staging, develop, epica-1-autenticacion, epica-2-administracion-usuarios]
+    branches: [main, staging, develop, epica-1-autenticacion, epica-2-administracion-usuarios, epica-3-roles-permisos]
   pull_request:
-    branches: [main, staging, develop, epica-1-autenticacion, epica-2-administracion-usuarios]
+    branches: [main, staging, develop, epica-1-autenticacion, epica-2-administracion-usuarios, epica-3-roles-permisos]
 
 permissions:
   contents: read
