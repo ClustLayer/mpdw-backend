@@ -11,7 +11,9 @@ MSG_LOGOUT_OK = "Sesión cerrada correctamente."
 MSG_SESION_EXPIRADA = "Su sesión ya había expirado. Inicie sesión nuevamente."
 MSG_LOGOUT_FALLO = "No fue posible cerrar la sesión en el servidor. Intente nuevamente."
 
-MSG_RECUPERACION_OK = "Si el correo está registrado, recibirá un enlace para restablecer su contraseña."
+MSG_RECUPERACION_OK = (
+    "Si el correo está registrado, recibirá un enlace para restablecer su contraseña."
+)
 MSG_RESET_OK = "Su contraseña ha sido restablecida. Ya puede iniciar sesión."
 MSG_RESET_INVALIDO = "El enlace de recuperación no es válido o ha expirado. Solicite uno nuevo."
 MSG_ERROR_SOLICITUD = "No fue posible completar la solicitud. Intente nuevamente."
@@ -54,12 +56,49 @@ MSG_ESTADO_ERROR = "No fue posible cambiar el estado del usuario. Intente nuevam
 MSG_LISTADO_USUARIOS = "Mostrando {n} de {total} usuarios."
 MSG_LISTADO_VACIO = "No se encontraron usuarios con los criterios indicados."
 MSG_LISTADO_ERROR = "No fue posible cargar los usuarios. Intente nuevamente."
-MSG_CONTRASENA_TEMP_OK = "Contraseña temporal generada. El usuario deberá cambiarla en su siguiente acceso."
+MSG_CONTRASENA_TEMP_OK = (
+    "Contraseña temporal generada. El usuario deberá cambiarla en su siguiente acceso."
+)
 MSG_CONTRASENA_TEMP_ERROR = "No fue posible generar la contraseña temporal. Intente nuevamente."
 MSG_CONTRASENA_TEMP_PROPIA = "No puede generar una contraseña temporal para su propia cuenta."
 MSG_PERFIL_ACTUALIZADO = "Su perfil ha sido actualizado correctamente."
 MSG_PERFIL_ERROR = "No fue posible actualizar su perfil. Intente nuevamente."
 MSG_ROL_PROPIO = "No puede modificar su propio rol."
-MSG_CONCURRENCIA = "El registro fue modificado por otro usuario. Recargue los datos e intente nuevamente."
+MSG_CONCURRENCIA = (
+    "El registro fue modificado por otro usuario. Recargue los datos e intente nuevamente."
+)
 MSG_SEDE_OBLIGATORIA = "Debe asignar al menos una sede activa y marcar una como principal."
 MSG_ROL_INACTIVO = "El rol seleccionado no está disponible."
+
+MSG_ROL_NOMBRE_OBLIGATORIO = "El nombre del rol es obligatorio."
+MSG_ROL_NOMBRE_DUPLICADO = "Ya existe un rol registrado con este nombre."
+MSG_ROL_CREADO = "Rol creado correctamente."
+MSG_ROL_CREAR_ERROR = "No fue posible crear el rol. Intente nuevamente."
+MSG_ROL_ACTUALIZADO = "Rol actualizado correctamente."
+MSG_ROL_ACTUALIZAR_ERROR = "No fue posible actualizar el rol. Intente nuevamente."
+MSG_ROL_BASE_PROTEGIDO = "Los roles base no pueden ser modificados ni eliminados."
+MSG_ROL_INACTIVAR_USUARIOS = (
+    "No es posible inactivar el rol porque tiene usuarios activos asignados. "
+    "Reasigne los usuarios a otro rol antes de desactivarlo."
+)
+MSG_LISTADO_ROLES = "Mostrando {n} de {total} roles."
+MSG_LISTADO_ROLES_VACIO = "No se encontraron roles con los criterios indicados."
+
+MSG_PERMISO_CAMPOS = "Todos los campos obligatorios deben ser diligenciados."
+MSG_PERMISO_DUPLICADO = "Ya existe un permiso para este módulo y esta acción."
+MSG_PERMISO_CREADO = "Permiso creado correctamente."
+MSG_PERMISO_CREAR_ERROR = "No fue posible crear el permiso. Intente nuevamente."
+MSG_PERMISO_ACTUALIZADO = "Permiso actualizado correctamente."
+MSG_PERMISO_ACTUALIZAR_ERROR = "No fue posible actualizar el permiso. Intente nuevamente."
+MSG_PERMISO_INACTIVADO = (
+    "El permiso se ha inactivado correctamente y sus accesos han sido revocados."
+)
+MSG_LISTADO_PERMISOS = "Mostrando {n} de {total} permisos."
+
+MSG_MATRIZ_DESTINO = "Seleccione un rol o un usuario."
+MSG_MATRIZ_GUARDADA = "Permisos actualizados correctamente. Los cambios aplican de inmediato."
+MSG_MATRIZ_ERROR = "No fue posible guardar los permisos. Intente nuevamente."
+
+MSG_PERMISO_DENEGADO = "No tiene permisos para realizar esta operación."
+MSG_PERMISO_VERIFICAR_ERROR = "No fue posible verificar sus permisos. Intente nuevamente."
+MSG_ACCESO_DENEGADO_RUTA = "No tiene permisos para acceder a este recurso."

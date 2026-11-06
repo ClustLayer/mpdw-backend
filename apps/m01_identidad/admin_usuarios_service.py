@@ -82,7 +82,9 @@ class PaginaUsuarios:
 def _sedes_payload(sedes: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
     if not sedes:
         return []
-    return [{"id_sede": int(s["id_sede"]), "es_principal": bool(s.get("es_principal"))} for s in sedes]
+    return [
+        {"id_sede": int(s["id_sede"]), "es_principal": bool(s.get("es_principal"))} for s in sedes
+    ]
 
 
 class AdminUsuariosService:
@@ -107,7 +109,9 @@ class AdminUsuariosService:
         page_size: int,
         ordering: str,
     ) -> PaginaUsuarios:
-        sede_principal_qs = Usuario_sede.objects.filter(estado=True, es_principal=True).select_related("id_sede")
+        sede_principal_qs = Usuario_sede.objects.filter(
+            estado=True, es_principal=True
+        ).select_related("id_sede")
         qs = Usuarios.objects.select_related("id_rol").prefetch_related(
             Prefetch("sedes_usuario", queryset=sede_principal_qs, to_attr="sedes_principales")
         )
@@ -124,7 +128,9 @@ class AdminUsuariosService:
         ahora = timezone.now()
         filtro = (estado_filtro or "todos").lower()
         if filtro == "activo":
-            qs = qs.filter(estado=True).filter(Q(bloqueado_hasta__isnull=True) | Q(bloqueado_hasta__lte=ahora))
+            qs = qs.filter(estado=True).filter(
+                Q(bloqueado_hasta__isnull=True) | Q(bloqueado_hasta__lte=ahora)
+            )
         elif filtro == "inactivo":
             qs = qs.filter(estado=False)
         elif filtro == "bloqueado":
@@ -147,7 +153,9 @@ class AdminUsuariosService:
             mensaje = MSG_LISTADO_VACIO
         else:
             mensaje = MSG_LISTADO_USUARIOS.format(n=len(items), total=total)
-        return PaginaUsuarios(items=items, total=total, page=page, page_size=page_size, mensaje=mensaje)
+        return PaginaUsuarios(
+            items=items, total=total, page=page, page_size=page_size, mensaje=mensaje
+        )
 
     def obtener_detalle(self, id_usuario: int) -> dict[str, Any]:
         usuario = self._users.buscar_por_id(id_usuario)
@@ -164,14 +172,18 @@ class AdminUsuariosService:
             logger.exception("Fallo al crear usuario")
             raise DominioError(MSG_USUARIO_CREAR_ERROR, codigo="ERROR_CREAR_USUARIO") from exc
 
-    def actualizar(self, ctx: AuthContext, id_usuario: int, datos: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+    def actualizar(
+        self, ctx: AuthContext, id_usuario: int, datos: dict[str, Any]
+    ) -> tuple[str, dict[str, Any]]:
         try:
             return self._actualizar(ctx, id_usuario, datos)
         except ReglaNegocioError:
             raise
         except Exception as exc:
             logger.exception("Fallo al actualizar usuario %s", id_usuario)
-            raise DominioError(MSG_USUARIO_ACTUALIZAR_ERROR, codigo="ERROR_ACTUALIZAR_USUARIO") from exc
+            raise DominioError(
+                MSG_USUARIO_ACTUALIZAR_ERROR, codigo="ERROR_ACTUALIZAR_USUARIO"
+            ) from exc
 
     def cambiar_estado(self, ctx: AuthContext, id_usuario: int, accion: str) -> str:
         try:
@@ -230,9 +242,13 @@ class AdminUsuariosService:
             self._auditar(ctx, "CREAR_USUARIO", usuario.id_usuario, None, despues)
         if self._email:
             try:
-                entregado = self._email.enviar_contrasena_inicial(email, nombre_completo(usuario), clave)
+                entregado = self._email.enviar_contrasena_inicial(
+                    email, nombre_completo(usuario), clave
+                )
                 if not entregado:
-                    logger.error("Adaptador de correo reporto fallo al enviar contrasena inicial a %s", email)
+                    logger.error(
+                        "Adaptador de correo reporto fallo al enviar contrasena inicial a %s", email
+                    )
                     raise DominioError(MSG_EMAIL_ENTREGA_FALLIDA, codigo="EMAIL_NO_ENTREGADO")
             except DominioError:
                 raise
@@ -241,7 +257,9 @@ class AdminUsuariosService:
                 raise DominioError(MSG_EMAIL_ENTREGA_FALLIDA, codigo="EMAIL_NO_ENTREGADO") from exc
         return MSG_USUARIO_CREADO, self._detalle(usuario)
 
-    def _actualizar(self, ctx: AuthContext, id_usuario: int, datos: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+    def _actualizar(
+        self, ctx: AuthContext, id_usuario: int, datos: dict[str, Any]
+    ) -> tuple[str, dict[str, Any]]:
         version = int(datos.get("version_fila") or 0)
         self._validar_obligatorios_edicion(datos)
         email = str(datos["email"]).strip()
@@ -311,7 +329,13 @@ class AdminUsuariosService:
             if revocar_tokens:
                 usuario.credential_version = int(usuario.credential_version or 1) + 1
             usuario.version_fila = int(usuario.version_fila) + 1
-            campos = ["estado", "bloqueado_hasta", "intentos_fallidos", "version_fila", "fecha_actualizacion"]
+            campos = [
+                "estado",
+                "bloqueado_hasta",
+                "intentos_fallidos",
+                "version_fila",
+                "fecha_actualizacion",
+            ]
             if revocar_tokens:
                 campos.append("credential_version")
             usuario.save(update_fields=campos)
@@ -390,7 +414,9 @@ class AdminUsuariosService:
         try:
             return Usuarios.objects.select_for_update().select_related("id_rol").get(pk=id_usuario)
         except Usuarios.DoesNotExist as err:
-            raise ReglaNegocioError(MSG_USUARIO_NO_ENCONTRADO, codigo="USUARIO_NO_ENCONTRADO") from err
+            raise ReglaNegocioError(
+                MSG_USUARIO_NO_ENCONTRADO, codigo="USUARIO_NO_ENCONTRADO"
+            ) from err
 
     def _fila_listado(self, usuario: Usuarios) -> dict[str, Any]:
         principales = getattr(usuario, "sedes_principales", None)
@@ -457,30 +483,44 @@ class PerfilPropioService:
     def actualizar(self, ctx: AuthContext, usuario: Usuarios, datos: dict[str, Any]) -> str:
         if datos.get("id_rol") is not None or datos.get("rol_nombre"):
             raise ReglaNegocioError(MSG_ROL_PROPIO, codigo="ROL_PROPIO")
-        nombre = str(datos.get("nombre") if datos.get("nombre") is not None else usuario.nombre).strip()
-        apellido = str(datos.get("apellido") if datos.get("apellido") is not None else usuario.apellido).strip()
+        nombre = str(
+            datos.get("nombre") if datos.get("nombre") is not None else usuario.nombre
+        ).strip()
+        apellido = str(
+            datos.get("apellido") if datos.get("apellido") is not None else usuario.apellido
+        ).strip()
         if not nombre or not apellido:
             raise ReglaNegocioError(MSG_CAMPOS_OBLIGATORIOS, codigo="CAMPOS_OBLIGATORIOS")
-        telefono = str(datos.get("telefono") if "telefono" in datos else usuario.telefono or "").strip()
+        telefono = str(
+            datos.get("telefono") if "telefono" in datos else usuario.telefono or ""
+        ).strip()
         exigir_telefono(telefono)
         tipo_sangre = str(
-            datos.get("tipo_sangre") if "tipo_sangre" in datos else getattr(usuario, "tipo_sangre", "") or ""
+            datos.get("tipo_sangre")
+            if "tipo_sangre" in datos
+            else getattr(usuario, "tipo_sangre", "") or ""
         ).strip()
         exigir_tipo_sangre(tipo_sangre)
-        fecha_nac = datos.get("fecha_nacimiento") if "fecha_nacimiento" in datos else usuario.fecha_nacimiento
+        fecha_nac = (
+            datos.get("fecha_nacimiento")
+            if "fecha_nacimiento" in datos
+            else usuario.fecha_nacimiento
+        )
         exigir_fecha_nacimiento(fecha_nac)
-        direccion = str(datos.get("direccion") if "direccion" in datos else getattr(usuario, "direccion", "") or "").strip()
+        direccion = str(
+            datos.get("direccion")
+            if "direccion" in datos
+            else getattr(usuario, "direccion", "") or ""
+        ).strip()
         contacto_nombre = str(
             datos.get("contacto_emergencia_nombre")
             if "contacto_emergencia_nombre" in datos
-            else getattr(usuario, "contacto_emergencia_nombre", "")
-            or ""
+            else getattr(usuario, "contacto_emergencia_nombre", "") or ""
         ).strip()
         contacto_tel = str(
             datos.get("contacto_emergencia_telefono")
             if "contacto_emergencia_telefono" in datos
-            else getattr(usuario, "contacto_emergencia_telefono", "")
-            or ""
+            else getattr(usuario, "contacto_emergencia_telefono", "") or ""
         ).strip()
         exigir_telefono_emergencia(contacto_tel)
         try:

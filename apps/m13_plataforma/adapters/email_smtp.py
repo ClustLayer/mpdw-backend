@@ -38,12 +38,18 @@ class SmtpEmailAdapter(EmailPort):
         self._use_tls = settings.SMTP_USE_TLS if use_tls is None else use_tls
 
     def enviar_recuperacion_password(self, destinatario: str, enlace: str) -> bool:
-        return self._enviar(destinatario, "Restablecer contraseña - Mundo Pinturas Diana", html_recuperacion(enlace))
+        return self._enviar(
+            destinatario, "Restablecer contraseña - Mundo Pinturas Diana", html_recuperacion(enlace)
+        )
 
     def enviar_codigo_2fa(self, destinatario: str, codigo: str) -> bool:
-        return self._enviar(destinatario, "Código de verificación - Mundo Pinturas Diana", html_codigo_2fa(codigo))
+        return self._enviar(
+            destinatario, "Código de verificación - Mundo Pinturas Diana", html_codigo_2fa(codigo)
+        )
 
-    def enviar_contrasena_inicial(self, destinatario: str, nombre: str, contrasena_plana: str) -> bool:
+    def enviar_contrasena_inicial(
+        self, destinatario: str, nombre: str, contrasena_plana: str
+    ) -> bool:
         return self._enviar(
             destinatario,
             "Acceso al sistema - Mundo Pinturas Diana",

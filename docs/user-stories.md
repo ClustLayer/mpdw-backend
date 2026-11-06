@@ -116,3 +116,16 @@
 
 ## HU_MPDW_01_12 — Mi perfil
 **Status:** COMPLETED — **Received:** 2026-11-05
+
+## Epica 3 — Roles, permisos y control de acceso (2026-11-05)
+
+| Historia | Estado | Evidencia |
+|----------|--------|-----------|
+| HU_MPDW_01_13 Crear rol / listado | COMPLETED | `POST/GET /api/v1/roles-permisos/roles`, tests `test_epic3_*` |
+| HU_MPDW_01_14 Editar rol | COMPLETED | `PATCH /api/v1/roles-permisos/roles/{id}` |
+| HU_MPDW_01_15 Crear permiso / catálogo | COMPLETED | `POST/GET /api/v1/roles-permisos/permisos` |
+| HU_MPDW_01_16 Editar permiso | COMPLETED | `PATCH /api/v1/roles-permisos/permisos/{id}` |
+| HU_MPDW_01_17 Matriz de permisos | COMPLETED | `GET/PUT /api/v1/roles-permisos/matriz` |
+| HU_MPDW_01_18 Rutas y menú autorizados | COMPLETED | `GET /api/v1/auth/accesos-panel`, `PermissionService.accesos_panel` |
+
+Migración: `0008_epic3_roles_permisos`. OpenAPI: `docs/openapi.yaml`.

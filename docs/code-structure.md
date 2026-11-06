@@ -22,6 +22,7 @@
 ### Services
 - AuthService, RecuperacionService, ContrasenaService, Verificacion2FAService (`apps/m01_identidad/services.py`)
 - AdminUsuariosService, PerfilPropioService (`apps/m01_identidad/admin_usuarios_service.py`)
+- AdminRolesPermisosService, panel_accesos (`admin_roles_permisos_service.py`, `panel_accesos.py`); rutas `urls_roles_permisos.py`
 - SmtpEmailAdapter y SendGridEmailAdapter (`apps/m13_plataforma/adapters`)
 
 ### Models

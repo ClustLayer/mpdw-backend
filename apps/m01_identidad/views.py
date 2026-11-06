@@ -144,7 +144,12 @@ class LoginView(APIView):
     def post(self, request: Request) -> Response:
         serializer = LoginRequestSerializer(data=request.data)
         if not serializer.is_valid():
-            return _error("DATOS_INVALIDOS", _primer_mensaje(serializer.errors), status.HTTP_400_BAD_REQUEST, request)
+            return _error(
+                "DATOS_INVALIDOS",
+                _primer_mensaje(serializer.errors),
+                status.HTTP_400_BAD_REQUEST,
+                request,
+            )
         try:
             resultado = _auth().autenticar(
                 email=serializer.validated_data["email"],
@@ -157,7 +162,9 @@ class LoginView(APIView):
             raise
         except Exception:
             logger.exception("Fallo no anticipado al iniciar sesion")
-            return _error("ERROR_LOGIN", MSG_ERROR_LOGIN, status.HTTP_500_INTERNAL_SERVER_ERROR, request)
+            return _error(
+                "ERROR_LOGIN", MSG_ERROR_LOGIN, status.HTTP_500_INTERNAL_SERVER_ERROR, request
+            )
 
         ctx = resultado.ctx
         cuerpo = {
@@ -194,22 +201,47 @@ class TokenRefreshView(APIView):
 
     @extend_schema(
         summary="Continuar sesion",
-        request=inline_serializer("RefreshRequest", fields={"refresh_token": serializers.CharField(required=False)}),
-        responses={200: inline_serializer("RefreshResponse", fields={"access_token": serializers.CharField(), "token_type": serializers.CharField(), "mensaje": serializers.CharField()})},
+        request=inline_serializer(
+            "RefreshRequest", fields={"refresh_token": serializers.CharField(required=False)}
+        ),
+        responses={
+            200: inline_serializer(
+                "RefreshResponse",
+                fields={
+                    "access_token": serializers.CharField(),
+                    "token_type": serializers.CharField(),
+                    "mensaje": serializers.CharField(),
+                },
+            )
+        },
     )
     def post(self, request: Request) -> Response:
         if not _origen_confiable(request):
-            return _error("ORIGEN_NO_PERMITIDO", "Origen no autorizado para renovar la sesión.", status.HTTP_403_FORBIDDEN, request)
+            return _error(
+                "ORIGEN_NO_PERMITIDO",
+                "Origen no autorizado para renovar la sesión.",
+                status.HTTP_403_FORBIDDEN,
+                request,
+            )
         refresh = _refresh_entrante(request)
         if not refresh:
-            return _error("SESION_EXPIRADA", MSG_SESION_EXPIRADA, status.HTTP_401_UNAUTHORIZED, request)
+            return _error(
+                "SESION_EXPIRADA", MSG_SESION_EXPIRADA, status.HTTP_401_UNAUTHORIZED, request
+            )
         try:
-            acceso, nuevo = _auth().rotar_refresh_token(refresh, ip=_ip(request), id_correlacion=_cid(request))
+            acceso, nuevo = _auth().rotar_refresh_token(
+                refresh, ip=_ip(request), id_correlacion=_cid(request)
+            )
         except AutenticacionError:
             raise
         except Exception:
             logger.exception("Fallo no anticipado al renovar la sesion")
-            return _error("ERROR_RENOVACION", MSG_RENOVAR_ERROR, status.HTTP_500_INTERNAL_SERVER_ERROR, request)
+            return _error(
+                "ERROR_RENOVACION",
+                MSG_RENOVAR_ERROR,
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                request,
+            )
         response = Response(
             {"access_token": acceso, "token_type": "Bearer", "mensaje": MSG_SESION_CONTINUA},
             status=status.HTTP_200_OK,
@@ -225,15 +257,24 @@ class LogoutView(APIView):
     @extend_schema(
         summary="Cierre de sesion",
         description="Revocacion de la familia de refresh tokens y borrado de cookie (ADR-006).",
-        request=inline_serializer("LogoutRequest", fields={"refresh_token": serializers.CharField(required=False)}),
+        request=inline_serializer(
+            "LogoutRequest", fields={"refresh_token": serializers.CharField(required=False)}
+        ),
         responses={200: MensajeResponseSerializer},
     )
     def post(self, request: Request) -> Response:
         if not _origen_confiable(request):
-            return _error("ORIGEN_NO_PERMITIDO", "Origen no autorizado para cerrar la sesión.", status.HTTP_403_FORBIDDEN, request)
+            return _error(
+                "ORIGEN_NO_PERMITIDO",
+                "Origen no autorizado para cerrar la sesión.",
+                status.HTTP_403_FORBIDDEN,
+                request,
+            )
         refresh = _refresh_entrante(request)
         if not refresh:
-            response = _error("SESION_EXPIRADA", MSG_SESION_EXPIRADA, status.HTTP_401_UNAUTHORIZED, request)
+            response = _error(
+                "SESION_EXPIRADA", MSG_SESION_EXPIRADA, status.HTTP_401_UNAUTHORIZED, request
+            )
             _quitar_refresh(response)
             return response
         try:
@@ -244,7 +285,12 @@ class LogoutView(APIView):
             return _error(exc.codigo, exc.mensaje, status.HTTP_500_INTERNAL_SERVER_ERROR, request)
         except Exception:
             logger.exception("Fallo no anticipado al cerrar sesion")
-            return _error("LOGOUT_FALLO", "No fue posible cerrar la sesión en el servidor. Intente nuevamente.", 500, request)
+            return _error(
+                "LOGOUT_FALLO",
+                "No fue posible cerrar la sesión en el servidor. Intente nuevamente.",
+                500,
+                request,
+            )
         response = Response({"mensaje": mensaje}, status=status.HTTP_200_OK)
         _quitar_refresh(response)
         return response
@@ -273,11 +319,15 @@ class ProfileView(APIView):
 
         serializer = PerfilUpdateRequestSerializer(data=request.data, partial=True)
         if not serializer.is_valid():
-            return _dominio(ReglaNegocioError(str(serializer.errors), codigo="DATOS_INVALIDOS"), request)
+            return _dominio(
+                ReglaNegocioError(str(serializer.errors), codigo="DATOS_INVALIDOS"), request
+            )
         from apps.m01_identidad.models import Usuarios
 
         if not isinstance(request.user, Usuarios):
-            return _error("NO_AUTORIZADO", "Usuario no autenticado.", status.HTTP_401_UNAUTHORIZED, request)
+            return _error(
+                "NO_AUTORIZADO", "Usuario no autenticado.", status.HTTP_401_UNAUTHORIZED, request
+            )
         try:
             mensaje = PerfilPropioService(audit_port=AuditService()).actualizar(
                 _ctx(request), request.user, serializer.validated_data
@@ -294,7 +344,9 @@ class ProfileView(APIView):
 class PoliticaSesionView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(summary="Politica publica de vigencia de sesion", responses={200: PoliticaSesionSerializer})
+    @extend_schema(
+        summary="Politica publica de vigencia de sesion", responses={200: PoliticaSesionSerializer}
+    )
     def get(self, request: Request) -> Response:
         return Response(
             {
@@ -313,20 +365,31 @@ class RecuperacionSolicitudView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
-    @extend_schema(summary="Solicitar enlace de recuperacion", request=RecuperarRequestSerializer, responses={200: MensajeResponseSerializer})
+    @extend_schema(
+        summary="Solicitar enlace de recuperacion",
+        request=RecuperarRequestSerializer,
+        responses={200: MensajeResponseSerializer},
+    )
     def post(self, request: Request) -> Response:
         email = ""
         if isinstance(request.data, dict):
             email = str(request.data.get("email") or "").strip()
         if not correo_valido(email):
-            return _error("DATOS_INVALIDOS", MSG_EMAIL_INVALIDO, status.HTTP_400_BAD_REQUEST, request)
+            return _error(
+                "DATOS_INVALIDOS", MSG_EMAIL_INVALIDO, status.HTTP_400_BAD_REQUEST, request
+            )
         try:
             mensaje = RecuperacionService(email_port=_correo()).solicitar(email)
         except DominioError as exc:
             return _error(exc.codigo, exc.mensaje, status.HTTP_500_INTERNAL_SERVER_ERROR, request)
         except Exception:
             logger.exception("Fallo no anticipado al solicitar recuperacion")
-            return _error("ERROR_RECUPERACION", MSG_ERROR_SOLICITUD, status.HTTP_500_INTERNAL_SERVER_ERROR, request)
+            return _error(
+                "ERROR_RECUPERACION",
+                MSG_ERROR_SOLICITUD,
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                request,
+            )
         return Response({"mensaje": mensaje}, status=status.HTTP_200_OK)
 
 
@@ -351,7 +414,12 @@ class RecuperacionConfirmarView(APIView):
             raise
         except Exception:
             logger.exception("Fallo no anticipado al restablecer contraseña")
-            return _error("ERROR_RECUPERACION", MSG_ERROR_SOLICITUD, status.HTTP_500_INTERNAL_SERVER_ERROR, request)
+            return _error(
+                "ERROR_RECUPERACION",
+                MSG_ERROR_SOLICITUD,
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                request,
+            )
         return Response({"mensaje": mensaje}, status=status.HTTP_200_OK)
 
 
@@ -367,7 +435,9 @@ class CambiarContrasenaView(APIView):
         data = request.data if isinstance(request.data, dict) else {}
         payload = getattr(request, "jwt_payload", {})
         try:
-            acceso, mensaje, sigue_2fa, desafio = ContrasenaService(auth=_auth(), audit_port=AuditService()).cambiar(
+            acceso, mensaje, sigue_2fa, desafio = ContrasenaService(
+                auth=_auth(), audit_port=AuditService()
+            ).cambiar(
                 usuario=request.user,
                 actual=str(data.get("password_actual") or ""),
                 nueva=str(data.get("password") or ""),
@@ -382,7 +452,9 @@ class CambiarContrasenaView(APIView):
             raise
         except Exception:
             logger.exception("Fallo no anticipado al cambiar contraseña")
-            return _error("ERROR_CAMBIO", MSG_CAMBIO_ERROR, status.HTTP_500_INTERNAL_SERVER_ERROR, request)
+            return _error(
+                "ERROR_CAMBIO", MSG_CAMBIO_ERROR, status.HTTP_500_INTERNAL_SERVER_ERROR, request
+            )
         redireccion = "verificacion-2fa" if sigue_2fa else "inicio"
         cuerpo = {
             "access_token": acceso,
@@ -426,7 +498,9 @@ class Verificar2FAView(APIView):
             return _error(exc.codigo, exc.mensaje, status.HTTP_500_INTERNAL_SERVER_ERROR, request)
         except Exception:
             logger.exception("Fallo no anticipado al verificar 2FA")
-            return _error("ERROR_2FA", MSG_2FA_ERROR, status.HTTP_500_INTERNAL_SERVER_ERROR, request)
+            return _error(
+                "ERROR_2FA", MSG_2FA_ERROR, status.HTTP_500_INTERNAL_SERVER_ERROR, request
+            )
         cuerpo = {
             "mensaje": resultado.mensaje,
             "nombre": resultado.nombre,
@@ -449,12 +523,25 @@ class Reenviar2FAView(APIView):
     @extend_schema(
         summary="Reenviar codigo de segundo factor",
         request=Reenviar2FARequestSerializer,
-        responses={200: inline_serializer("Reenviar2FAResponse", fields={"mensaje": serializers.CharField(), "desafio_token": serializers.CharField()})},
+        responses={
+            200: inline_serializer(
+                "Reenviar2FAResponse",
+                fields={
+                    "mensaje": serializers.CharField(),
+                    "desafio_token": serializers.CharField(),
+                },
+            )
+        },
     )
     def post(self, request: Request) -> Response:
         serializer = Reenviar2FARequestSerializer(data=request.data)
         if not serializer.is_valid():
-            return _error("DATOS_INVALIDOS", _primer_mensaje(serializer.errors), status.HTTP_400_BAD_REQUEST, request)
+            return _error(
+                "DATOS_INVALIDOS",
+                _primer_mensaje(serializer.errors),
+                status.HTTP_400_BAD_REQUEST,
+                request,
+            )
         usuario = request.user if getattr(request.user, "is_authenticated", False) else None
         try:
             mensaje, desafio = Verificacion2FAService(auth=_auth(), email_port=_correo()).reenviar(
@@ -467,7 +554,9 @@ class Reenviar2FAView(APIView):
             return _error(exc.codigo, exc.mensaje, status.HTTP_500_INTERNAL_SERVER_ERROR, request)
         except Exception:
             logger.exception("Fallo no anticipado al reenviar 2FA")
-            return _error("ERROR_2FA", MSG_2FA_ERROR, status.HTTP_500_INTERNAL_SERVER_ERROR, request)
+            return _error(
+                "ERROR_2FA", MSG_2FA_ERROR, status.HTTP_500_INTERNAL_SERVER_ERROR, request
+            )
         return Response({"mensaje": mensaje, "desafio_token": desafio}, status=status.HTTP_200_OK)
 
 
@@ -477,7 +566,15 @@ class ContratoAuthView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
-    @extend_schema(summary="Contrato de autenticacion para el frontend", responses={200: inline_serializer("ContratoAuth", fields={"endpoints": serializers.DictField(), "mensajes": serializers.DictField()})})
+    @extend_schema(
+        summary="Contrato de autenticacion para el frontend",
+        responses={
+            200: inline_serializer(
+                "ContratoAuth",
+                fields={"endpoints": serializers.DictField(), "mensajes": serializers.DictField()},
+            )
+        },
+    )
     def get(self, request: Request) -> Response:
         return Response(
             {
@@ -487,7 +584,10 @@ class ContratoAuthView(APIView):
                     "logout": {"method": "POST", "path": "/api/v1/auth/logout"},
                     "recuperar": {"method": "POST", "path": "/api/v1/auth/recuperar"},
                     "restablecer": {"method": "POST", "path": "/api/v1/auth/restablecer"},
-                    "cambiar_contrasena": {"method": "POST", "path": "/api/v1/auth/cambiar-contrasena"},
+                    "cambiar_contrasena": {
+                        "method": "POST",
+                        "path": "/api/v1/auth/cambiar-contrasena",
+                    },
                     "verificar_2fa": {"method": "POST", "path": "/api/v1/auth/verificar-2fa"},
                     "reenviar_2fa": {"method": "POST", "path": "/api/v1/auth/reenviar-2fa"},
                     "politica_sesion": {"method": "GET", "path": "/api/v1/auth/politica-sesion"},

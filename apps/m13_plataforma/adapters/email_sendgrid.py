@@ -27,7 +27,9 @@ class SendGridEmailAdapter(EmailPort):
         client: httpx.Client | None = None,
     ) -> None:
         self._api_key = api_key or getattr(settings, "SENDGRID_API_KEY", "")
-        self._remitente = remitente or getattr(settings, "DEFAULT_FROM_EMAIL", "soporte@mundopinturasdiana.com")
+        self._remitente = remitente or getattr(
+            settings, "DEFAULT_FROM_EMAIL", "soporte@mundopinturasdiana.com"
+        )
         self._client = client or httpx.Client(timeout=10.0)
 
     def enviar_recuperacion_password(self, destinatario: str, enlace: str) -> bool:
@@ -76,32 +78,48 @@ class SendGridEmailAdapter(EmailPort):
             logger.warning("SENDGRID_API_KEY no configurada. Omitiendo codigo 2FA.")
             return False
         payload = {
-            "personalizations": [{"to": [{"email": destinatario}], "subject": "Codigo de verificacion - Mundo Pinturas Diana"}],
+            "personalizations": [
+                {
+                    "to": [{"email": destinatario}],
+                    "subject": "Codigo de verificacion - Mundo Pinturas Diana",
+                }
+            ],
             "from": {"email": self._remitente, "name": "Mundo Pinturas Diana"},
             "content": [{"type": "text/html", "value": html_codigo_2fa(codigo)}],
         }
         headers = {"Authorization": f"Bearer {self._api_key}", "Content-Type": "application/json"}
         try:
-            response = self._client.post("https://api.sendgrid.com/v3/mail/send", json=payload, headers=headers, timeout=10.0)
+            response = self._client.post(
+                "https://api.sendgrid.com/v3/mail/send", json=payload, headers=headers, timeout=10.0
+            )
             return response.status_code in (200, 202)
         except httpx.HTTPError as err:
             logger.error("Fallo de conexion con SendGrid: %s", type(err).__name__)
             return False
 
-    def enviar_contrasena_inicial(self, destinatario: str, nombre: str, contrasena_plana: str) -> bool:
+    def enviar_contrasena_inicial(
+        self, destinatario: str, nombre: str, contrasena_plana: str
+    ) -> bool:
         if not self._api_key:
             logger.warning("SENDGRID_API_KEY no configurada. Omitiendo acceso inicial.")
             return False
         payload = {
             "personalizations": [
-                {"to": [{"email": destinatario}], "subject": "Acceso al sistema - Mundo Pinturas Diana"},
+                {
+                    "to": [{"email": destinatario}],
+                    "subject": "Acceso al sistema - Mundo Pinturas Diana",
+                },
             ],
             "from": {"email": self._remitente, "name": "Mundo Pinturas Diana"},
-            "content": [{"type": "text/html", "value": html_contrasena_inicial(nombre, contrasena_plana)}],
+            "content": [
+                {"type": "text/html", "value": html_contrasena_inicial(nombre, contrasena_plana)}
+            ],
         }
         headers = {"Authorization": f"Bearer {self._api_key}", "Content-Type": "application/json"}
         try:
-            response = self._client.post("https://api.sendgrid.com/v3/mail/send", json=payload, headers=headers, timeout=10.0)
+            response = self._client.post(
+                "https://api.sendgrid.com/v3/mail/send", json=payload, headers=headers, timeout=10.0
+            )
             return response.status_code in (200, 202)
         except httpx.HTTPError as err:
             logger.error("Fallo de conexion con SendGrid: %s", type(err).__name__)

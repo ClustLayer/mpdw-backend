@@ -51,3 +51,17 @@
 ### Evidencia
 - `make calidad`: 9 puertas en verde (cobertura unitaria >= 90%).
 - Pruebas: `tests/unit/test_epic2_usuarios.py`, `tests/integration/test_epic2_usuarios_api.py`.
+
+## Epica 3 — Roles, permisos y control de acceso
+**Status:** COMPLETED  
+**Date:** 2026-11-05  
+**Branch:** `epica-3-roles-permisos`
+
+### Backend
+- Migracion `0008_epic3_roles_permisos` (campos HU 13–16, `Rol_permiso.permitido`).
+- `AdminRolesPermisosService` + vistas bajo `/api/v1/roles-permisos/`; accesos de menu en `GET /api/v1/auth/accesos-panel`.
+- Evaluacion RN-US-03 en `PermissionRepository` / `PermissionService.accesos_panel`.
+
+### Evidencia
+- `make calidad`: ruff, mypy, import-linter, bandit, OpenAPI, pytest unit (201 tests, cobertura ~90%).
+- `tests/unit/test_epic3_roles_permisos.py`, `test_epic3_roles_views.py`, `tests/integration/test_epic3_roles_api.py`.

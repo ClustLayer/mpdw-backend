@@ -97,7 +97,12 @@ class UsuarioListCreateView(APIView):
             )
         except Exception:
             logger.exception("Fallo al listar usuarios")
-            return _error("LISTADO_USUARIOS", MSG_LISTADO_ERROR, status.HTTP_500_INTERNAL_SERVER_ERROR, request)
+            return _error(
+                "LISTADO_USUARIOS",
+                MSG_LISTADO_ERROR,
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                request,
+            )
         return Response(
             {
                 "items": pagina.items,
@@ -121,9 +126,9 @@ class UsuarioListCreateView(APIView):
             exc = ReglaNegocioError(str(serializer.errors), codigo="DATOS_INVALIDOS")
             return _dominio(exc, request)
         try:
-            mensaje, detalle = AdminUsuariosService(audit_port=AuditService(), email_port=_correo()).crear(
-                _ctx(request), serializer.validated_data
-            )
+            mensaje, detalle = AdminUsuariosService(
+                audit_port=AuditService(), email_port=_correo()
+            ).crear(_ctx(request), serializer.validated_data)
         except (ReglaNegocioError, DominioError) as exc:
             return _dominio(exc, request)
         return Response({"mensaje": mensaje, **detalle}, status=status.HTTP_201_CREATED)
@@ -181,7 +186,9 @@ class UsuarioEstadoView(APIView):
     def post(self, request: Request, id_usuario: int) -> Response:
         serializer = CambiarEstadoRequestSerializer(data=request.data)
         if not serializer.is_valid():
-            return _dominio(ReglaNegocioError(str(serializer.errors), codigo="DATOS_INVALIDOS"), request)
+            return _dominio(
+                ReglaNegocioError(str(serializer.errors), codigo="DATOS_INVALIDOS"), request
+            )
         try:
             mensaje = AdminUsuariosService(audit_port=AuditService()).cambiar_estado(
                 _ctx(request), id_usuario, serializer.validated_data["accion"]
@@ -203,13 +210,17 @@ class UsuarioContrasenaTemporalView(APIView):
     )
     def post(self, request: Request, id_usuario: int) -> Response:
         try:
-            mensaje, clave = AdminUsuariosService(audit_port=AuditService()).generar_contrasena_temporal(
-                _ctx(request), id_usuario
-            )
+            mensaje, clave = AdminUsuariosService(
+                audit_port=AuditService()
+            ).generar_contrasena_temporal(_ctx(request), id_usuario)
         except (ReglaNegocioError, DominioError) as exc:
             return _dominio(exc, request)
         return Response(
-            {"mensaje": mensaje, "contrasena_temporal": clave, "leyenda": "Esta contraseña no se volverá a mostrar."},
+            {
+                "mensaje": mensaje,
+                "contrasena_temporal": clave,
+                "leyenda": "Esta contraseña no se volverá a mostrar.",
+            },
             status=status.HTTP_200_OK,
         )
 
@@ -226,4 +237,3 @@ class RolesCatalogoView(APIView):
     def get(self, request: Request) -> Response:
         roles = Roles.objects.filter(estado=True).order_by("nombre").values("id_rol", "nombre")
         return Response({"items": list(roles)}, status=status.HTTP_200_OK)
-
