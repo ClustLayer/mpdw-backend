@@ -42,3 +42,14 @@ No se levanto el par navegador-API contra la base de Supabase durante esta ejecu
 | Modulo Permisos (demo) | Frontend | `panel-permisos-page.tsx` |
 | Filtros usuarios en una fila | Frontend | `panel-usuarios-page.tsx` |
 | OpenAPI | Contrato | `docs/openapi.yaml` regenerado |
+
+## Iteración 7 (2026-11-05)
+**Status:** VERIFIED
+
+| Criterio | Capa | Evidencia |
+| --- | --- | --- |
+| Sin acceso / Total en catálogo y evaluación | Backend | `permiso_eval.py`, `PermissionRepository` |
+| Eliminar rol personalizado | API | `DELETE roles/{id}` + tests |
+| Sesión tras F5 | Frontend | `session-storage`, bootstrap `providers` |
+| Guards UI | Frontend | `AccesosProvider`, `logic.ts` |
+| QA manual/automation | Docs | `docs/qa-epic-2.md`, `qa-epic-3.md` (frontend) |
