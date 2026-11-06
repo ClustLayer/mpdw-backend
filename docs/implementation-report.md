@@ -65,3 +65,12 @@
 ### Evidencia
 - `make calidad`: ruff, mypy, import-linter, bandit, OpenAPI, pytest unit (201 tests, cobertura ~90%).
 - `tests/unit/test_epic3_roles_permisos.py`, `test_epic3_roles_views.py`, `tests/integration/test_epic3_roles_api.py`.
+
+## Iteración 7 — Ajustes Épica 2 y 3
+**Status:** COMPLETED  
+**Date:** 2026-11-05  
+**Branch:** `epica-3-ajustes-y-fixes`
+
+- `permiso_eval`, `PermissionRepository`, `eliminar_rol`, OpenAPI `DELETE` rol.
+- Cobertura unitaria 90.24% (210 tests).
+- `docs/correcciones-iteracion-7.md`.

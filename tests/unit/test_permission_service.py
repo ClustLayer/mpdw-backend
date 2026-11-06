@@ -27,16 +27,18 @@ class FakePermissionRepo:
 
 
 @pytest.mark.unit
-def test_administrador_global_tiene_acceso_irrestricto():
-    service = PermissionService()
+def test_administrador_sin_permiso_explicito_es_denegado():
+    repo = FakePermissionRepo()
+    service = PermissionService(repo=repo)
     ctx = AuthContext(
         id_usuario=1,
         email="admin@diana.com",
         rol_nombre="Administrador",
         sedes_asignadas=(1,),
         es_global=True,
+        id_rol=1,
     )
-    assert service.tiene_permiso(ctx, "m01_identidad", "crear") is True
+    assert service.tiene_permiso(ctx, "sedes", "T") is False
 
 
 @pytest.mark.unit

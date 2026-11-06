@@ -129,3 +129,13 @@
 | HU_MPDW_01_18 Rutas y menú autorizados | COMPLETED | `GET /api/v1/auth/accesos-panel`, `PermissionService.accesos_panel` |
 
 Migración: `0008_epic3_roles_permisos`. OpenAPI: `docs/openapi.yaml`.
+
+## Epica 4 — Sedes (2026-11-05)
+
+| Historia | Estado | Evidencia |
+|----------|--------|-----------|
+| HU_MPDW_01_19 Crear sede | COMPLETED | `POST /api/v1/sedes/gestion/` |
+| HU_MPDW_01_20 Editar / desactivar sede | COMPLETED | `PATCH /api/v1/sedes/gestion/{id}/` |
+| HU_MPDW_01_21 Consolidado por sede | PARTIAL | `GET /api/v1/sedes/consolidado/` (estructura; agregados cuando haya datos) |
+
+Migraciones: `0002_epic4_sedes_horarios`, permisos demo `0009`/`0010`, seed `0003`. Iteraciones 8–9 en `docs/correcciones-iteracion-*.md`.

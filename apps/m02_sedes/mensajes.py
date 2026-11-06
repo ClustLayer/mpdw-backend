@@ -1,0 +1,16 @@
+MSG_CAMPOS_OBLIGATORIOS = "Todos los campos obligatorios deben ser diligenciados."
+MSG_TELEFONO_INVALIDO = "El teléfono ingresado no tiene un formato válido."
+MSG_WHATSAPP_INVALIDO = "El número de WhatsApp ingresado no tiene un formato válido."
+MSG_HORARIO_CIERRE = "La hora de cierre debe ser posterior a la hora de apertura."
+MSG_SEDE_CREADA = "Sede creada correctamente."
+MSG_SEDE_ACTUALIZADA = "Sede actualizada correctamente."
+MSG_SEDE_CREAR_ERROR = "No fue posible crear la sede. Intente nuevamente."
+MSG_SEDE_ACTUALIZAR_ERROR = "No fue posible actualizar la sede. Intente nuevamente."
+MSG_JORNADA_ABIERTA = (
+    "No es posible desactivar la sede porque tiene una jornada abierta. "
+    "Debe cerrar la jornada activa antes de proceder."
+)
+MSG_CONSOLIDADO_OK = "Consolidado generado para el periodo seleccionado."
+MSG_CONSOLIDADO_VACIO = "No hay información para la sede y el periodo seleccionados."
+MSG_CONSOLIDADO_ERROR = "No fue posible generar el consolidado. Intente nuevamente."
+MSG_FECHAS_INVALIDAS = "La fecha inicial no puede ser posterior a la fecha final."

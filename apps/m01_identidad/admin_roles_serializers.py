@@ -20,12 +20,14 @@ class RolListResponseSerializer(serializers.Serializer):
 
 class CrearRolRequestSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=30)
-    descripcion = serializers.CharField(required=False, allow_blank=True, default="")
+    descripcion = serializers.CharField(
+        max_length=200, required=False, allow_blank=True, default=""
+    )
 
 
 class EditarRolRequestSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=30, required=False)
-    descripcion = serializers.CharField(required=False, allow_blank=True)
+    descripcion = serializers.CharField(max_length=200, required=False, allow_blank=True)
     estado = serializers.BooleanField(required=False)
     version_fila = serializers.IntegerField()
 
@@ -62,14 +64,16 @@ class CrearPermisoRequestSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=100)
     modulo = serializers.CharField(max_length=100)
     accion = serializers.CharField(max_length=50)
-    descripcion = serializers.CharField(required=False, allow_blank=True, default="")
+    descripcion = serializers.CharField(
+        max_length=200, required=False, allow_blank=True, default=""
+    )
 
 
 class EditarPermisoRequestSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=100, required=False)
     modulo = serializers.CharField(max_length=100, required=False)
     accion = serializers.CharField(max_length=50, required=False)
-    descripcion = serializers.CharField(required=False, allow_blank=True)
+    descripcion = serializers.CharField(max_length=200, required=False, allow_blank=True)
     estado = serializers.BooleanField(required=False)
     version_fila = serializers.IntegerField()
 
@@ -96,3 +100,41 @@ class AccesosPanelResponseSerializer(serializers.Serializer):
     acciones_por_modulo = serializers.DictField(
         child=serializers.ListField(child=serializers.CharField())
     )
+
+
+class MatrizFilaResponseSerializer(serializers.Serializer):
+    id_permiso = serializers.IntegerField()
+    modulo = serializers.CharField()
+    accion = serializers.CharField()
+    nombre = serializers.CharField()
+    asignado = serializers.BooleanField(required=False)
+    permitido = serializers.BooleanField(allow_null=True, required=False)
+    heredado_de_rol = serializers.BooleanField(allow_null=True, required=False)
+    tiene_excepcion = serializers.BooleanField(required=False)
+
+
+class MatrizModuloResponseSerializer(serializers.Serializer):
+    panel = serializers.CharField()
+    etiqueta = serializers.CharField()
+    modulo = serializers.CharField()
+    detalle = MatrizFilaResponseSerializer(many=True)
+
+
+class MatrizResponseSerializer(serializers.Serializer):
+    tipo = serializers.CharField()
+    id_destino = serializers.IntegerField()
+    nombre_destino = serializers.CharField()
+    filas = MatrizModuloResponseSerializer(many=True)
+
+
+class UsuarioCatalogoItemSerializer(serializers.Serializer):
+    id_usuario = serializers.IntegerField()
+    label = serializers.CharField()  # type: ignore[assignment]
+    rol = serializers.CharField()
+
+
+class UsuarioCatalogoResponseSerializer(serializers.Serializer):
+    items = UsuarioCatalogoItemSerializer(many=True)
+    total = serializers.IntegerField()
+    page = serializers.IntegerField()
+    page_size = serializers.IntegerField()

@@ -319,6 +319,7 @@ class AdminUsuariosService:
                 self._sessions.revocar_usuario(usuario.id_usuario)
                 revocar_tokens = True
             elif accion == "activar":
+                self._rol_activo(int(usuario.id_rol_id))
                 usuario.estado = True
                 usuario.bloqueado_hasta = None
                 usuario.intentos_fallidos = 0

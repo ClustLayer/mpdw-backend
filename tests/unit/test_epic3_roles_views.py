@@ -48,6 +48,8 @@ def test_vistas_roles_crud(db):
         format="json",
     )
     assert p.status_code == 200
+    d = client.delete(f"/api/v1/roles-permisos/roles/{id_rol}")
+    assert d.status_code == 200
 
 
 @pytest.mark.unit
@@ -109,3 +111,33 @@ def test_vista_rol_no_encontrado(db):
     client = _cliente_admin(db)
     assert client.get("/api/v1/roles-permisos/roles/999999").status_code == 404
     assert client.patch("/api/v1/roles-permisos/roles/999999", {"version_fila": 1}, format="json").status_code == 404
+    assert client.delete("/api/v1/roles-permisos/roles/999999").status_code == 404
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_vista_matriz_id_destino_invalido(db):
+    client = _cliente_admin(db)
+    assert client.get("/api/v1/roles-permisos/matriz?tipo=rol&id_destino=abc").status_code == 400
+
+
+def test_vista_roles_paginacion_invalida(db):
+    client = _cliente_admin(db)
+    assert client.get("/api/v1/roles-permisos/roles?page=xx").status_code == 400
+
+
+def test_vista_usuarios_catalogo_paginado(db):
+    client = _cliente_admin(db)
+    r = client.get("/api/v1/roles-permisos/usuarios-activos?page=1&page_size=10")
+    assert r.status_code == 200
+    body = r.json()
+    assert "items" in body and "total" in body
+    assert client.get("/api/v1/roles-permisos/usuarios-activos?page=bad").status_code == 400
+
+
+def test_vista_delete_rol_base_protegido(db):
+    client = _cliente_admin(db)
+    admin = Roles.objects.get(nombre="Administrador")
+    resp = client.delete(f"/api/v1/roles-permisos/roles/{admin.id_rol}")
+    assert resp.status_code in (400, 403)
+    assert resp.status_code != 200

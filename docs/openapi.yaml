@@ -313,8 +313,6 @@ paths:
   /api/v1/branches/:
     get:
       operationId: branches_list
-      description: Consulta pública de sedes habilitadas.
-      summary: Listado de sedes
       tags:
       - branches
       security:
@@ -326,7 +324,93 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Sede'
+                  $ref: '#/components/schemas/SedePublic'
+          description: ''
+  /api/v1/branches/consolidado/:
+    get:
+      operationId: branches_consolidado_retrieve
+      tags:
+      - branches
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/branches/gestion/:
+    get:
+      operationId: branches_gestion_list
+      tags:
+      - branches
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SedePublic'
+          description: ''
+    post:
+      operationId: branches_gestion_create
+      tags:
+      - branches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearSedeRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CrearSedeRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CrearSedeRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/branches/gestion/{id_sede}/:
+    patch:
+      operationId: branches_gestion_partial_update
+      parameters:
+      - in: path
+        name: id_sede
+        schema:
+          type: integer
+        required: true
+      tags:
+      - branches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarSedeRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarSedeRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarSedeRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
           description: ''
   /api/v1/health/live:
     get:
@@ -543,7 +627,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GuardarMatrizRequest'
+                $ref: '#/components/schemas/MatrizResponse'
           description: ''
     put:
       operationId: matriz_save
@@ -743,6 +827,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/RolDetalleResponse'
           description: ''
+    delete:
+      operationId: roles_delete
+      parameters:
+      - in: path
+        name: id_rol
+        schema:
+          type: integer
+        required: true
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
   /api/v1/roles-permisos/roles/catalogo/activos:
     get:
       operationId: roles_activos_catalogo
@@ -769,7 +872,109 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RolesCatalogoResponse'
+                $ref: '#/components/schemas/UsuarioCatalogoResponse'
+          description: ''
+  /api/v1/sedes/:
+    get:
+      operationId: sedes_list
+      tags:
+      - sedes
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SedePublic'
+          description: ''
+  /api/v1/sedes/consolidado/:
+    get:
+      operationId: sedes_consolidado_retrieve
+      tags:
+      - sedes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/sedes/gestion/:
+    get:
+      operationId: sedes_gestion_list
+      tags:
+      - sedes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SedePublic'
+          description: ''
+    post:
+      operationId: sedes_gestion_create
+      tags:
+      - sedes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearSedeRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CrearSedeRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CrearSedeRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/sedes/gestion/{id_sede}/:
+    patch:
+      operationId: sedes_gestion_partial_update
+      parameters:
+      - in: path
+        name: id_sede
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sedes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarSedeRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarSedeRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarSedeRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
           description: ''
   /api/v1/usuarios/:
     get:
@@ -1077,6 +1282,7 @@ components:
         descripcion:
           type: string
           default: ''
+          maxLength: 200
       required:
       - accion
       - modulo
@@ -1091,8 +1297,54 @@ components:
         descripcion:
           type: string
           default: ''
+          maxLength: 200
       required:
       - nombre
+    CrearSedeRequestRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 255
+        direccion:
+          type: string
+          minLength: 1
+          maxLength: 255
+        telefono:
+          type: string
+          minLength: 1
+          maxLength: 20
+        whatsapp:
+          type: string
+          default: ''
+          maxLength: 20
+        ciudad:
+          type: string
+          default: Cali
+          maxLength: 50
+        maps_url:
+          type: string
+          default: ''
+          maxLength: 500
+        map_query:
+          type: string
+          default: ''
+          maxLength: 255
+        orden:
+          type: integer
+          default: 10
+        id_usuario_responsable:
+          type: integer
+          nullable: true
+        horarios:
+          type: array
+          items:
+            $ref: '#/components/schemas/HorarioRequest'
+      required:
+      - direccion
+      - nombre
+      - telefono
     CrearUsuarioRequestRequest:
       type: object
       properties:
@@ -1132,21 +1384,6 @@ components:
       - id_rol
       - nombre
       - sedes
-    GuardarMatrizRequest:
-      type: object
-      properties:
-        tipo:
-          $ref: '#/components/schemas/TipoEnum'
-        id_destino:
-          type: integer
-        cambios:
-          type: array
-          items:
-            $ref: '#/components/schemas/MatrizCambio'
-      required:
-      - cambios
-      - id_destino
-      - tipo
     GuardarMatrizRequestRequest:
       type: object
       properties:
@@ -1162,6 +1399,42 @@ components:
       - cambios
       - id_destino
       - tipo
+    Horario:
+      type: object
+      properties:
+        dia_semana:
+          type: integer
+          maximum: 7
+          minimum: 1
+        hora_apertura:
+          type: string
+          nullable: true
+        hora_cierre:
+          type: string
+          nullable: true
+        cerrado:
+          type: boolean
+          default: false
+      required:
+      - dia_semana
+    HorarioRequest:
+      type: object
+      properties:
+        dia_semana:
+          type: integer
+          maximum: 7
+          minimum: 1
+        hora_apertura:
+          type: string
+          nullable: true
+        hora_cierre:
+          type: string
+          nullable: true
+        cerrado:
+          type: boolean
+          default: false
+      required:
+      - dia_semana
     Inventario:
       type: object
       properties:
@@ -1214,19 +1487,6 @@ components:
         refresh_token:
           type: string
           minLength: 1
-    MatrizCambio:
-      type: object
-      properties:
-        id_permiso:
-          type: integer
-        permitido:
-          type: boolean
-        eliminar_excepcion:
-          type: boolean
-          default: false
-      required:
-      - id_permiso
-      - permitido
     MatrizCambioRequest:
       type: object
       properties:
@@ -1240,6 +1500,68 @@ components:
       required:
       - id_permiso
       - permitido
+    MatrizFilaResponse:
+      type: object
+      properties:
+        id_permiso:
+          type: integer
+        modulo:
+          type: string
+        accion:
+          type: string
+        nombre:
+          type: string
+        asignado:
+          type: boolean
+        permitido:
+          type: boolean
+          nullable: true
+        heredado_de_rol:
+          type: boolean
+          nullable: true
+        tiene_excepcion:
+          type: boolean
+      required:
+      - accion
+      - id_permiso
+      - modulo
+      - nombre
+    MatrizModuloResponse:
+      type: object
+      properties:
+        panel:
+          type: string
+        etiqueta:
+          type: string
+        modulo:
+          type: string
+        detalle:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatrizFilaResponse'
+      required:
+      - detalle
+      - etiqueta
+      - modulo
+      - panel
+    MatrizResponse:
+      type: object
+      properties:
+        tipo:
+          type: string
+        id_destino:
+          type: integer
+        nombre_destino:
+          type: string
+        filas:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatrizModuloResponse'
+      required:
+      - filas
+      - id_destino
+      - nombre_destino
+      - tipo
     MensajeResponse:
       type: object
       properties:
@@ -1300,6 +1622,7 @@ components:
           maxLength: 50
         descripcion:
           type: string
+          maxLength: 200
         estado:
           type: boolean
         version_fila:
@@ -1313,10 +1636,57 @@ components:
           maxLength: 30
         descripcion:
           type: string
+          maxLength: 200
         estado:
           type: boolean
         version_fila:
           type: integer
+    PatchedEditarSedeRequestRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 255
+        direccion:
+          type: string
+          minLength: 1
+          maxLength: 255
+        telefono:
+          type: string
+          minLength: 1
+          maxLength: 20
+        whatsapp:
+          type: string
+          default: ''
+          maxLength: 20
+        ciudad:
+          type: string
+          default: Cali
+          maxLength: 50
+        maps_url:
+          type: string
+          default: ''
+          maxLength: 500
+        map_query:
+          type: string
+          default: ''
+          maxLength: 255
+        orden:
+          type: integer
+          default: 10
+        id_usuario_responsable:
+          type: integer
+          nullable: true
+        horarios:
+          type: array
+          items:
+            $ref: '#/components/schemas/HorarioRequest'
+        estado:
+          type: boolean
+        version_fila:
+          type: integer
+          minimum: 1
     PatchedEditarUsuarioRequestRequest:
       type: object
       properties:
@@ -1808,30 +2178,6 @@ components:
             $ref: '#/components/schemas/RolCatalogoItem'
       required:
       - items
-    Sede:
-      type: object
-      properties:
-        id_sede:
-          type: integer
-          readOnly: true
-        nombre:
-          type: string
-          maxLength: 100
-        direccion:
-          type: string
-          maxLength: 200
-        telefono:
-          type: string
-          maxLength: 20
-        ciudad:
-          type: string
-          maxLength: 50
-        estado:
-          type: boolean
-      required:
-      - direccion
-      - id_sede
-      - nombre
     SedeAsignada:
       type: object
       properties:
@@ -1854,6 +2200,45 @@ components:
       required:
       - es_principal
       - id_sede
+    SedePublic:
+      type: object
+      properties:
+        id_sede:
+          type: integer
+        nombre:
+          type: string
+        direccion:
+          type: string
+        ciudad:
+          type: string
+        telefono:
+          type: string
+        whatsapp:
+          type: string
+        maps_url:
+          type: string
+        map_query:
+          type: string
+        orden:
+          type: integer
+        horarios:
+          type: array
+          items:
+            $ref: '#/components/schemas/Horario'
+        schedule_text:
+          type: string
+      required:
+      - ciudad
+      - direccion
+      - horarios
+      - id_sede
+      - map_query
+      - maps_url
+      - nombre
+      - orden
+      - schedule_text
+      - telefono
+      - whatsapp
     StockInicialInputRequest:
       type: object
       description: Stock de apertura por sede para el alta de producto.
@@ -1976,6 +2361,37 @@ components:
       - rol_nombre
       - ultimo_acceso
       - version_fila
+    UsuarioCatalogoItem:
+      type: object
+      properties:
+        id_usuario:
+          type: integer
+        label:
+          type: string
+        rol:
+          type: string
+      required:
+      - id_usuario
+      - label
+      - rol
+    UsuarioCatalogoResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsuarioCatalogoItem'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+      required:
+      - items
+      - page
+      - page_size
+      - total
     UsuarioDetalle:
       type: object
       properties:
