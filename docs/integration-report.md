@@ -29,3 +29,16 @@ No se levanto el par navegador-API contra la base de Supabase durante esta ejecu
 | Listado, filtros 300 ms debounce | Frontend | panel-usuarios-page.tsx |
 | OpenAPI sin drift | Contrato | docs/openapi.yaml + test_openapi_contract |
 | Calidad completa | Ambos | make calidad, npm exec pnpm run calidad |
+
+## Epica 3
+**Date:** 2026-11-05  
+**Status:** VERIFIED (suites locales)
+
+| Criterio | Capa | Evidencia |
+| --- | --- | --- |
+| CRUD roles/permisos y matriz | Backend | `/api/v1/roles-permisos/*`, test_epic3_* |
+| Mensajes CA 5–6 literales | Backend | `mensajes.py`; toasts en frontend |
+| Menu dinamico y acceso denegado | Frontend | `useAccesosPanel`, `PanelAccesoDenegadoPage` |
+| Modulo Permisos (demo) | Frontend | `panel-permisos-page.tsx` |
+| Filtros usuarios en una fila | Frontend | `panel-usuarios-page.tsx` |
+| OpenAPI | Contrato | `docs/openapi.yaml` regenerado |
