@@ -29,7 +29,7 @@ from apps.m02_sedes.models import Sede_horario, Sedes
 from apps.m08_caja.repositories import CashAdapter
 from apps.m10_auditoria.services import AuditService
 from contratos.dtos import AuditoriaDTO, AuthContext
-from contratos.excepciones import DominioError, ReglaNegocioError
+from contratos.excepciones import ConflictoVersionError, DominioError, ReglaNegocioError
 
 logger = logging.getLogger(__name__)
 _E164 = re.compile(r"^\+?[1-9]\d{6,14}$")
@@ -159,7 +159,7 @@ class AdminSedesService:
             with transaction.atomic():
                 sede = Sedes.objects.select_for_update().get(pk=id_sede)
                 if int(sede.version_fila) != version:
-                    raise ReglaNegocioError(
+                    raise ConflictoVersionError(
                         "La sede fue modificada por otro usuario.",
                         codigo="CONCURRENCIA",
                     )
@@ -194,6 +194,8 @@ class AdminSedesService:
                 despues = _snapshot(sede)
                 self._auditar(ctx, "EDITAR_SEDE", sede.id_sede, antes, despues)
             return despues, MSG_SEDE_ACTUALIZADA
+        except ConflictoVersionError:
+            raise
         except ReglaNegocioError:
             raise
         except Sedes.DoesNotExist:

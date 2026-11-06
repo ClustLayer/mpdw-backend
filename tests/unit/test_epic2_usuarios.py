@@ -21,7 +21,7 @@ from apps.m01_identidad.services import AuthService
 from apps.m02_sedes.models import Sedes
 from apps.m13_plataforma.adapters.fakes import FakeEmailAdapter
 from contratos.dtos import AuthContext
-from contratos.excepciones import DominioError, ReglaNegocioError
+from contratos.excepciones import ConflictoVersionError, DominioError, ReglaNegocioError
 
 
 def _cliente_jwt_admin(admin_ctx: AuthContext) -> APIClient:
@@ -156,7 +156,9 @@ def test_listar_y_cambiar_estado(admin_ctx, sede_activa):
     _, detalle = servicio.crear(admin_ctx, payload)
     pagina = servicio.listar("", None, "todos", 1, 20, "nombre")
     assert pagina.total >= 1
-    msg = servicio.cambiar_estado(admin_ctx, detalle["id_usuario"], "desactivar")
+    msg = servicio.cambiar_estado(
+        admin_ctx, detalle["id_usuario"], "desactivar", motivo="Baja operativa de prueba"
+    )
     assert "actualizó" in msg
 
 
@@ -253,7 +255,14 @@ def test_api_usuarios_y_perfil(admin_ctx, sede_activa):
     assert creado.status_code == 201
     uid = creado.json()["id_usuario"]
     assert client.get(f"/api/v1/usuarios/{uid}").status_code == 200
-    assert client.post(f"/api/v1/usuarios/{uid}/estado", {"accion": "bloquear"}, format="json").status_code == 200
+    assert (
+        client.post(
+            f"/api/v1/usuarios/{uid}/estado",
+            {"accion": "bloquear", "motivo": "Prueba API bloqueo"},
+            format="json",
+        ).status_code
+        == 200
+    )
     assert client.post(f"/api/v1/usuarios/{uid}/contrasena-temporal", {}, format="json").status_code == 200
     assert client.get("/api/v1/usuarios/999999").status_code == 404
 
@@ -359,11 +368,11 @@ def test_cambiar_estado_activar_y_bloquear(admin_ctx, sede_activa):
     uid = detalle["id_usuario"]
     usuario = Usuarios.objects.get(pk=uid)
     cv_inicial = int(usuario.credential_version or 1)
-    servicio.cambiar_estado(admin_ctx, uid, "bloquear")
+    servicio.cambiar_estado(admin_ctx, uid, "bloquear", motivo="Incidente de seguridad simulado")
     usuario.refresh_from_db()
     assert int(usuario.credential_version or 1) == cv_inicial + 1
     servicio.cambiar_estado(admin_ctx, uid, "activar")
-    servicio.cambiar_estado(admin_ctx, uid, "desactivar")
+    servicio.cambiar_estado(admin_ctx, uid, "desactivar", motivo="Fin de contrato simulado")
     usuario.refresh_from_db()
     assert usuario.bloqueado_hasta is None
     assert int(usuario.credential_version or 1) == cv_inicial + 2
@@ -459,7 +468,7 @@ def test_actualizar_concurrencia(admin_ctx, sede_activa):
             "sedes": [{"id_sede": sede_activa.id_sede, "es_principal": True}],
         },
     )
-    with pytest.raises(ReglaNegocioError, match="modificado"):
+    with pytest.raises(ConflictoVersionError, match="confirmaba"):
         servicio.actualizar(
             admin_ctx,
             detalle["id_usuario"],

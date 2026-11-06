@@ -8,7 +8,7 @@ from apps.m01_identidad.admin_roles_permisos_service import AdminRolesPermisosSe
 from apps.m01_identidad.models import Permisos, Rol_permiso, Roles, Usuario_permiso, Usuarios
 from apps.m01_identidad.services import PermissionService
 from contratos.dtos import AuthContext
-from contratos.excepciones import ReglaNegocioError
+from contratos.excepciones import ConflictoVersionError, ReglaNegocioError
 
 
 @pytest.fixture
@@ -293,7 +293,7 @@ def test_listar_filtros_estado(svc, ctx_admin):
 @pytest.mark.django_db
 def test_editar_rol_concurrencia(svc, ctx_admin):
     rol = Roles.objects.create(nombre="Conc", es_rol_base=False)
-    with pytest.raises(ReglaNegocioError) as exc:
+    with pytest.raises(ConflictoVersionError) as exc:
         svc.editar_rol(ctx_admin, rol.id_rol, {"descripcion": "x", "version_fila": 99})
     assert exc.value.codigo == "CONCURRENCIA"
 

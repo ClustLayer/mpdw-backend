@@ -39,7 +39,7 @@ from apps.m01_identidad.models import Permisos, Rol_permiso, Roles, Usuario_perm
 from apps.m01_identidad.panel_accesos import ACCIONES_CATALOGO, MODULOS_CATALOGO
 from apps.m01_identidad.panel_matriz import PANEL_MATRIZ_ORDEN
 from contratos.dtos import AuditoriaDTO, AuthContext
-from contratos.excepciones import DominioError, ReglaNegocioError
+from contratos.excepciones import ConflictoVersionError, DominioError, ReglaNegocioError
 from contratos.puertos.auditoria import AuditPort
 
 logger = logging.getLogger(__name__)
@@ -176,7 +176,7 @@ class AdminRolesPermisosService:
                 ):
                     raise ReglaNegocioError(MSG_ROL_BASE_PROTEGIDO, codigo="ROL_BASE_PROTEGIDO")
                 if int(rol.version_fila) != version:
-                    raise ReglaNegocioError(MSG_CONCURRENCIA, codigo="CONCURRENCIA")
+                    raise ConflictoVersionError(MSG_CONCURRENCIA, codigo="CONCURRENCIA")
                 antes = _snapshot_rol(rol)
                 if not rol.es_rol_base and datos.get("nombre") is not None:
                     nombre = str(datos["nombre"]).strip()
@@ -206,6 +206,8 @@ class AdminRolesPermisosService:
                 despues = _snapshot_rol(rol)
                 self._auditar(ctx, "EDITAR_ROL", "Roles", rol.id_rol, antes, despues)
             return despues, MSG_ROL_ACTUALIZADO
+        except ConflictoVersionError:
+            raise
         except (ReglaNegocioError, Roles.DoesNotExist):
             raise
         except Exception:
@@ -271,7 +273,7 @@ class AdminRolesPermisosService:
             with transaction.atomic():
                 perm = Permisos.objects.select_for_update().get(pk=id_permiso)
                 if int(perm.version_fila) != version:
-                    raise ReglaNegocioError(MSG_CONCURRENCIA, codigo="CONCURRENCIA")
+                    raise ConflictoVersionError(MSG_CONCURRENCIA, codigo="CONCURRENCIA")
                 antes = _snapshot_permiso(perm)
                 if datos.get("nombre") is not None:
                     nombre = str(datos["nombre"]).strip()

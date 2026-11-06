@@ -73,7 +73,12 @@ def _dominio(exc: ReglaNegocioError | DominioError, request: Request) -> Respons
         http_status_code = status.HTTP_404_NOT_FOUND
     elif exc.codigo in {"NO_AUTORIZADO", "ROL_BASE_PROTEGIDO"}:
         http_status_code = status.HTTP_403_FORBIDDEN
-    return _error(exc.codigo, exc.mensaje, http_status_code, request)
+    elif exc.codigo in {"CONCURRENCIA", "CONFLICTO_CONCURRENCIA"}:
+        http_status_code = status.HTTP_409_CONFLICT
+    codigo_resp = exc.codigo
+    if codigo_resp == "CONCURRENCIA":
+        codigo_resp = "CONFLICTO_CONCURRENCIA"
+    return _error(codigo_resp, exc.mensaje, http_status_code, request)
 
 
 def _svc() -> AdminRolesPermisosService:

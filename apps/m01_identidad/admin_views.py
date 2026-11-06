@@ -58,9 +58,14 @@ def _dominio(exc: ReglaNegocioError | DominioError, request: Request) -> Respons
         http_status_code = status.HTTP_404_NOT_FOUND
     elif exc.codigo in {"NO_AUTORIZADO", "CONTRASENA_TEMP_PROPIA", "ROL_PROPIO"}:
         http_status_code = status.HTTP_403_FORBIDDEN
+    elif exc.codigo in {"CONCURRENCIA", "CONFLICTO_CONCURRENCIA"}:
+        http_status_code = status.HTTP_409_CONFLICT
     elif exc.codigo in {"EMAIL_NO_ENTREGADO"}:
         http_status_code = status.HTTP_502_BAD_GATEWAY
-    return _error(exc.codigo, exc.mensaje, http_status_code, request)
+    codigo_resp = exc.codigo
+    if codigo_resp == "CONCURRENCIA":
+        codigo_resp = "CONFLICTO_CONCURRENCIA"
+    return _error(codigo_resp, exc.mensaje, http_status_code, request)
 
 
 class UsuarioListCreateView(APIView):
@@ -190,8 +195,9 @@ class UsuarioEstadoView(APIView):
                 ReglaNegocioError(str(serializer.errors), codigo="DATOS_INVALIDOS"), request
             )
         try:
+            v = serializer.validated_data
             mensaje = AdminUsuariosService(audit_port=AuditService()).cambiar_estado(
-                _ctx(request), id_usuario, serializer.validated_data["accion"]
+                _ctx(request), id_usuario, v["accion"], motivo=str(v.get("motivo") or "")
             )
         except (ReglaNegocioError, DominioError) as exc:
             return _dominio(exc, request)

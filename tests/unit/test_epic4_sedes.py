@@ -5,7 +5,7 @@ import pytest
 from apps.m02_sedes.admin_sedes_service import AdminSedesService
 from apps.m02_sedes.models import Sedes
 from contratos.dtos import AuthContext
-from contratos.excepciones import ReglaNegocioError
+from contratos.excepciones import ConflictoVersionError, ReglaNegocioError
 
 
 @pytest.fixture
@@ -158,7 +158,7 @@ def test_listar_filtro_inactivo_y_concurrencia(ctx_admin):
         },
     )
     assert svc.listar(estado="inactivo", page=1, page_size=5)["total"] >= 1
-    with pytest.raises(ReglaNegocioError) as exc:
+    with pytest.raises(ConflictoVersionError) as exc:
         svc.editar(
             ctx_admin,
             det["id_sede"],

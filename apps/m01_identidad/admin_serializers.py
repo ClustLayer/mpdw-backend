@@ -22,6 +22,7 @@ class EditarUsuarioRequestSerializer(CrearUsuarioRequestSerializer):
 
 class CambiarEstadoRequestSerializer(serializers.Serializer):
     accion = serializers.ChoiceField(choices=["activar", "desactivar", "bloquear"])
+    motivo = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
 
 
 class PerfilUpdateRequestSerializer(serializers.Serializer):

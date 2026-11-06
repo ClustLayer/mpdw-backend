@@ -64,9 +64,7 @@ MSG_CONTRASENA_TEMP_PROPIA = "No puede generar una contraseña temporal para su 
 MSG_PERFIL_ACTUALIZADO = "Su perfil ha sido actualizado correctamente."
 MSG_PERFIL_ERROR = "No fue posible actualizar su perfil. Intente nuevamente."
 MSG_ROL_PROPIO = "No puede modificar su propio rol."
-MSG_CONCURRENCIA = (
-    "El registro fue modificado por otro usuario. Recargue los datos e intente nuevamente."
-)
+MSG_CONCURRENCIA = "El registro cambió mientras confirmaba. Actualice e intente nuevamente."
 MSG_SEDE_OBLIGATORIA = "Debe asignar al menos una sede activa y marcar una como principal."
 MSG_ROL_INACTIVO = "El rol seleccionado no está disponible."
 
