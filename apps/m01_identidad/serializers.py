@@ -10,7 +10,9 @@ from apps.m01_identidad.politicas import correo_valido
 
 class LoginRequestSerializer(serializers.Serializer):
     email = serializers.CharField(max_length=255, allow_blank=True, trim_whitespace=True)
-    password = serializers.CharField(max_length=128, allow_blank=True, write_only=True, trim_whitespace=False)
+    password = serializers.CharField(
+        max_length=128, allow_blank=True, write_only=True, trim_whitespace=False
+    )
 
     def validate(self, attrs: dict) -> dict:
         email = (attrs.get("email") or "").strip()

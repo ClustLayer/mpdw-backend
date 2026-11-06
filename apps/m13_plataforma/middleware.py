@@ -66,5 +66,3 @@ class CorsAndSecurityHeadersMiddleware:
 
     def _origen_permitido(self, origin: str) -> bool:
         return self._allow_all or origin in self._allowed_origins or "*" in self._allowed_origins
-
-

@@ -18,8 +18,12 @@ class FakeEmailAdapter(EmailPort):
         self.enviados.append({"destinatario": destinatario, "codigo": codigo})
         return True
 
-    def enviar_contrasena_inicial(self, destinatario: str, nombre: str, contrasena_plana: str) -> bool:
-        self.enviados.append({"destinatario": destinatario, "nombre": nombre, "tipo": "contrasena_inicial"})
+    def enviar_contrasena_inicial(
+        self, destinatario: str, nombre: str, contrasena_plana: str
+    ) -> bool:
+        self.enviados.append(
+            {"destinatario": destinatario, "nombre": nombre, "tipo": "contrasena_inicial"}
+        )
         return True
 
 
@@ -36,4 +40,3 @@ class FakeStorageAdapter(FileStoragePort):
             del self.archivos[ruta]
             return True
         return False
-

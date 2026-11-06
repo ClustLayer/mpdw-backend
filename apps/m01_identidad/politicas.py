@@ -82,7 +82,9 @@ def exigir_telefono_emergencia(telefono: str) -> None:
     if not valor:
         return
     if len(valor) > 20 or not re.fullmatch(r"^[0-9+\s()-]{7,20}$", valor):
-        raise ReglaNegocioError(MSG_TELEFONO_EMERGENCIA_INVALIDO, codigo="TELEFONO_EMERGENCIA_INVALIDO")
+        raise ReglaNegocioError(
+            MSG_TELEFONO_EMERGENCIA_INVALIDO, codigo="TELEFONO_EMERGENCIA_INVALIDO"
+        )
 
 
 def generar_contrasena_inicial(longitud: int = 12) -> str:

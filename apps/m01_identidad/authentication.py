@@ -58,7 +58,9 @@ class JWTAuthentication(BaseAuthentication):
             raise AuthenticationFailed("El token de acceso fue revocado.")
 
         sedes = tuple(
-            Usuario_sede.objects.filter(id_usuario=user, estado=True).values_list("id_sede_id", flat=True)
+            Usuario_sede.objects.filter(id_usuario=user, estado=True).values_list(
+                "id_sede_id", flat=True
+            )
         )
         es_global = user.id_rol.nombre == "Administrador"
 
@@ -112,4 +114,3 @@ class JWTAuthenticationExtension(OpenApiAuthenticationExtension):
             "scheme": "bearer",
             "bearerFormat": "JWT",
         }
-

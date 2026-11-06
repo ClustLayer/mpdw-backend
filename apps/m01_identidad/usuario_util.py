@@ -50,6 +50,8 @@ def snapshot_usuario(usuario: Usuarios, *, incluir_sedes: bool = True) -> dict[s
     if incluir_sedes:
         data["sedes"] = [
             {"id_sede": s.id_sede_id, "es_principal": s.es_principal}
-            for s in Usuario_sede.objects.filter(id_usuario=usuario, estado=True).order_by("id_sede_id")
+            for s in Usuario_sede.objects.filter(id_usuario=usuario, estado=True).order_by(
+                "id_sede_id"
+            )
         ]
     return data

@@ -33,8 +33,12 @@ class PerfilUpdateRequestSerializer(serializers.Serializer):
     tipo_sangre = serializers.CharField(max_length=5, required=False, allow_blank=True, default="")
     fecha_nacimiento = serializers.DateField(required=False, allow_null=True)
     direccion = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
-    contacto_emergencia_nombre = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
-    contacto_emergencia_telefono = serializers.CharField(max_length=20, required=False, allow_blank=True, default="")
+    contacto_emergencia_nombre = serializers.CharField(
+        max_length=255, required=False, allow_blank=True, default=""
+    )
+    contacto_emergencia_telefono = serializers.CharField(
+        max_length=20, required=False, allow_blank=True, default=""
+    )
 
 
 class UsuarioListItemSerializer(serializers.Serializer):

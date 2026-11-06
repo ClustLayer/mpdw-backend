@@ -25,4 +25,3 @@ class HasDynamicPermission(BasePermission):
             return False
 
         return self._service.tiene_permiso(ctx, modulo, accion)
-
