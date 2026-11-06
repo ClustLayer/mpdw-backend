@@ -743,6 +743,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/RolDetalleResponse'
           description: ''
+    delete:
+      operationId: roles_delete
+      parameters:
+      - in: path
+        name: id_rol
+        schema:
+          type: integer
+        required: true
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
   /api/v1/roles-permisos/roles/catalogo/activos:
     get:
       operationId: roles_activos_catalogo

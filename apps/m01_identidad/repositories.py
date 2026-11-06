@@ -158,32 +158,44 @@ class SessionRepository:
 class PermissionRepository:
     """Evaluación de permisos en servidor (BR-10, ADR-007)."""
 
-    def tiene_permiso(self, id_usuario: int, id_rol: int, modulo: str, accion: str) -> bool:
-        """
-        Regla BR-10:
-        1. Si existe excepción individual en Usuario_permiso: rige su valor 'permitido'.
-        2. Si no, si existe asignación en Rol_permiso: True.
-        3. En cualquier otro caso: False (Deny by default).
-        """
-        # 1. Verificar override individual
+    def _efectivo_permitido(self, id_usuario: int, id_rol: int, modulo: str, accion: str) -> bool | None:
         excepcion = Usuario_permiso.objects.filter(
             id_usuario_id=id_usuario,
             id_permiso__modulo=modulo,
             id_permiso__accion=accion,
             id_permiso__estado=True,
         ).first()
-
         if excepcion is not None:
             return bool(excepcion.permitido)
-
-        # 2. Verificar permiso por rol base (solo asignaciones permitidas)
-        return Rol_permiso.objects.filter(
+        if Rol_permiso.objects.filter(
             id_rol_id=id_rol,
             id_permiso__modulo=modulo,
             id_permiso__accion=accion,
             id_permiso__estado=True,
             permitido=True,
-        ).exists()
+        ).exists():
+            return True
+        return None
+
+    def _bloqueado_sin_acceso(self, id_usuario: int, id_rol: int, modulo: str) -> bool:
+        efectivo = self._efectivo_permitido(id_usuario, id_rol, modulo, "Sin acceso")
+        return efectivo is True
+
+    def tiene_permiso(self, id_usuario: int, id_rol: int, modulo: str, accion: str) -> bool:
+        """
+        Regla BR-10 + equivalencias Total/T y bloqueo Sin acceso.
+        """
+        from apps.m01_identidad.permiso_eval import candidatas_para
+
+        if self._bloqueado_sin_acceso(id_usuario, id_rol, modulo):
+            return False
+        for candidata in candidatas_para(accion):
+            efectivo = self._efectivo_permitido(id_usuario, id_rol, modulo, candidata)
+            if efectivo is True:
+                return True
+            if efectivo is False:
+                continue
+        return False
 
     def acciones_por_modulo(self, id_usuario: int, id_rol: int) -> dict[str, set[str]]:
         """Acciones efectivas agrupadas por módulo de dominio (HU 18)."""
@@ -210,6 +222,9 @@ class PermissionRepository:
             elif p.id_permiso not in rol_map:
                 continue
             resultado.setdefault(p.modulo, set()).add(p.accion)
+        for modulo in list(resultado.keys()):
+            if "Sin acceso" in resultado[modulo]:
+                resultado[modulo] = {"Sin acceso"}
         return resultado
 
 

@@ -723,11 +723,13 @@ class PermissionService:
         modulos_panel: list[str] = []
         acciones: dict[str, list[str]] = {}
         for modulo_dom, acts in por_modulo.items():
+            if acts == {"Sin acceso"}:
+                continue
             clave = MODULO_A_PANEL.get(modulo_dom)
             if not clave:
                 continue
             modulos_panel.append(clave)
-            acciones[clave] = sorted(acts)
+            acciones[clave] = sorted(a for a in acts if a != "Sin acceso")
         if "resumen" not in modulos_panel and por_modulo.get("autenticacion_perfil"):
             modulos_panel.insert(0, "resumen")
         return {"modulos": sorted(set(modulos_panel)), "acciones_por_modulo": acciones}

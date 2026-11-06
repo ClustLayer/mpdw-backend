@@ -135,6 +135,18 @@ class RolDetailView(APIView):
         except (ReglaNegocioError, DominioError) as exc:
             return _dominio(exc, request)
 
+    @extend_schema(operation_id="roles_delete", responses={200: MensajeResponseSerializer})
+    def delete(self, request: Request, id_rol: int) -> Response:
+        try:
+            mensaje = _svc().eliminar_rol(_ctx(request), id_rol)
+            return Response({"mensaje": mensaje})
+        except Roles.DoesNotExist:
+            return _error(
+                "ROL_NO_ENCONTRADO", "Rol no encontrado.", status.HTTP_404_NOT_FOUND, request
+            )
+        except (ReglaNegocioError, DominioError) as exc:
+            return _dominio(exc, request)
+
 
 class PermisoListCreateView(APIView):
     permission_classes = [IsAuthenticated, HasDynamicPermission]

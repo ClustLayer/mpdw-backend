@@ -28,6 +28,9 @@ from apps.m01_identidad.mensajes import (
     MSG_ROL_BASE_PROTEGIDO,
     MSG_ROL_CREADO,
     MSG_ROL_CREAR_ERROR,
+    MSG_ROL_ELIMINADO,
+    MSG_ROL_ELIMINAR_ASIGNADO,
+    MSG_ROL_ELIMINAR_ERROR,
     MSG_ROL_INACTIVAR_USUARIOS,
     MSG_ROL_NOMBRE_DUPLICADO,
     MSG_ROL_NOMBRE_OBLIGATORIO,
@@ -135,6 +138,30 @@ class AdminRolesPermisosService:
     def detalle_rol(self, id_rol: int) -> dict[str, Any]:
         rol = Roles.objects.get(pk=id_rol)
         return _snapshot_rol(rol)
+
+    def eliminar_rol(self, ctx: AuthContext, id_rol: int) -> str:
+        try:
+            with transaction.atomic():
+                rol = Roles.objects.select_for_update().get(pk=id_rol)
+                if rol.es_rol_base:
+                    raise ReglaNegocioError(MSG_ROL_BASE_PROTEGIDO, codigo="ROL_BASE_PROTEGIDO")
+                if Usuarios.objects.filter(id_rol=rol).exists():
+                    raise ReglaNegocioError(
+                        MSG_ROL_ELIMINAR_ASIGNADO, codigo="ROL_USUARIOS_ASIGNADOS"
+                    )
+                antes = _snapshot_rol(rol)
+                id_ent = rol.id_rol
+                Rol_permiso.objects.filter(id_rol=rol).delete()
+                rol.delete()
+                self._auditar(ctx, "ELIMINAR_ROL", "Roles", id_ent, antes, None)
+            return MSG_ROL_ELIMINADO
+        except ReglaNegocioError:
+            raise
+        except Roles.DoesNotExist:
+            raise
+        except Exception:
+            logger.exception("eliminar_rol")
+            raise DominioError(MSG_ROL_ELIMINAR_ERROR, codigo="ROL_ELIMINAR_ERROR") from None
 
     def editar_rol(
         self, ctx: AuthContext, id_rol: int, datos: dict[str, Any]

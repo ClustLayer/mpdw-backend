@@ -128,6 +128,42 @@ def test_matriz_usuario_override(ctx_admin, svc):
 
 @pytest.mark.unit
 @pytest.mark.django_db
+def test_eliminar_rol_custom_sin_usuarios(svc, ctx_admin):
+    svc.crear_rol(ctx_admin, {"nombre": "Borrable", "descripcion": ""})
+    rol = Roles.objects.get(nombre="Borrable")
+    msg = svc.eliminar_rol(ctx_admin, rol.id_rol)
+    assert "correctamente" in msg
+    assert not Roles.objects.filter(pk=rol.id_rol).exists()
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_eliminar_rol_base_bloqueado(svc, ctx_admin):
+    admin = Roles.objects.get(nombre="Administrador")
+    with pytest.raises(ReglaNegocioError) as exc:
+        svc.eliminar_rol(ctx_admin, admin.id_rol)
+    assert exc.value.codigo == "ROL_BASE_PROTEGIDO"
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_eliminar_rol_con_usuario_asignado(svc, ctx_admin):
+    rol = Roles.objects.create(nombre="NoBorrable", es_rol_base=False)
+    Usuarios.objects.create_user(
+        email="nb@test.local",
+        password="x",
+        nombre="N",
+        apellido="B",
+        documento="900000003",
+        id_rol=rol,
+    )
+    with pytest.raises(ReglaNegocioError) as exc:
+        svc.eliminar_rol(ctx_admin, rol.id_rol)
+    assert exc.value.codigo == "ROL_USUARIOS_ASIGNADOS"
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
 def test_listar_y_editar_rol_custom(svc, ctx_admin):
     svc.crear_rol(ctx_admin, {"nombre": "Auxiliar", "descripcion": ""})
     pag = svc.listar_roles("", "todos", 1, 20)
@@ -182,6 +218,8 @@ def test_matriz_rol_y_catalogos(svc, ctx_admin):
     assert len(data["filas"]) > 0
     cat = svc.catalogos()
     assert "modulos" in cat and "acciones" in cat
+    assert "Sin acceso" in cat["acciones"]
+    assert "Total" in cat["acciones"]
 
 
 @pytest.mark.unit
