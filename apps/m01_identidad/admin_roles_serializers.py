@@ -113,11 +113,18 @@ class MatrizFilaResponseSerializer(serializers.Serializer):
     tiene_excepcion = serializers.BooleanField(required=False)
 
 
+class MatrizModuloResponseSerializer(serializers.Serializer):
+    panel = serializers.CharField()
+    etiqueta = serializers.CharField()
+    modulo = serializers.CharField()
+    detalle = MatrizFilaResponseSerializer(many=True)
+
+
 class MatrizResponseSerializer(serializers.Serializer):
     tipo = serializers.CharField()
     id_destino = serializers.IntegerField()
     nombre_destino = serializers.CharField()
-    filas = MatrizFilaResponseSerializer(many=True)
+    filas = MatrizModuloResponseSerializer(many=True)
 
 
 class UsuarioCatalogoItemSerializer(serializers.Serializer):

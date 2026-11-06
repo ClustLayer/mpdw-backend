@@ -192,3 +192,29 @@ def test_whatsapp_invalido_y_sede_inexistente(ctx_admin):
             999_999,
             {"nombre": "X", "direccion": "D", "telefono": "+573001234567", "version_fila": 1},
         )
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_maps_y_texto_horario_publico(ctx_admin):
+    mock = __import__("unittest.mock").mock.MagicMock()
+    svc = AdminSedesService(audit_port=mock)
+    svc.crear(
+        ctx_admin,
+        {
+            "nombre": "Mapa",
+            "direccion": "Calle 10",
+            "telefono": "+573001234567",
+            "maps_url": "https://www.google.com/maps/embed?pb=test",
+            "map_query": "Calle 10, Cali",
+            "horarios": [
+                {"dia_semana": d, "hora_apertura": "08:00", "hora_cierre": "18:00", "cerrado": d == 7}
+                for d in range(1, 8)
+            ],
+        },
+    )
+    pub = svc.listar_publicas()
+    row = next(s for s in pub if s["nombre"] == "Mapa")
+    assert row["maps_url"].startswith("https://")
+    assert row["map_query"] == "Calle 10, Cali"
+    assert row.get("schedule_text")

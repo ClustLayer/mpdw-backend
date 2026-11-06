@@ -211,10 +211,14 @@ def test_inactivar_rol_con_usuarios_activos(svc, ctx_admin):
 @pytest.mark.unit
 @pytest.mark.django_db
 def test_matriz_rol_y_catalogos(svc, ctx_admin):
+    from apps.m01_identidad.panel_matriz import PANEL_MATRIZ_ORDEN
+
     rol = Roles.objects.get(nombre="Gerente")
     data = svc.obtener_matriz("rol", rol.id_rol)
     assert data["tipo"] == "rol"
-    assert len(data["filas"]) > 0
+    assert len(data["filas"]) == len(PANEL_MATRIZ_ORDEN)
+    assert data["filas"][0]["panel"] == "resumen"
+    assert "detalle" in data["filas"][0]
     cat = svc.catalogos()
     assert "modulos" in cat and "acciones" in cat
     assert "Sin acceso" in cat["acciones"]
@@ -299,7 +303,7 @@ def test_editar_rol_concurrencia(svc, ctx_admin):
 def test_matriz_usuario_eliminar_excepcion(svc, ctx_admin):
     rol = Roles.objects.get(nombre="Empleado")
     perm, _ = Permisos.objects.get_or_create(
-        modulo="pos", accion="O", defaults={"nombre": "POS O", "estado": True}
+        modulo="pos", accion="Consultar", defaults={"nombre": "POS ver", "estado": True}
     )
     user = Usuarios.objects.create_user(
         email="exc@test.local",

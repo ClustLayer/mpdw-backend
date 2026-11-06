@@ -1526,6 +1526,24 @@ components:
       - id_permiso
       - modulo
       - nombre
+    MatrizModuloResponse:
+      type: object
+      properties:
+        panel:
+          type: string
+        etiqueta:
+          type: string
+        modulo:
+          type: string
+        detalle:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatrizFilaResponse'
+      required:
+      - detalle
+      - etiqueta
+      - modulo
+      - panel
     MatrizResponse:
       type: object
       properties:
@@ -1538,7 +1556,7 @@ components:
         filas:
           type: array
           items:
-            $ref: '#/components/schemas/MatrizFilaResponse'
+            $ref: '#/components/schemas/MatrizModuloResponse'
       required:
       - filas
       - id_destino

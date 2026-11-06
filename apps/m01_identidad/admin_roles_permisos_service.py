@@ -37,6 +37,7 @@ from apps.m01_identidad.mensajes import (
 )
 from apps.m01_identidad.models import Permisos, Rol_permiso, Roles, Usuario_permiso, Usuarios
 from apps.m01_identidad.panel_accesos import ACCIONES_CATALOGO, MODULOS_CATALOGO
+from apps.m01_identidad.panel_matriz import PANEL_MATRIZ_ORDEN
 from contratos.dtos import AuditoriaDTO, AuthContext
 from contratos.excepciones import DominioError, ReglaNegocioError
 from contratos.puertos.auditoria import AuditPort
@@ -311,39 +312,39 @@ class AdminRolesPermisosService:
     def catalogos(self) -> dict[str, Any]:
         return {"modulos": MODULOS_CATALOGO, "acciones": ACCIONES_CATALOGO}
 
-    def obtener_matriz(self, tipo: str, id_destino: int) -> dict[str, Any]:
-        permisos = Permisos.objects.filter(estado=True).order_by("modulo", "accion")
-        filas: list[dict[str, Any]] = []
-        if tipo == "rol":
-            rol = Roles.objects.get(pk=id_destino, estado=True)
-            asignados = {
-                rp.id_permiso_id: rp.permitido
-                for rp in Rol_permiso.objects.filter(id_rol=rol).select_related("id_permiso")
-            }
-            for p in permisos:
-                filas.append(
-                    {
-                        "id_permiso": p.id_permiso,
-                        "modulo": p.modulo,
-                        "accion": p.accion,
-                        "nombre": p.nombre or f"{p.modulo}:{p.accion}",
-                        "asignado": p.id_permiso in asignados,
-                        "permitido": asignados.get(p.id_permiso),
-                        "heredado_de_rol": None,
-                    }
+    def _asegurar_permisos_matriz(self) -> None:
+        dominios = {dominio for _, dominio, _ in PANEL_MATRIZ_ORDEN}
+        for dominio in dominios:
+            for accion in ACCIONES_CATALOGO:
+                Permisos.objects.get_or_create(
+                    modulo=dominio,
+                    accion=accion,
+                    defaults={
+                        "nombre": f"{dominio} · {accion}",
+                        "descripcion": "Catálogo matriz",
+                        "estado": True,
+                    },
                 )
-            return {
-                "tipo": "rol",
-                "id_destino": rol.id_rol,
-                "nombre_destino": rol.nombre,
-                "filas": filas,
-            }
-        if tipo == "usuario":
-            usuario = Usuarios.objects.select_related("id_rol").get(pk=id_destino, estado=True)
+
+    def _filas_matriz_por_panel(
+        self,
+        tipo: str,
+        rol: Roles | None,
+        usuario: Usuarios | None,
+    ) -> list[dict[str, Any]]:
+        self._asegurar_permisos_matriz()
+        permisos = Permisos.objects.filter(estado=True, accion__in=ACCIONES_CATALOGO)
+        por_modulo: dict[str, dict[str, Permisos]] = {}
+        for p in permisos:
+            por_modulo.setdefault(p.modulo, {})[p.accion] = p
+
+        rol_perms: dict[int, bool] = {}
+        overrides: dict[int, bool] = {}
+        if usuario is not None:
             rol_perms = {
                 rp.id_permiso_id: rp.permitido
                 for rp in Rol_permiso.objects.filter(
-                    id_rol=usuario.id_rol, permitido=True
+                    id_rol_id=usuario.id_rol_id, permitido=True
                 ).select_related("id_permiso")
             }
             overrides = {
@@ -352,26 +353,75 @@ class AdminRolesPermisosService:
                     "id_permiso"
                 )
             }
-            for p in permisos:
-                heredado = rol_perms.get(p.id_permiso)
-                override = overrides.get(p.id_permiso)
-                filas.append(
-                    {
-                        "id_permiso": p.id_permiso,
-                        "modulo": p.modulo,
-                        "accion": p.accion,
-                        "nombre": p.nombre or f"{p.modulo}:{p.accion}",
-                        "asignado": override is not None or heredado is True,
-                        "permitido": override if override is not None else heredado,
-                        "heredado_de_rol": heredado if override is not None else None,
-                        "tiene_excepcion": override is not None,
-                    }
-                )
+        elif rol is not None:
+            rol_perms = {
+                rp.id_permiso_id: rp.permitido
+                for rp in Rol_permiso.objects.filter(id_rol=rol).select_related("id_permiso")
+            }
+
+        filas: list[dict[str, Any]] = []
+        for panel, dominio, etiqueta in PANEL_MATRIZ_ORDEN:
+            acciones_mod = por_modulo.get(dominio, {})
+            detalle: list[dict[str, Any]] = []
+            for accion in ACCIONES_CATALOGO:
+                perm = acciones_mod.get(accion)
+                if not perm:
+                    continue
+                if tipo == "usuario" and usuario is not None:
+                    heredado = rol_perms.get(perm.id_permiso)
+                    override = overrides.get(perm.id_permiso)
+                    permitido = override if override is not None else heredado
+                    detalle.append(
+                        {
+                            "id_permiso": perm.id_permiso,
+                            "modulo": perm.modulo,
+                            "accion": perm.accion,
+                            "nombre": perm.nombre or f"{perm.modulo}:{perm.accion}",
+                            "asignado": override is not None or heredado is True,
+                            "permitido": permitido,
+                            "heredado_de_rol": heredado if override is not None else None,
+                            "tiene_excepcion": override is not None,
+                        }
+                    )
+                else:
+                    permitido = rol_perms.get(perm.id_permiso)
+                    detalle.append(
+                        {
+                            "id_permiso": perm.id_permiso,
+                            "modulo": perm.modulo,
+                            "accion": perm.accion,
+                            "nombre": perm.nombre or f"{perm.modulo}:{perm.accion}",
+                            "asignado": perm.id_permiso in rol_perms,
+                            "permitido": permitido,
+                            "heredado_de_rol": None,
+                        }
+                    )
+            filas.append(
+                {
+                    "panel": panel,
+                    "etiqueta": etiqueta,
+                    "modulo": dominio,
+                    "detalle": detalle,
+                }
+            )
+        return filas
+
+    def obtener_matriz(self, tipo: str, id_destino: int) -> dict[str, Any]:
+        if tipo == "rol":
+            rol = Roles.objects.get(pk=id_destino, estado=True)
+            return {
+                "tipo": "rol",
+                "id_destino": rol.id_rol,
+                "nombre_destino": rol.nombre,
+                "filas": self._filas_matriz_por_panel("rol", rol, None),
+            }
+        if tipo == "usuario":
+            usuario = Usuarios.objects.select_related("id_rol").get(pk=id_destino, estado=True)
             return {
                 "tipo": "usuario",
                 "id_destino": usuario.id_usuario,
                 "nombre_destino": f"{usuario.nombre} {usuario.apellido}".strip(),
-                "filas": filas,
+                "filas": self._filas_matriz_por_panel("usuario", None, usuario),
             }
         raise ReglaNegocioError(MSG_MATRIZ_DESTINO, codigo="MATRIZ_DESTINO")
 
@@ -384,19 +434,22 @@ class AdminRolesPermisosService:
         try:
             with transaction.atomic():
                 prev = self.obtener_matriz(tipo, id_destino)
+                prev_cambios: list[dict[str, Any]] = []
+                for bloque in prev["filas"]:
+                    for f in bloque.get("detalle") or []:
+                        if f.get("permitido") is not None:
+                            prev_cambios.append(
+                                {
+                                    "id_permiso": f["id_permiso"],
+                                    "modulo": f["modulo"],
+                                    "accion": f["accion"],
+                                    "permitido": f.get("permitido"),
+                                }
+                            )
                 antes: dict[str, Any] = {
                     "tipo": tipo,
                     "id_destino": id_destino,
-                    "cambios": [
-                        {
-                            "id_permiso": f["id_permiso"],
-                            "modulo": f["modulo"],
-                            "accion": f["accion"],
-                            "permitido": f.get("permitido"),
-                        }
-                        for f in prev["filas"]
-                        if f.get("permitido") is not None
-                    ],
+                    "cambios": prev_cambios,
                 }
                 despues: dict[str, Any] = {
                     "tipo": tipo,
