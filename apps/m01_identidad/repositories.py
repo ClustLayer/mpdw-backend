@@ -36,7 +36,9 @@ class UserRepository:
         except Usuarios.DoesNotExist:
             return None
 
-    def incrementar_intentos_fallidos(self, usuario: Usuarios, max_intentos: int = 5, minutos_bloqueo: int = 15) -> bool:
+    def incrementar_intentos_fallidos(
+        self, usuario: Usuarios, max_intentos: int = 5, minutos_bloqueo: int = 15
+    ) -> bool:
         usuario.intentos_fallidos += 1
         bloqueado = usuario.intentos_fallidos >= max_intentos
         if bloqueado:
@@ -70,7 +72,9 @@ class UserRepository:
 
     def obtener_sedes_asignadas_ids(self, id_usuario: int) -> tuple[int, ...]:
         return tuple(
-            Usuario_sede.objects.filter(id_usuario_id=id_usuario, estado=True).values_list("id_sede_id", flat=True)
+            Usuario_sede.objects.filter(id_usuario_id=id_usuario, estado=True).values_list(
+                "id_sede_id", flat=True
+            )
         )
 
 
@@ -166,17 +170,47 @@ class PermissionRepository:
             id_usuario_id=id_usuario,
             id_permiso__modulo=modulo,
             id_permiso__accion=accion,
+            id_permiso__estado=True,
         ).first()
 
         if excepcion is not None:
             return bool(excepcion.permitido)
 
-        # 2. Verificar permiso por rol base
+        # 2. Verificar permiso por rol base (solo asignaciones permitidas)
         return Rol_permiso.objects.filter(
             id_rol_id=id_rol,
             id_permiso__modulo=modulo,
             id_permiso__accion=accion,
+            id_permiso__estado=True,
+            permitido=True,
         ).exists()
+
+    def acciones_por_modulo(self, id_usuario: int, id_rol: int) -> dict[str, set[str]]:
+        """Acciones efectivas agrupadas por módulo de dominio (HU 18)."""
+        from apps.m01_identidad.models import Permisos
+
+        resultado: dict[str, set[str]] = {}
+        permisos = Permisos.objects.filter(estado=True).only("id_permiso", "modulo", "accion")
+        overrides = {
+            up.id_permiso_id: up.permitido
+            for up in Usuario_permiso.objects.filter(id_usuario_id=id_usuario).only(
+                "id_permiso_id", "permitido"
+            )
+        }
+        rol_map = {
+            rp.id_permiso_id: rp.permitido
+            for rp in Rol_permiso.objects.filter(id_rol_id=id_rol, permitido=True).only(
+                "id_permiso_id", "permitido"
+            )
+        }
+        for p in permisos:
+            if p.id_permiso in overrides:
+                if not overrides[p.id_permiso]:
+                    continue
+            elif p.id_permiso not in rol_map:
+                continue
+            resultado.setdefault(p.modulo, set()).add(p.accion)
+        return resultado
 
 
 class RecuperacionRepository:
@@ -196,9 +230,9 @@ class RecuperacionRepository:
     def buscar_por_token(self, token: str) -> Tokens_recuperacion | None:
         token_hash = SessionRepository.calcular_hash(token)
         try:
-            return Tokens_recuperacion.objects.select_related("id_usuario", "id_usuario__id_rol").get(
-                token_hash=token_hash
-            )
+            return Tokens_recuperacion.objects.select_related(
+                "id_usuario", "id_usuario__id_rol"
+            ).get(token_hash=token_hash)
         except Tokens_recuperacion.DoesNotExist:
             return None
 
@@ -221,7 +255,9 @@ class RecuperacionRepository:
             expira = getattr(registro, "expira_en", None)
             if not expira or timezone.now() > expira:
                 return None
-            actualizados = Tokens_recuperacion.objects.filter(pk=registro.pk, usado=False).update(usado=True)
+            actualizados = Tokens_recuperacion.objects.filter(pk=registro.pk, usado=False).update(
+                usado=True
+            )
             if actualizados != 1:
                 return None
             registro.usado = True
@@ -279,7 +315,9 @@ class Codigo2FARepository:
                 intentos=0,
             )
 
-    def intentar_consumir_codigo(self, id_usuario: int, codigo: str, max_intentos: int) -> tuple[str, Codigos_2fa | None]:
+    def intentar_consumir_codigo(
+        self, id_usuario: int, codigo: str, max_intentos: int
+    ) -> tuple[str, Codigos_2fa | None]:
         """
         Retorna ('ok', registro), ('invalido', registro) o ('expirado', None).
         Serializa verificacion y conteo de fallos sobre la fila del codigo vigente.
@@ -311,4 +349,3 @@ class Codigo2FARepository:
             registro.usado = True
             registro.save(update_fields=["usado"])
             return "ok", registro
-
