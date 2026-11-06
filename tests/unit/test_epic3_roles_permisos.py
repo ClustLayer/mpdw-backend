@@ -91,10 +91,9 @@ def test_matriz_usuario_override(ctx_admin, svc):
     rol = Roles.objects.get(nombre="Empleado")
     perm, _ = Permisos.objects.get_or_create(
         modulo="clientes",
-        accion="T",
-        defaults={"nombre": "Clientes T", "estado": True},
+        accion="Total",
+        defaults={"nombre": "Clientes total", "estado": True},
     )
-    Rol_permiso.objects.update_or_create(id_rol=rol, id_permiso=perm, defaults={"permitido": True})
     user = Usuarios.objects.create_user(
         email="emp@test.local",
         password="x",

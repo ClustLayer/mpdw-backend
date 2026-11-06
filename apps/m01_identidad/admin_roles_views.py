@@ -1,5 +1,6 @@
 import logging
 
+from django.db import models
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -16,10 +17,12 @@ from apps.m01_identidad.admin_roles_serializers import (
     EditarPermisoRequestSerializer,
     EditarRolRequestSerializer,
     GuardarMatrizRequestSerializer,
+    MatrizResponseSerializer,
     PermisoListItemSerializer,
     PermisoListResponseSerializer,
     RolDetalleResponseSerializer,
     RolListResponseSerializer,
+    UsuarioCatalogoResponseSerializer,
 )
 from apps.m01_identidad.admin_serializers import RolesCatalogoResponseSerializer
 from apps.m01_identidad.models import Permisos, Roles, Usuarios
@@ -50,6 +53,20 @@ def _error(codigo: str, mensaje: str, http_status: int, request: Request) -> Res
     )
 
 
+def _page_params(params, request: Request) -> tuple[int, int] | Response:
+    try:
+        page = max(1, int(params.get("page") or 1))
+        page_size = min(100, max(1, int(params.get("page_size") or 20)))
+        return page, page_size
+    except (TypeError, ValueError):
+        return _error(
+            "PAGINACION_INVALIDA",
+            "Los parámetros page y page_size deben ser números enteros válidos.",
+            status.HTTP_400_BAD_REQUEST,
+            request,
+        )
+
+
 def _dominio(exc: ReglaNegocioError | DominioError, request: Request) -> Response:
     http_status_code: int = status.HTTP_400_BAD_REQUEST
     if exc.codigo in {"ROL_NO_ENCONTRADO", "PERMISO_NO_ENCONTRADO"}:
@@ -70,8 +87,10 @@ class RolListCreateView(APIView):
     @extend_schema(operation_id="roles_list", responses={200: RolListResponseSerializer})
     def get(self, request: Request) -> Response:
         params = request.query_params
-        page = max(1, int(params.get("page") or 1))
-        page_size = min(100, max(1, int(params.get("page_size") or 20)))
+        parsed = _page_params(params, request)
+        if isinstance(parsed, Response):
+            return parsed
+        page, page_size = parsed
         pagina = _svc().listar_roles(
             q=params.get("q", ""),
             estado_filtro=params.get("estado") or "todos",
@@ -157,8 +176,10 @@ class PermisoListCreateView(APIView):
     )
     def get(self, request: Request) -> Response:
         params = request.query_params
-        page = max(1, int(params.get("page") or 1))
-        page_size = min(100, max(1, int(params.get("page_size") or 20)))
+        parsed = _page_params(params, request)
+        if isinstance(parsed, Response):
+            return parsed
+        page, page_size = parsed
         pagina = _svc().listar_permisos(
             q=params.get("q", ""),
             modulo=params.get("modulo") or "",
@@ -233,7 +254,7 @@ class MatrizPermisosView(APIView):
     permission_classes = [IsAuthenticated, HasDynamicPermission]
     required_permission = PERM_ROLES
 
-    @extend_schema(operation_id="matriz_get", responses={200: GuardarMatrizRequestSerializer})
+    @extend_schema(operation_id="matriz_get", responses={200: MatrizResponseSerializer})
     def get(self, request: Request) -> Response:
         tipo = request.query_params.get("tipo") or ""
         id_raw = (
@@ -243,6 +264,14 @@ class MatrizPermisosView(APIView):
         )
         try:
             id_destino = int(id_raw or 0)
+        except (TypeError, ValueError):
+            return _error(
+                "MATRIZ_DESTINO_INVALIDO",
+                "El identificador de destino no es válido.",
+                status.HTTP_400_BAD_REQUEST,
+                request,
+            )
+        try:
             data = _svc().obtener_matriz(tipo, id_destino)
             return Response(data)
         except (ReglaNegocioError, Roles.DoesNotExist, Usuarios.DoesNotExist) as exc:
@@ -287,23 +316,38 @@ class UsuariosActivosCatalogoView(APIView):
     required_permission = PERM_ROLES
 
     @extend_schema(
-        operation_id="usuarios_activos_matriz", responses={200: RolesCatalogoResponseSerializer}
+        operation_id="usuarios_activos_matriz",
+        responses={200: UsuarioCatalogoResponseSerializer},
     )
     def get(self, request: Request) -> Response:
-        qs = (
-            Usuarios.objects.filter(estado=True)
-            .select_related("id_rol")
-            .order_by("nombre", "apellido")[:500]
+        params = request.query_params
+        parsed = _page_params(params, request)
+        if isinstance(parsed, Response):
+            return parsed
+        page, page_size = parsed
+        q = (params.get("q") or "").strip()
+        qs = Usuarios.objects.filter(estado=True).select_related("id_rol").order_by(
+            "nombre", "apellido"
         )
+        if q:
+            qs = qs.filter(
+                models.Q(nombre__icontains=q)
+                | models.Q(apellido__icontains=q)
+                | models.Q(email__icontains=q)
+            )
+        total = qs.count()
+        offset = (page - 1) * page_size
         items = [
             {
                 "id_usuario": u.id_usuario,
                 "label": f"{u.nombre} {u.apellido}".strip() or u.email,
                 "rol": u.id_rol.nombre,
             }
-            for u in qs
+            for u in qs[offset : offset + page_size]
         ]
-        return Response({"items": items})
+        return Response(
+            {"items": items, "total": total, "page": page, "page_size": page_size}
+        )
 
 
 class AccesosPanelView(APIView):

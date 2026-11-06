@@ -16,6 +16,7 @@ urlpatterns = [
     path("api/v1/usuarios/", include("apps.m01_identidad.urls_usuarios")),
     path("api/v1/roles-permisos/", include("apps.m01_identidad.urls_roles_permisos")),
     path("api/v1/branches/", include("apps.m02_sedes.urls")),
+    path("api/v1/sedes/", include("apps.m02_sedes.urls")),
     path("api/v1/products/", include("apps.m03_catalogo.urls")),
     path("api/v1/inventory/", include("apps.m04_inventario.urls")),
 ]

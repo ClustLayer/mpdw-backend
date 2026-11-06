@@ -383,7 +383,21 @@ class AdminRolesPermisosService:
             raise ReglaNegocioError(MSG_MATRIZ_DESTINO, codigo="MATRIZ_DESTINO")
         try:
             with transaction.atomic():
-                antes: dict[str, Any] = {"tipo": tipo, "id_destino": id_destino, "cambios": []}
+                prev = self.obtener_matriz(tipo, id_destino)
+                antes: dict[str, Any] = {
+                    "tipo": tipo,
+                    "id_destino": id_destino,
+                    "cambios": [
+                        {
+                            "id_permiso": f["id_permiso"],
+                            "modulo": f["modulo"],
+                            "accion": f["accion"],
+                            "permitido": f.get("permitido"),
+                        }
+                        for f in prev["filas"]
+                        if f.get("permitido") is not None
+                    ],
+                }
                 despues: dict[str, Any] = {
                     "tipo": tipo,
                     "id_destino": id_destino,

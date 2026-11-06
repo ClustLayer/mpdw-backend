@@ -690,9 +690,6 @@ class PermissionService:
         self._repo = repo or PermissionRepository()
 
     def tiene_permiso(self, ctx: AuthContext, modulo: str, accion: str) -> bool:
-        if ctx.es_global and ctx.rol_nombre == "Administrador":
-            return True
-
         if ctx.id_rol is not None:
             return self._repo.tiene_permiso(ctx.id_usuario, ctx.id_rol, modulo, accion)
 
@@ -706,9 +703,6 @@ class PermissionService:
 
     def accesos_panel(self, ctx: AuthContext) -> dict[str, Any]:
         from apps.m01_identidad.panel_accesos import MODULO_A_PANEL
-
-        if ctx.es_global and ctx.rol_nombre == "Administrador":
-            return {"modulos": list(MODULO_A_PANEL.values()), "acciones_por_modulo": {}}
 
         id_rol = ctx.id_rol
         if id_rol is None:

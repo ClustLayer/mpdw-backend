@@ -367,6 +367,33 @@ def test_cambiar_estado_activar_y_bloquear(admin_ctx, sede_activa):
     usuario.refresh_from_db()
     assert usuario.bloqueado_hasta is None
     assert int(usuario.credential_version or 1) == cv_inicial + 2
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_activar_usuario_rechaza_rol_inactivo(admin_ctx, sede_activa):
+    rol_off = Roles.objects.create(nombre="RolOff", es_rol_base=False, estado=False)
+    rol_ok, _ = Roles.objects.get_or_create(nombre="Empleado", defaults={"es_rol_base": True, "estado": True})
+    servicio = AdminUsuariosService(audit_port=MagicMock(), email_port=FakeEmailAdapter())
+    _, det = servicio.crear(
+        admin_ctx,
+        {
+            "nombre": "U",
+            "apellido": "R",
+            "documento": "100010123457",
+            "telefono": "",
+            "email": "rol.off@test.local",
+            "id_rol": rol_ok.id_rol,
+            "sedes": [{"id_sede": sede_activa.id_sede, "es_principal": True}],
+        },
+    )
+    u = Usuarios.objects.get(pk=det["id_usuario"])
+    u.id_rol = rol_off
+    u.estado = False
+    u.save(update_fields=["id_rol", "estado"])
+    with pytest.raises(ReglaNegocioError) as exc:
+        servicio.cambiar_estado(admin_ctx, u.id_usuario, "activar")
+    assert exc.value.codigo == "ROL_INVALIDO"
     pagina = servicio.listar("", None, "inactivo", 1, 20, "-ultimo_acceso")
     assert pagina.total >= 1
 

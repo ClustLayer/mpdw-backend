@@ -116,6 +116,25 @@ def test_vista_rol_no_encontrado(db):
 
 @pytest.mark.unit
 @pytest.mark.django_db
+def test_vista_matriz_id_destino_invalido(db):
+    client = _cliente_admin(db)
+    assert client.get("/api/v1/roles-permisos/matriz?tipo=rol&id_destino=abc").status_code == 400
+
+
+def test_vista_roles_paginacion_invalida(db):
+    client = _cliente_admin(db)
+    assert client.get("/api/v1/roles-permisos/roles?page=xx").status_code == 400
+
+
+def test_vista_usuarios_catalogo_paginado(db):
+    client = _cliente_admin(db)
+    r = client.get("/api/v1/roles-permisos/usuarios-activos?page=1&page_size=10")
+    assert r.status_code == 200
+    body = r.json()
+    assert "items" in body and "total" in body
+    assert client.get("/api/v1/roles-permisos/usuarios-activos?page=bad").status_code == 400
+
+
 def test_vista_delete_rol_base_protegido(db):
     client = _cliente_admin(db)
     admin = Roles.objects.get(nombre="Administrador")
