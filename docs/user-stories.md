@@ -138,4 +138,4 @@ Migración: `0008_epic3_roles_permisos`. OpenAPI: `docs/openapi.yaml`.
 | HU_MPDW_01_20 Editar / desactivar sede | COMPLETED | `PATCH /api/v1/sedes/gestion/{id}/` |
 | HU_MPDW_01_21 Consolidado por sede | PARTIAL | `GET /api/v1/sedes/consolidado/` (estructura; agregados cuando haya datos) |
 
-Migraciones: `0002_epic4_sedes_horarios`, permisos demo `0009_demo_permisos_matriz`. Iteración 8: `docs/correcciones-iteracion-8.md`.
+Migraciones: `0002_epic4_sedes_horarios`, permisos demo `0009`/`0010`, seed `0003`. Iteraciones 8–9 en `docs/correcciones-iteracion-*.md`.
