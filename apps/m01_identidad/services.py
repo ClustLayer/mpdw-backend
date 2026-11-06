@@ -128,7 +128,9 @@ class AuthService:
         assert usuario is not None
         self._users.registrar_acceso_exitoso(usuario)
         if getattr(usuario, "debe_cambiar_password", False) or not _requiere_2fa(usuario):
-            return self._emitir_sesion(usuario, ip, user_agent, id_correlacion, mfa_verificada=not _requiere_2fa(usuario))
+            return self._emitir_sesion(
+                usuario, ip, user_agent, id_correlacion, mfa_verificada=not _requiere_2fa(usuario)
+            )
         return self._iniciar_desafio(usuario, ip)
 
     def rotar_refresh_token(
@@ -157,7 +159,9 @@ class AuthService:
         nuevo_refresh = secrets.token_urlsafe(48)
         nueva = self._sessions.rotar_sesion(sesion, nuevo_refresh, ip=ip)
         mfa_pendiente = not bool(getattr(sesion, "mfa_verificada", True))
-        nuevo_access = self.emitir_access(sesion.id_usuario, nueva.id_sesion, mfa_pendiente=mfa_pendiente)
+        nuevo_access = self.emitir_access(
+            sesion.id_usuario, nueva.id_sesion, mfa_pendiente=mfa_pendiente
+        )
         return nuevo_access, nuevo_refresh
 
     def cerrar_sesion(self, refresh_token: str) -> str:
@@ -357,7 +361,9 @@ class AuthService:
             return False
         return ahora - ultimo > timedelta(minutes=int(settings.INACTIVITY_TIMEOUT_MINUTES))
 
-    def _contexto(self, usuario: Any, sedes: tuple[int, ...], ip: str, user_agent: str, correlacion: str) -> AuthContext:
+    def _contexto(
+        self, usuario: Any, sedes: tuple[int, ...], ip: str, user_agent: str, correlacion: str
+    ) -> AuthContext:
         return AuthContext(
             id_usuario=usuario.id_usuario,
             email=usuario.email,
@@ -466,7 +472,12 @@ class RecuperacionService:
             usuario.contrasena_temporal_expira = None
             usuario.credential_version = int(getattr(usuario, "credential_version", 1) or 1) + 1
             usuario.save(
-                update_fields=["password", "debe_cambiar_password", "contrasena_temporal_expira", "credential_version"]
+                update_fields=[
+                    "password",
+                    "debe_cambiar_password",
+                    "contrasena_temporal_expira",
+                    "credential_version",
+                ]
             )
             self._sessions.revocar_usuario(usuario.id_usuario)
         return MSG_RESET_OK
@@ -579,7 +590,9 @@ class Verificacion2FAService:
         id_correlacion: str,
     ) -> ResultadoLogin:
         try:
-            return self._verificar(usuario, desafio_token, codigo, id_sesion, ip, user_agent, id_correlacion)
+            return self._verificar(
+                usuario, desafio_token, codigo, id_sesion, ip, user_agent, id_correlacion
+            )
         except (ReglaNegocioError, AutenticacionError):
             raise
         except Exception as exc:
@@ -593,7 +606,9 @@ class Verificacion2FAService:
             if restantes <= 0:
                 raise ReglaNegocioError(MSG_2FA_EXPIRADO, codigo="CODIGO_2FA_EXPIRADO")
             minutos_codigo = max(1, (restantes + 59) // 60)
-            emitir_codigo_2fa(self._codigos, self._email, usuario, MSG_2FA_ERROR, minutos_vigencia=minutos_codigo)
+            emitir_codigo_2fa(
+                self._codigos, self._email, usuario, MSG_2FA_ERROR, minutos_vigencia=minutos_codigo
+            )
             try:
                 payload = jwt.decode(
                     desafio_token,
@@ -636,9 +651,13 @@ class Verificacion2FAService:
                 debe_cambiar_password=bool(getattr(usuario, "debe_cambiar_password", False)),
                 requiere_2fa=False,
                 desafio_token=None,
-                redireccion="cambiar-contrasena" if getattr(usuario, "debe_cambiar_password", False) else self._auth._inicio_de_rol(usuario),
+                redireccion="cambiar-contrasena"
+                if getattr(usuario, "debe_cambiar_password", False)
+                else self._auth._inicio_de_rol(usuario),
             )
-        resultado = self._auth._emitir_sesion(usuario, ip, user_agent, id_correlacion, mfa_verificada=True)
+        resultado = self._auth._emitir_sesion(
+            usuario, ip, user_agent, id_correlacion, mfa_verificada=True
+        )
         return ResultadoLogin(
             access_token=resultado.access_token,
             refresh_token=resultado.refresh_token,
@@ -684,3 +703,31 @@ class PermissionService:
             return self._repo.tiene_permiso(ctx.id_usuario, usr_model.id_rol_id, modulo, accion)
         except Exception:
             return False
+
+    def accesos_panel(self, ctx: AuthContext) -> dict[str, Any]:
+        from apps.m01_identidad.panel_accesos import MODULO_A_PANEL
+
+        if ctx.es_global and ctx.rol_nombre == "Administrador":
+            return {"modulos": list(MODULO_A_PANEL.values()), "acciones_por_modulo": {}}
+
+        id_rol = ctx.id_rol
+        if id_rol is None:
+            from apps.m01_identidad.models import Usuarios
+
+            try:
+                id_rol = Usuarios.objects.only("id_rol_id").get(pk=ctx.id_usuario).id_rol_id
+            except Exception:
+                return {"modulos": [], "acciones_por_modulo": {}}
+
+        por_modulo = self._repo.acciones_por_modulo(ctx.id_usuario, id_rol)
+        modulos_panel: list[str] = []
+        acciones: dict[str, list[str]] = {}
+        for modulo_dom, acts in por_modulo.items():
+            clave = MODULO_A_PANEL.get(modulo_dom)
+            if not clave:
+                continue
+            modulos_panel.append(clave)
+            acciones[clave] = sorted(acts)
+        if "resumen" not in modulos_panel and por_modulo.get("autenticacion_perfil"):
+            modulos_panel.insert(0, "resumen")
+        return {"modulos": sorted(set(modulos_panel)), "acciones_por_modulo": acciones}
