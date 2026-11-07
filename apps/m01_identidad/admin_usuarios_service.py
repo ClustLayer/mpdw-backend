@@ -52,7 +52,7 @@ from apps.m01_identidad.repositories import SessionRepository, UserRepository
 from apps.m01_identidad.usuario_util import estado_etiqueta, nombre_completo, snapshot_usuario
 from apps.m02_sedes.models import Sedes
 from contratos.dtos import AuditoriaDTO, AuthContext
-from contratos.excepciones import DominioError, ReglaNegocioError
+from contratos.excepciones import ConflictoVersionError, DominioError, ReglaNegocioError
 from contratos.puertos.auditoria import AuditPort
 from contratos.puertos.correo import EmailPort
 
@@ -177,6 +177,8 @@ class AdminUsuariosService:
     ) -> tuple[str, dict[str, Any]]:
         try:
             return self._actualizar(ctx, id_usuario, datos)
+        except ConflictoVersionError:
+            raise
         except ReglaNegocioError:
             raise
         except Exception as exc:
@@ -185,9 +187,9 @@ class AdminUsuariosService:
                 MSG_USUARIO_ACTUALIZAR_ERROR, codigo="ERROR_ACTUALIZAR_USUARIO"
             ) from exc
 
-    def cambiar_estado(self, ctx: AuthContext, id_usuario: int, accion: str) -> str:
+    def cambiar_estado(self, ctx: AuthContext, id_usuario: int, accion: str, motivo: str = "") -> str:
         try:
-            return self._cambiar_estado(ctx, id_usuario, accion)
+            return self._cambiar_estado(ctx, id_usuario, accion, motivo)
         except ReglaNegocioError:
             raise
         except Exception as exc:
@@ -278,7 +280,7 @@ class AdminUsuariosService:
             if Usuarios.objects.filter(documento=documento).exclude(pk=id_usuario).exists():
                 raise ReglaNegocioError(MSG_DOCUMENTO_DUPLICADO, codigo="DOCUMENTO_DUPLICADO")
             if int(usuario.version_fila) != version:
-                raise ReglaNegocioError(MSG_CONCURRENCIA, codigo="CONCURRENCIA")
+                raise ConflictoVersionError(MSG_CONCURRENCIA, codigo="CONCURRENCIA")
             antes = snapshot_usuario(usuario)
             usuario.nombre = str(datos["nombre"]).strip()
             usuario.apellido = str(datos["apellido"]).strip()
@@ -304,10 +306,13 @@ class AdminUsuariosService:
             self._auditar(ctx, "EDITAR_USUARIO", usuario.id_usuario, antes, despues)
         return MSG_USUARIO_ACTUALIZADO, self._detalle(usuario)
 
-    def _cambiar_estado(self, ctx: AuthContext, id_usuario: int, accion: str) -> str:
+    def _cambiar_estado(self, ctx: AuthContext, id_usuario: int, accion: str, motivo: str = "") -> str:
         accion = (accion or "").strip().lower()
         if accion not in {"activar", "desactivar", "bloquear"}:
             raise ReglaNegocioError(MSG_ESTADO_ERROR, codigo="ACCION_INVALIDA")
+        motivo_limpio = (motivo or "").strip()
+        if accion in {"desactivar", "bloquear"} and not motivo_limpio:
+            raise ReglaNegocioError(MSG_CAMPOS_OBLIGATORIOS, codigo="MOTIVO_OBLIGATORIO")
         horas = int(getattr(settings, "BLOQUEO_MANUAL_HORAS", 24))
         with transaction.atomic():
             usuario = self._usuario_con_bloqueo(id_usuario)
@@ -341,7 +346,8 @@ class AdminUsuariosService:
                 campos.append("credential_version")
             usuario.save(update_fields=campos)
             despues = snapshot_usuario(usuario)
-            self._auditar(ctx, "CAMBIAR_ESTADO_USUARIO", usuario.id_usuario, antes, despues)
+            extra = {"motivo_operacion": motivo_limpio} if motivo_limpio else None
+            self._auditar(ctx, "CAMBIAR_ESTADO_USUARIO", usuario.id_usuario, antes, despues, extra)
         return MSG_ESTADO_ACTUALIZADO
 
     def _generar_contrasena_temporal(self, ctx: AuthContext, id_usuario: int) -> tuple[str, str]:
@@ -458,9 +464,15 @@ class AdminUsuariosService:
         id_entidad: int,
         antes: dict[str, Any] | None,
         despues: dict[str, Any] | None,
+        extra_despues: dict[str, Any] | None = None,
     ) -> None:
         if not self._audit:
             return
+        dd = despues
+        if extra_despues and dd is not None:
+            dd = {**dd, **extra_despues}
+        elif extra_despues and dd is None:
+            dd = extra_despues
         self._audit.registrar(
             AuditoriaDTO(
                 id_usuario=ctx.id_usuario,
@@ -468,7 +480,7 @@ class AdminUsuariosService:
                 entidad="Usuarios",
                 id_entidad=id_entidad,
                 datos_antes=antes,
-                datos_despues=despues,
+                datos_despues=dd,
                 motivo=accion,
                 id_correlacion=ctx.id_correlacion,
                 ip=ctx.ip,

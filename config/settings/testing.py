@@ -39,3 +39,11 @@ if not _use_postgres:
 
 # Desactivar throttling en pruebas automáticas
 REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"] = []  # noqa: F405
+
+# Caché en memoria: evita depender de django_cache cuando se usa SQLite :memory:
+CACHES = {  # noqa: F405
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "mpdw-tests",
+    }
+}

@@ -31,9 +31,14 @@ def _err(exc: ReglaNegocioError | DominioError, request: Request) -> Response:
     code: int = status.HTTP_400_BAD_REQUEST
     if exc.codigo == "NO_AUTORIZADO":
         code = status.HTTP_403_FORBIDDEN
+    elif exc.codigo == "CONCURRENCIA":
+        code = status.HTTP_409_CONFLICT
     cid = getattr(request, "correlation_id", "")
+    codigo_resp = exc.codigo
+    if codigo_resp == "CONCURRENCIA":
+        codigo_resp = "CONFLICTO_CONCURRENCIA"
     return Response(
-        {"codigo": exc.codigo, "mensaje": exc.mensaje, "detalles": [], "idCorrelacion": cid},
+        {"codigo": codigo_resp, "mensaje": exc.mensaje, "detalles": [], "idCorrelacion": cid},
         status=code,
     )
 

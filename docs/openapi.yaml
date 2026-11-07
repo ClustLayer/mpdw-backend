@@ -4,6 +4,52 @@ info:
   version: 1.0.0
   description: API REST transaccional para la gestión comercial y multi-sede de MPDW
 paths:
+  /api/v1/auditoria/bitacora/:
+    get:
+      operationId: auditoria_bitacora_retrieve
+      tags:
+      - auditoria
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BitacoraListResponse'
+          description: ''
+  /api/v1/auditoria/bitacora/acciones/:
+    get:
+      operationId: auditoria_bitacora_acciones_retrieve
+      description: Acciones distintas registradas, para el filtro desplegable.
+      tags:
+      - auditoria
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccionesBitacora'
+          description: ''
+  /api/v1/auditoria/bitacora/usuarios/:
+    get:
+      operationId: auditoria_bitacora_usuarios_list
+      description: Opciones de usuario para filtro con búsqueda (CA 2.1).
+      tags:
+      - auditoria
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UsuarioOpcion'
+          description: ''
   /api/v1/auth/accesos-panel:
     get:
       operationId: auth_accesos_panel
@@ -1166,6 +1212,77 @@ components:
         * `activar` - activar
         * `desactivar` - desactivar
         * `bloquear` - bloquear
+    AccionesBitacora:
+      type: object
+      properties:
+        acciones:
+          type: array
+          items:
+            type: string
+      required:
+      - acciones
+    AuditoriaFila:
+      type: object
+      properties:
+        id_auditoria:
+          type: integer
+        fecha_hora:
+          type: string
+          nullable: true
+        usuario:
+          $ref: '#/components/schemas/UsuarioBitacoraAnidado'
+        accion:
+          type: string
+        entidad:
+          type: string
+        id_entidad:
+          type: integer
+        ip_origen:
+          type: string
+        resumen:
+          type: string
+        datos_anteriores:
+          nullable: true
+        datos_nuevos:
+          nullable: true
+        motivo:
+          type: string
+        resultado:
+          type: string
+      required:
+      - accion
+      - datos_anteriores
+      - datos_nuevos
+      - entidad
+      - fecha_hora
+      - id_auditoria
+      - id_entidad
+      - ip_origen
+      - motivo
+      - resultado
+      - resumen
+      - usuario
+    BitacoraListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditoriaFila'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        mensaje:
+          type: string
+      required:
+      - items
+      - mensaje
+      - page
+      - page_size
+      - total
     CambiarContrasenaRequestRequest:
       type: object
       properties:
@@ -1211,6 +1328,10 @@ components:
       properties:
         accion:
           $ref: '#/components/schemas/AccionEnum'
+        motivo:
+          type: string
+          default: ''
+          maxLength: 255
       required:
       - accion
     CatalogosPermisoResponse:
@@ -1334,6 +1455,9 @@ components:
         orden:
           type: integer
           default: 10
+        es_principal:
+          type: boolean
+          default: false
         id_usuario_responsable:
           type: integer
           nullable: true
@@ -1675,6 +1799,9 @@ components:
         orden:
           type: integer
           default: 10
+        es_principal:
+          type: boolean
+          default: false
         id_usuario_responsable:
           type: integer
           nullable: true
@@ -2221,6 +2348,8 @@ components:
           type: string
         orden:
           type: integer
+        es_principal:
+          type: boolean
         horarios:
           type: array
           items:
@@ -2361,6 +2490,21 @@ components:
       - rol_nombre
       - ultimo_acceso
       - version_fila
+    UsuarioBitacoraAnidado:
+      type: object
+      properties:
+        id_usuario:
+          type: integer
+          nullable: true
+        nombre:
+          type: string
+        email:
+          type: string
+          nullable: true
+      required:
+      - email
+      - id_usuario
+      - nombre
     UsuarioCatalogoItem:
       type: object
       properties:
@@ -2500,6 +2644,20 @@ components:
       - page
       - page_size
       - total
+    UsuarioOpcion:
+      type: object
+      properties:
+        id_usuario:
+          type: integer
+        etiqueta:
+          type: string
+        email:
+          type: string
+          format: email
+      required:
+      - email
+      - etiqueta
+      - id_usuario
   securitySchemes:
     jwtAuth:
       type: http

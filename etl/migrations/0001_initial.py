@@ -5,18 +5,15 @@
 from django.db import migrations
 
 
-class Migration(migrations.Migration):
-
-    initial = True
-
-    dependencies = []
-
-    operations = [
-        migrations.RunSQL(
-            sql="""
+def crear_esquema_analitica(apps, schema_editor):
+    """SQLite (pytest local): omitir DDL de PostgreSQL."""
+    if schema_editor.connection.vendor != "postgresql":
+        return
+    cursor = schema_editor.connection.cursor()
+    cursor.execute(
+        """
             CREATE SCHEMA IF NOT EXISTS analitica;
 
-            -- 1. Ventas diarias agregadas por sede
             CREATE TABLE IF NOT EXISTS analitica.ventas_diarias (
                 fecha DATE NOT NULL,
                 id_sede BIGINT NOT NULL,
@@ -26,7 +23,6 @@ class Migration(migrations.Migration):
                 CONSTRAINT pk_ventas_diarias PRIMARY KEY (fecha, id_sede)
             );
 
-            -- 2. Movimientos de caja diarios segregados
             CREATE TABLE IF NOT EXISTS analitica.movimientos_diarios (
                 fecha DATE NOT NULL,
                 id_sede BIGINT NOT NULL,
@@ -36,7 +32,6 @@ class Migration(migrations.Migration):
                 CONSTRAINT pk_movimientos_diarios PRIMARY KEY (fecha, id_sede, tipo_movimiento)
             );
 
-            -- 3. Productos más vendidos
             CREATE TABLE IF NOT EXISTS analitica.productos_top (
                 fecha DATE NOT NULL,
                 id_producto BIGINT NOT NULL,
@@ -46,7 +41,6 @@ class Migration(migrations.Migration):
                 CONSTRAINT pk_productos_top PRIMARY KEY (fecha, id_producto)
             );
 
-            -- 4. Alertas de inventario
             CREATE TABLE IF NOT EXISTS analitica.inventario_alerta (
                 id_alerta BIGSERIAL PRIMARY KEY,
                 fecha DATE NOT NULL,
@@ -57,7 +51,6 @@ class Migration(migrations.Migration):
                 fecha_calculo TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
 
-            -- 5. Bitácora de ejecución del proceso ETL
             CREATE TABLE IF NOT EXISTS analitica.corrida_etl (
                 id_corrida BIGSERIAL PRIMARY KEY,
                 fecha_inicio TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -68,7 +61,6 @@ class Migration(migrations.Migration):
                 duracion_segundos NUMERIC(8,2)
             );
 
-            -- Permisos de lectura para el rol de BI (si el rol existe en el cluster)
             DO $$
             BEGIN
                 IF EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'mpdw_bi') THEN
@@ -78,10 +70,23 @@ class Migration(migrations.Migration):
                 END IF;
             END
             $$;
-            """,
-            reverse_sql="""
-            DROP SCHEMA IF EXISTS analitica CASCADE;
-            """,
-        ),
+        """
+    )
+
+
+def borrar_esquema_analitica(apps, schema_editor):
+    if schema_editor.connection.vendor != "postgresql":
+        return
+    schema_editor.execute("DROP SCHEMA IF EXISTS analitica CASCADE;")
+
+
+class Migration(migrations.Migration):
+
+    initial = True
+
+    dependencies = []
+
+    operations = [
+        migrations.RunPython(crear_esquema_analitica, borrar_esquema_analitica),
     ]
 

@@ -47,6 +47,8 @@ def uniform_exception_handler(exc: Exception, context: dict[str, Any]) -> Respon
         mensaje = exc.mensaje
         detalles = exc.detalles
         status_code = status.HTTP_409_CONFLICT
+        if codigo == "CONCURRENCIA":
+            codigo = "CONFLICTO_CONCURRENCIA"
 
     elif isinstance(exc, SedeNoAutorizadaError | PermisoDenegadoError | PermissionDenied):
         codigo = getattr(exc, "codigo", "ACCESO_DENEGADO")

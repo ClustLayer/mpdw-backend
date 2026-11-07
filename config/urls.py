@@ -19,6 +19,7 @@ urlpatterns = [
     path("api/v1/sedes/", include("apps.m02_sedes.urls")),
     path("api/v1/products/", include("apps.m03_catalogo.urls")),
     path("api/v1/inventory/", include("apps.m04_inventario.urls")),
+    path("api/v1/auditoria/", include("apps.m10_auditoria.urls")),
 ]
 
 # Swagger UI interactivo habilitado exclusivamente en entorno de desarrollo (SAD §9.1)

@@ -2,10 +2,23 @@
 
 import pytest
 
-from apps.m02_sedes.admin_sedes_service import AdminSedesService
+from apps.m02_sedes.admin_sedes_service import AdminSedesService, _hora, _validar_tel
 from apps.m02_sedes.models import Sedes
 from contratos.dtos import AuthContext
-from contratos.excepciones import ReglaNegocioError
+from contratos.excepciones import ConflictoVersionError, ReglaNegocioError
+
+
+@pytest.mark.unit
+def test_hora_vacia_es_none():
+    assert _hora(None) is None
+    assert _hora("") is None
+    assert _hora("08:00") == "08:00"
+
+
+@pytest.mark.unit
+def test_telefono_obligatorio_vacio():
+    with pytest.raises(ReglaNegocioError):
+        _validar_tel("   ", True)
 
 
 @pytest.fixture
@@ -158,7 +171,7 @@ def test_listar_filtro_inactivo_y_concurrencia(ctx_admin):
         },
     )
     assert svc.listar(estado="inactivo", page=1, page_size=5)["total"] >= 1
-    with pytest.raises(ReglaNegocioError) as exc:
+    with pytest.raises(ConflictoVersionError) as exc:
         svc.editar(
             ctx_admin,
             det["id_sede"],

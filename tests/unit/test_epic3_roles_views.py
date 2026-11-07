@@ -59,11 +59,11 @@ def test_vistas_permisos_y_catalogos(db):
     assert client.get("/api/v1/roles-permisos/permisos/catalogos").status_code == 200
     r = client.post(
         "/api/v1/roles-permisos/permisos",
-        {"nombre": "P Vista", "modulo": "auditoria", "accion": "Consultar"},
+        {"nombre": "P Vista E13", "modulo": "eventos", "accion": "Exportar"},
         format="json",
     )
     assert r.status_code == 201
-    assert client.get("/api/v1/roles-permisos/permisos?modulo=auditoria").status_code == 200
+    assert client.get("/api/v1/roles-permisos/permisos?modulo=eventos").status_code == 200
 
 
 @pytest.mark.unit
