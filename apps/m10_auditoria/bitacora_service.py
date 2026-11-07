@@ -97,9 +97,21 @@ class BitacoraAuditoriaService:
             qs = qs.filter(id_usuario_id=uid)
 
         if accion:
-            qs = qs.filter(accion__icontains=accion)
+            qs = qs.filter(accion__iexact=accion)
         if entidad:
             qs = qs.filter(entidad__icontains=entidad)
+
+        q_libre = (params.get("q") or "").strip()[:100]
+        if q_libre:
+            libre = (
+                Q(entidad__icontains=q_libre)
+                | Q(id_usuario__nombre__icontains=q_libre)
+                | Q(id_usuario__apellido__icontains=q_libre)
+                | Q(id_usuario__email__icontains=q_libre)
+            )
+            if q_libre.isdigit():
+                libre |= Q(id_entidad=int(q_libre))
+            qs = qs.filter(libre)
 
         if id_entidad_raw and str(id_entidad_raw).strip():
             try:
@@ -152,6 +164,12 @@ class BitacoraAuditoriaService:
                 }
             )
         return out
+
+    def acciones(self) -> list[str]:
+        """Valores distintos de Auditoria.accion para el combobox del visor."""
+        return list(
+            Auditoria.objects.order_by("accion").values_list("accion", flat=True).distinct()
+        )
 
 
 def _fila(r: Auditoria) -> dict[str, Any]:

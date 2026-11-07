@@ -18,6 +18,7 @@ class SedePublicSerializer(serializers.Serializer):
     maps_url = serializers.CharField()
     map_query = serializers.CharField()
     orden = serializers.IntegerField()
+    es_principal = serializers.BooleanField(required=False)
     horarios = HorarioSerializer(many=True)
     schedule_text = serializers.CharField()
 
@@ -31,6 +32,7 @@ class CrearSedeRequestSerializer(serializers.Serializer):
     maps_url = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
     map_query = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
     orden = serializers.IntegerField(required=False, default=10)
+    es_principal = serializers.BooleanField(required=False, default=False)
     id_usuario_responsable = serializers.IntegerField(required=False, allow_null=True)
     horarios = HorarioSerializer(many=True, required=False)
 

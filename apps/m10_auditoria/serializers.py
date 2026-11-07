@@ -30,6 +30,10 @@ class BitacoraListResponseSerializer(serializers.Serializer):
     mensaje = serializers.CharField()
 
 
+class AccionesBitacoraSerializer(serializers.Serializer):
+    acciones = serializers.ListField(child=serializers.CharField())
+
+
 class UsuarioOpcionSerializer(serializers.Serializer):
     id_usuario = serializers.IntegerField()
     etiqueta = serializers.CharField()

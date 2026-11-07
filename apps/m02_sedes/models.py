@@ -19,6 +19,7 @@ class Sedes(models.Model):
     map_query = models.CharField(max_length=255, blank=True, default="", db_column="map_query")
     orden = models.PositiveIntegerField(default=10, db_column="orden")
     estado = models.BooleanField(default=True, db_column="estado")
+    es_principal = models.BooleanField(default=False, db_column="es_principal")
     version_fila = models.PositiveIntegerField(default=1, db_column="version_fila")
     fecha_creacion = models.DateTimeField(auto_now_add=True, db_column="fecha_creacion")
     id_usuario_responsable = models.ForeignKey(

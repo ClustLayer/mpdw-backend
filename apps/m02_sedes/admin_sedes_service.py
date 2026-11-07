@@ -56,12 +56,26 @@ def _validar_tel(raw: str, obligatorio: bool) -> str:
     return norm[:20]
 
 
+def _hora(valor: Any) -> str | None:
+    if valor is None or valor == "":
+        return None
+    if isinstance(valor, time):
+        return valor.isoformat(timespec="minutes")
+    return str(valor)
+
+
 def _snapshot(sede: Sedes) -> dict[str, Any]:
-    horarios = list(
-        sede.horarios.order_by("dia_semana").values(
+    horarios = [
+        {
+            "dia_semana": int(h["dia_semana"]),
+            "hora_apertura": _hora(h["hora_apertura"]),
+            "hora_cierre": _hora(h["hora_cierre"]),
+            "cerrado": bool(h["cerrado"]),
+        }
+        for h in sede.horarios.order_by("dia_semana").values(
             "dia_semana", "hora_apertura", "hora_cierre", "cerrado"
         )
-    )
+    ]
     return {
         "id_sede": sede.id_sede,
         "nombre": sede.nombre,
@@ -69,14 +83,22 @@ def _snapshot(sede: Sedes) -> dict[str, Any]:
         "telefono": sede.telefono,
         "whatsapp": sede.whatsapp,
         "ciudad": sede.ciudad,
-        "estado": sede.estado,
-        "orden": sede.orden,
+        "estado": bool(sede.estado),
+        "es_principal": bool(sede.es_principal),
+        "orden": int(sede.orden),
         "maps_url": sede.maps_url,
         "map_query": sede.map_query,
         "id_usuario_responsable": sede.id_usuario_responsable_id,
-        "version_fila": sede.version_fila,
+        "version_fila": int(sede.version_fila),
         "horarios": horarios,
     }
+
+
+def _fijar_principal(sede: Sedes, es_principal: bool) -> None:
+    """Solo una sede puede ser la principal."""
+    if es_principal:
+        Sedes.objects.exclude(pk=sede.pk).filter(es_principal=True).update(es_principal=False)
+    sede.es_principal = es_principal
 
 
 def _guardar_horarios(sede: Sedes, filas: list[dict[str, Any]] | None) -> None:
@@ -140,7 +162,13 @@ class AdminSedesService:
                     orden=int(datos.get("orden") or 10),
                     id_usuario_responsable_id=datos.get("id_usuario_responsable") or None,
                     estado=True,
+                    es_principal=False,
                 )
+                if datos.get("es_principal") is True or not Sedes.objects.exclude(pk=sede.pk).filter(
+                    es_principal=True
+                ).exists():
+                    _fijar_principal(sede, True)
+                    sede.save(update_fields=["es_principal"])
                 _guardar_horarios(sede, datos.get("horarios"))
                 despues = _snapshot(sede)
                 self._auditar(ctx, "CREAR_SEDE", sede.id_sede, None, despues)
@@ -187,6 +215,8 @@ class AdminSedesService:
                     sede.id_usuario_responsable_id = datos.get("id_usuario_responsable")
                 if nuevo_estado is not None:
                     sede.estado = bool(nuevo_estado)
+                if "es_principal" in datos:
+                    _fijar_principal(sede, bool(datos.get("es_principal")))
                 sede.version_fila = int(sede.version_fila) + 1
                 sede.save()
                 if datos.get("horarios") is not None:

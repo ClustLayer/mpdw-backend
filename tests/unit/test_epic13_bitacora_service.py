@@ -186,7 +186,7 @@ def test_filtros_accion_entidad_id_usuario_id_entidad():
     p = svc.listar(
         {
             "id_usuario": str(u.id_usuario),
-            "accion": "EDITAR",
+            "accion": "EDITAR_USUARIO",
             "entidad": "Usuario",
             "id_entidad": "99",
         }
@@ -202,6 +202,39 @@ def test_filtro_id_usuario_invalido():
     with pytest.raises(DominioError) as exc:
         svc.listar({"id_usuario": "nan"})
     assert exc.value.codigo == "FILTRO_INVALIDO"
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_busqueda_libre_y_acciones():
+    from apps.m01_identidad.models import Roles, Usuarios
+
+    rol, _ = Roles.objects.get_or_create(
+        nombre="QLibre", defaults={"es_rol_base": True, "estado": True}
+    )
+    u = Usuarios.objects.create_user(
+        email="qlibre.bit@test.local",
+        password="x",
+        nombre="Libre",
+        apellido="Busca",
+        documento="933333333",
+        id_rol=rol,
+    )
+    Auditoria.objects.create(
+        id_usuario=u,
+        accion="INACTIVAR_SEDE",
+        entidad="Sedes",
+        id_entidad=42,
+        datos_antes={"a": 1},
+        datos_despues={"a": 2},
+        motivo="—",
+        ip="10.0.0.2",
+    )
+    svc = BitacoraAuditoriaService()
+    assert svc.listar({"q": "Sedes"}).total == 1
+    assert svc.listar({"q": "Libre"}).total == 1
+    assert svc.listar({"q": "42"}).total == 1
+    assert "INACTIVAR_SEDE" in svc.acciones()
 
 
 @pytest.mark.unit

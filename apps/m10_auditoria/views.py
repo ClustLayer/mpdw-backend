@@ -14,6 +14,7 @@ from apps.m01_identidad.permissions import HasDynamicPermission
 from apps.m01_identidad.services import PermissionService
 from apps.m10_auditoria.bitacora_service import BitacoraAuditoriaService
 from apps.m10_auditoria.serializers import (
+    AccionesBitacoraSerializer,
     BitacoraListResponseSerializer,
     UsuarioOpcionSerializer,
     UsuariosBitacoraQuerySerializer,
@@ -62,6 +63,27 @@ class BitacoraListView(APIView):
             return Response(body)
         except (ReglaNegocioError, DominioError) as exc:
             return _err(exc, request)
+
+
+class BitacoraAccionesView(APIView):
+    """Acciones distintas registradas, para el filtro desplegable."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses={200: AccionesBitacoraSerializer})
+    def get(self, request: Request) -> Response:
+        ctx = _ctx(request)
+        if not PermissionService().tiene_permiso(ctx, "auditoria", "Consultar"):
+            return Response(
+                {
+                    "codigo": "PERMISO_DENEGADO",
+                    "mensaje": "No tiene permisos para realizar esta operación.",
+                    "detalles": [],
+                    "idCorrelacion": getattr(request, "correlation_id", ""),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return Response({"acciones": BitacoraAuditoriaService().acciones()})
 
 
 class BitacoraUsuariosOpcionesView(APIView):

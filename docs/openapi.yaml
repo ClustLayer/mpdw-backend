@@ -18,6 +18,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/BitacoraListResponse'
           description: ''
+  /api/v1/auditoria/bitacora/acciones/:
+    get:
+      operationId: auditoria_bitacora_acciones_retrieve
+      description: Acciones distintas registradas, para el filtro desplegable.
+      tags:
+      - auditoria
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccionesBitacora'
+          description: ''
   /api/v1/auditoria/bitacora/usuarios/:
     get:
       operationId: auditoria_bitacora_usuarios_list
@@ -1197,6 +1212,15 @@ components:
         * `activar` - activar
         * `desactivar` - desactivar
         * `bloquear` - bloquear
+    AccionesBitacora:
+      type: object
+      properties:
+        acciones:
+          type: array
+          items:
+            type: string
+      required:
+      - acciones
     AuditoriaFila:
       type: object
       properties:
@@ -1431,6 +1455,9 @@ components:
         orden:
           type: integer
           default: 10
+        es_principal:
+          type: boolean
+          default: false
         id_usuario_responsable:
           type: integer
           nullable: true
@@ -1772,6 +1799,9 @@ components:
         orden:
           type: integer
           default: 10
+        es_principal:
+          type: boolean
+          default: false
         id_usuario_responsable:
           type: integer
           nullable: true
@@ -2318,6 +2348,8 @@ components:
           type: string
         orden:
           type: integer
+        es_principal:
+          type: boolean
         horarios:
           type: array
           items:
