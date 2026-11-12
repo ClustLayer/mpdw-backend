@@ -316,17 +316,25 @@ class AdminRolesPermisosService:
 
     def _asegurar_permisos_matriz(self) -> None:
         dominios = {dominio for _, dominio, _ in PANEL_MATRIZ_ORDEN}
-        for dominio in dominios:
-            for accion in ACCIONES_CATALOGO:
-                Permisos.objects.get_or_create(
-                    modulo=dominio,
-                    accion=accion,
-                    defaults={
-                        "nombre": f"{dominio} · {accion}",
-                        "descripcion": "Catálogo matriz",
-                        "estado": True,
-                    },
-                )
+        existentes = set(
+            Permisos.objects.filter(modulo__in=dominios, accion__in=ACCIONES_CATALOGO).values_list(
+                "modulo", "accion"
+            )
+        )
+        faltantes = [
+            Permisos(
+                modulo=dominio,
+                accion=accion,
+                nombre=f"{dominio} · {accion}",
+                descripcion="Catálogo matriz",
+                estado=True,
+            )
+            for dominio in dominios
+            for accion in ACCIONES_CATALOGO
+            if (dominio, accion) not in existentes
+        ]
+        if faltantes:
+            Permisos.objects.bulk_create(faltantes, ignore_conflicts=True)
 
     def _filas_matriz_por_panel(
         self,
