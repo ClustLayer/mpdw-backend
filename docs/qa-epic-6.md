@@ -19,6 +19,10 @@
 - El diálogo solo tiene un scroll (`overflow-hidden` en `<dialog>`).
 - El botón de movimiento muestra spinner y no admite doble clic.
 
+## Entrada lote y origen
+
+- `test_entrada_proveedor_y_fabricado`, `test_origen_comprado_fabricado` (catálogo).
+
 ## Automatizado
 
 - `tests/unit/test_epic6_inventario.py`
