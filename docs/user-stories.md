@@ -163,3 +163,5 @@ Migraciones: `0002_epic4_sedes_horarios`, permisos demo `0009`/`0010`, seed `000
 | HU_MPDW_01_27 / 28 Parámetros | COMPLETED | `/api/v1/catalogo/parametros/{tipo}/` |
 | HU_MPDW_01_29 Importar | COMPLETED | `POST /api/v1/catalogo/productos/importar/` |
 | HU_MPDW_01_30 Exportar | COMPLETED | `GET /api/v1/catalogo/productos/exportar/` |
+
+Cierre parámetros (2026-11-12): `seed_catalogo_parametros`, accesos-panel con `categorias`/`marcas`/`tipos_producto`; docs `qa-epic-5.md`, `user-stories-epic-5-extras.md`.
