@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "apps.m10_auditoria.apps.M10AuditoriaConfig",
     "apps.m11_eventos.apps.M11EventosConfig",
     "apps.m12_tienda_publica.apps.M12TiendaPublicaConfig",
+    "apps.m14_proveedores.apps.M14ProveedoresConfig",
     "apps.m13_plataforma.apps.M13PlataformaConfig",
     # Proceso ETL
     "etl.apps.EtlConfig",

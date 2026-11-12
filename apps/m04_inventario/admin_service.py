@@ -13,6 +13,8 @@ from apps.m02_sedes.models import Sedes
 from apps.m03_catalogo.models import Productos
 from apps.m04_inventario.models import Inventarios, Movimientos_inventario
 from apps.m10_auditoria.services import AuditService
+from apps.m14_proveedores.mensajes import MSG_PROVEEDOR_INACTIVO
+from apps.m14_proveedores.models import Proveedores
 from contratos.dtos import AuditoriaDTO, AuthContext
 from contratos.excepciones import ReglaNegocioError
 
@@ -30,6 +32,7 @@ MSG_STOCK = "No hay existencias suficientes en la sede de origen."
 MSG_DATOS = "Todos los campos obligatorios deben ser diligenciados."
 MSG_SEDE = "La sede de destino debe ser distinta a la de origen."
 MSG_PROVEEDOR = "Los productos comprados requieren proveedor."
+MSG_PROVEEDOR_INVALIDO = "El proveedor indicado no existe o no es válido."
 MSG_COSTO = "El costo unitario no puede ser negativo."
 MSG_LINEAS = "Agregue al menos un producto."
 MSG_CODIGO = "Código no encontrado. Use SKU o código de barras registrado."
@@ -41,6 +44,17 @@ class AdminInventarioService:
 
     def sedes(self) -> list[dict[str, Any]]:
         return [dict(row) for row in Sedes.objects.filter(estado=True).order_by("nombre").values("id_sede", "nombre")]
+
+    def proveedores_activos(self) -> dict[str, Any]:
+        items = [
+            {
+                "id_proveedor": p.id_proveedor,
+                "nombre": p.nombre,
+                "numero_documento": p.numero_documento,
+            }
+            for p in Proveedores.objects.filter(estado=True).order_by("nombre")
+        ]
+        return {"items": items}
 
     def productos_opciones(self, q: str) -> dict[str, Any]:
         qs = Productos.objects.filter(estado=True)
@@ -100,7 +114,10 @@ class AdminInventarioService:
 
     def kardex(self, filtros: dict[str, str]) -> dict[str, Any]:
         qs = Movimientos_inventario.objects.select_related(
-            "id_inventario__id_producto", "id_inventario__id_sede", "id_usuario"
+            "id_inventario__id_producto",
+            "id_inventario__id_sede",
+            "id_usuario",
+            "id_proveedor",
         )
         if filtros.get("id_sede"):
             qs = qs.filter(id_inventario__id_sede_id=int(filtros["id_sede"]))
@@ -128,7 +145,9 @@ class AdminInventarioService:
                     "costo_unitario": str(m.costo_unitario) if m.costo_unitario is not None else None,
                     "motivo": m.motivo,
                     "referencia": m.referencia,
-                    "proveedor": m.proveedor_nombre,
+                    "id_proveedor": m.id_proveedor_id,
+                    "proveedor_nombre": m.id_proveedor.nombre if m.id_proveedor_id and m.id_proveedor else "",
+                    "proveedor": m.id_proveedor.nombre if m.id_proveedor_id and m.id_proveedor else "",
                     "usuario": m.id_usuario.email if m.id_usuario_id and m.id_usuario else "",
                 }
             )
@@ -148,7 +167,7 @@ class AdminInventarioService:
         lineas_raw = datos.get("lineas") or []
         if not isinstance(lineas_raw, list) or not lineas_raw:
             raise ReglaNegocioError(MSG_LINEAS, codigo="LINEAS")
-        proveedor = str(datos.get("proveedor") or "").strip()
+        id_proveedor = self._resolver_id_proveedor(datos)
         referencia = str(datos.get("referencia") or "")[:80]
         motivo = str(datos.get("motivo") or "").strip() or "Entrada de mercancía"
         consolidado: dict[int, dict[str, Any]] = {}
@@ -183,7 +202,7 @@ class AdminInventarioService:
         if not consolidado:
             raise ReglaNegocioError(MSG_LINEAS, codigo="LINEAS")
         for row in consolidado.values():
-            if row["origen"] == Productos.ORIGEN_COMPRADO and not proveedor:
+            if row["origen"] == Productos.ORIGEN_COMPRADO and not id_proveedor:
                 nombre = row.get("nombre", "producto")
                 raise ReglaNegocioError(f"«{nombre}» es comprado: el proveedor es obligatorio.", codigo="PROVEEDOR")
         with transaction.atomic():
@@ -195,7 +214,7 @@ class AdminInventarioService:
                     "cantidad": row["cantidad"],
                     "motivo": motivo,
                     "referencia": referencia,
-                    "proveedor": proveedor,
+                    "id_proveedor": id_proveedor,
                     "costo_unitario": row.get("costo_unitario"),
                 }
                 self._aplicar(ctx, "entrada_compra", payload, Decimal("1"), requiere_motivo=False)
@@ -234,6 +253,29 @@ class AdminInventarioService:
             raise ReglaNegocioError(MSG_CODIGO, codigo="PRODUCTO")
         return prod
 
+    def _resolver_id_proveedor(self, datos: dict[str, Any]) -> int | None:
+        raw = datos.get("id_proveedor")
+        if raw in (None, "", 0, "0"):
+            legacy = datos.get("proveedor")
+            if legacy not in (None, ""):
+                s = str(legacy).strip()
+                if s.isdigit():
+                    raw = int(s)
+                else:
+                    return None
+            else:
+                return None
+        try:
+            pid = int(raw)
+        except (TypeError, ValueError) as exc:
+            raise ReglaNegocioError(MSG_PROVEEDOR_INVALIDO, codigo="PROVEEDOR") from exc
+        prov = Proveedores.objects.filter(pk=pid).first()
+        if not prov:
+            raise ReglaNegocioError(MSG_PROVEEDOR_INVALIDO, codigo="PROVEEDOR")
+        if not prov.estado:
+            raise ReglaNegocioError(MSG_PROVEEDOR_INACTIVO, codigo="PROVEEDOR_INACTIVO")
+        return pid
+
     def _costo_opcional(self, valor: Any) -> Decimal | None:
         if valor in (None, ""):
             return None
@@ -255,9 +297,11 @@ class AdminInventarioService:
         producto = Productos.objects.filter(pk=id_producto, estado=True).first()
         if not producto:
             raise ReglaNegocioError(MSG_CODIGO, codigo="PRODUCTO")
-        proveedor = str(datos.get("proveedor") or "").strip()
-        if producto.origen == Productos.ORIGEN_COMPRADO and not proveedor:
+        id_proveedor = self._resolver_id_proveedor(datos)
+        if producto.origen == Productos.ORIGEN_COMPRADO and not id_proveedor:
             raise ReglaNegocioError(MSG_PROVEEDOR, codigo="PROVEEDOR")
+        if id_proveedor:
+            datos["id_proveedor"] = id_proveedor
         costo = self._costo_opcional(datos.get("costo_unitario"))
         if costo is not None:
             datos["costo_unitario"] = costo
@@ -304,6 +348,11 @@ class AdminInventarioService:
             inv.cantidad_actual = nueva
             inv.save(update_fields=["cantidad_actual"])
             usuario_id = ctx.id_usuario if Usuarios.objects.filter(pk=ctx.id_usuario).exists() else None
+            pid = datos.get("id_proveedor")
+            if pid:
+                pid = int(pid)
+            else:
+                pid = self._resolver_id_proveedor(datos)
             Movimientos_inventario.objects.create(
                 id_inventario=inv,
                 tipo_movimiento=tipo,
@@ -312,7 +361,7 @@ class AdminInventarioService:
                 cantidad_nueva=nueva,
                 motivo=motivo,
                 referencia=str(datos.get("referencia") or "")[:80],
-                proveedor_nombre=str(datos.get("proveedor") or "")[:255],
+                id_proveedor_id=pid,
                 costo_unitario=costo,
                 id_usuario_id=usuario_id,
             )
