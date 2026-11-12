@@ -721,15 +721,15 @@ class PermissionService:
                 continue
             lista = sorted(a for a in acts if a != "Sin acceso")
             if modulo_dom == "catalogo_productos":
-                for clave in CATALOGO_PRODUCTOS_PANEL:
-                    modulos_panel.append(clave)
-                    acciones[clave] = lista
+                for clave_catalogo in CATALOGO_PRODUCTOS_PANEL:
+                    modulos_panel.append(clave_catalogo)
+                    acciones[clave_catalogo] = lista
                 continue
-            clave = MODULO_A_PANEL.get(modulo_dom)
-            if not clave:
+            clave_panel = MODULO_A_PANEL.get(modulo_dom)
+            if clave_panel is None:
                 continue
-            modulos_panel.append(clave)
-            acciones[clave] = lista
+            modulos_panel.append(clave_panel)
+            acciones[clave_panel] = lista
         if "resumen" not in modulos_panel and por_modulo.get("autenticacion_perfil"):
             modulos_panel.insert(0, "resumen")
         return {"modulos": sorted(set(modulos_panel)), "acciones_por_modulo": acciones}

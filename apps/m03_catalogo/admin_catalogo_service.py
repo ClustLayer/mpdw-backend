@@ -24,7 +24,9 @@ from apps.m03_catalogo.mensajes import (
     MSG_ACTUALIZAR_ERROR,
     MSG_ARCHIVO,
     MSG_BARRAS_DUP,
+    MSG_BARRAS_INVALIDO,
     MSG_CODIGO_DUP,
+    MSG_CODIGO_INVALIDO,
     MSG_CONCURRENCIA,
     MSG_CREADO,
     MSG_CREAR_ERROR,
@@ -49,8 +51,11 @@ from apps.m03_catalogo.mensajes import (
     MSG_PARAM_EDITAR_ERROR,
     MSG_PARAM_GUARDAR_ERROR,
     MSG_PARAM_OK,
+    MSG_PARAMETRO_INACTIVO,
+    MSG_RANGO_INVALIDO,
     MSG_SIN_COINCIDENCIAS,
     MSG_TIPO_BASE,
+    MSG_UNIDAD_INVALIDA,
 )
 from apps.m03_catalogo.models import (
     Categorias_producto,
@@ -242,22 +247,22 @@ class AdminCatalogoService:
         if any(v in (None, "") for v in oblig) or datos.get("precio_compra") in (None, "") or datos.get("precio_venta") in (None, "") or datos.get("iva_porcentaje") in (None, "") or datos.get("stock_minimo") in (None, ""):
             raise ReglaNegocioError(MSG_OBLIGATORIOS, codigo="CAMPOS_OBLIGATORIOS")
         if len(codigo) > 30 or not codigo.replace("-", "").replace("_", "").isalnum():
-            raise ReglaNegocioError(MSG_OBLIGATORIOS, codigo="CODIGO_INVALIDO")
+            raise ReglaNegocioError(MSG_CODIGO_INVALIDO, codigo="CODIGO_INVALIDO")
         if len(nombre) > 255:
-            raise ReglaNegocioError(MSG_OBLIGATORIOS, codigo="NOMBRE_LARGO")
+            raise ReglaNegocioError(MSG_CODIGO_INVALIDO, codigo="NOMBRE_LARGO")
         if unidad not in UNIDADES:
-            raise ReglaNegocioError(MSG_OBLIGATORIOS, codigo="UNIDAD_INVALIDA")
+            raise ReglaNegocioError(MSG_UNIDAD_INVALIDA, codigo="UNIDAD_INVALIDA")
         if barras and (not barras.isdigit() or len(barras) > 14):
-            raise ReglaNegocioError(MSG_OBLIGATORIOS, codigo="BARRAS_INVALIDO")
+            raise ReglaNegocioError(MSG_BARRAS_INVALIDO, codigo="BARRAS_INVALIDO")
         compra = _d(datos.get("precio_compra"))
         venta = _d(datos.get("precio_venta"))
         iva = _d(datos.get("iva_porcentaje"))
         try:
             stock = int(str(datos.get("stock_minimo")))
         except (TypeError, ValueError):
-            raise ReglaNegocioError(MSG_OBLIGATORIOS, codigo="STOCK_INVALIDO") from None
+            raise ReglaNegocioError(MSG_RANGO_INVALIDO, codigo="STOCK_INVALIDO") from None
         if compra < 0 or venta < 0 or iva < 0 or iva > 100 or stock < 0:
-            raise ReglaNegocioError(MSG_OBLIGATORIOS, codigo="RANGO_INVALIDO")
+            raise ReglaNegocioError(MSG_RANGO_INVALIDO, codigo="RANGO_INVALIDO")
         dup = Productos.objects.filter(codigo_producto__iexact=codigo)
         if propio:
             dup = dup.exclude(pk=propio)
@@ -275,7 +280,7 @@ class AdminCatalogoService:
             (Tipos_producto, "id_tipo_producto", int(str(datos["id_tipo_producto"]))),
         ):
             if not modelo.objects.filter(pk=pk, estado=True).exists():
-                raise ReglaNegocioError(MSG_OBLIGATORIOS, codigo="PARAMETRO_INACTIVO")
+                raise ReglaNegocioError(MSG_PARAMETRO_INACTIVO, codigo="PARAMETRO_INACTIVO")
         return {
             "codigo_producto": codigo,
             "codigo_barras": barras or None,
