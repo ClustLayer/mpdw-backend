@@ -1,6 +1,6 @@
 # Changelog
 
-Versionado del producto (**major.sprint.epica**):
+Versionado del producto: **MAJOR.SPRINT.EPIC_IN_SPRINT** (`1` = major del sistema, `2` = Sprint 2, tercer dígito = épica secuencial del sprint).
 
 | Versión | Alcance |
 |---------|---------|
@@ -10,11 +10,20 @@ Versionado del producto (**major.sprint.epica**):
 | **1.1.3** | Sprint 1 · Épica 3 (roles y permisos) |
 | **1.1.4** | Sprint 1 · Épica 4 (sedes) |
 | **1.1.5** | Sprint 1 · Cierre (Épicas 13 y 18 + endurecimiento producción) |
-| **1.2.6** | Sprint 2 · Épica 6 (inventario y kardex) |
+| **1.2.1** | Sprint 2 · Épica 5 (catálogo de productos) |
+| **1.2.2** | Sprint 2 · Épica 6 (inventario y kardex) |
+| **1.2.3** | Sprint 2 · Épica 7 (directorio de clientes y Habeas Data) |
 
 ---
 
-## 2026-11-11 — v1.2.6 Épica 6 (inventario demo)
+## 2026-11-12 — v1.2.3 Épica 7 (directorio de clientes y Habeas Data)
+
+- Modelos `Clientes` / `Tipos_cliente` ampliados (apellido, e.164, WhatsApp, ciudad, observaciones, consentimiento, `version_fila`).
+- API `/api/v1/clientes/` (CRUD, tipos, verificación de teléfono, historial y métricas).
+- Semilla del tipo predeterminado «Común»; `Detalle_factura` para ranking de productos.
+- OpenAPI sincronizado; QA en `docs/qa-epic-7.md`.
+
+## 2026-11-11 — v1.2.2 Épica 6 (inventario demo)
 
 - Origen comprado/fabricado en productos; costo unitario en kardex.
 - Entrada manual, lote (escaneo/carga rápida) y validación de proveedor.

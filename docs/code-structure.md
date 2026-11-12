@@ -48,3 +48,8 @@
 - `apps/m04_inventario/admin_service.py`, `admin_views.py`, `urls_admin.py` — `/api/v1/inventario/`.
 - Migración `0002_epic6_kardex_campos` (`referencia`, `proveedor_nombre`).
 - El listado público sigue en `GET /api/v1/inventory/`.
+
+## Épica 7 — Clientes y Habeas Data
+- `apps/m05_clientes/admin_clientes_service.py`, `admin_views.py`, `urls_admin.py` — `/api/v1/clientes/`.
+- Migración `0002_epic7_clientes` (campos HU 37–41 + índices + semilla «Común»).
+- `apps/m06_ventas/migrations/0002_detalle_factura.py` — líneas para métricas HU 42.

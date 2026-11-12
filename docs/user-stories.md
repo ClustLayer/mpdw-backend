@@ -178,3 +178,16 @@ Cierre parámetros (2026-11-12): `seed_catalogo_parametros`, accesos-panel con `
 | HU_MPDW_01_36 Alerta de stock bajo | COMPLETED | campo `alerta` en existencias |
 
 Campos de demo (proveedor en texto y referencia) en `Movimientos_inventario`. QA: `docs/qa-epic-6.md`.
+
+## Épica 7 — Directorio de clientes y Habeas Data (2026-11-12) — **v1.2.3** — **Status:** COMPLETED
+
+| Historia | Estado | Evidencia |
+|----------|--------|-----------|
+| HU_MPDW_01_37 Crear cliente + consentimiento | COMPLETED | `POST /api/v1/clientes/`, e.164, Habeas Data, `fecha_consentimiento` |
+| HU_MPDW_01_38 Directorio (búsqueda/filtros/WhatsApp) | COMPLETED | `GET /api/v1/clientes/`, wa.me e.164 sanitizado |
+| HU_MPDW_01_39 Editar / desactivar cliente | COMPLETED | `PATCH /api/v1/clientes/{id}/`, concurrencia `version_fila` |
+| HU_MPDW_01_40 Crear tipo de cliente | COMPLETED | `POST /api/v1/clientes/tipos/`, semilla «Común» |
+| HU_MPDW_01_41 Editar tipo (proteger Común) | COMPLETED | `PATCH /api/v1/clientes/tipos/{id}/` |
+| HU_MPDW_01_42 Detalle, historial y métricas | COMPLETED | `GET /api/v1/clientes/{id}/historial/` |
+
+QA: `docs/qa-epic-7.md`. Extras demo: `docs/user-stories-sprint2-extras.md` (S2_13–S2_15).
