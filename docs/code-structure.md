@@ -43,3 +43,8 @@
 - `apps/m03_catalogo/admin_catalogo_service.py`, `admin_views.py`, `urls_admin.py` — `/api/v1/catalogo/`.
 - Migración `0002_epic5_catalogo_backoffice` (precios, imagen, parámetros, tipos base).
 - RBAC: mapas de permiso en una pasada (`PermissionRepository._mapas`) y alta masiva de la matriz.
+
+## Épica 6 — Inventario y kardex
+- `apps/m04_inventario/admin_service.py`, `admin_views.py`, `urls_admin.py` — `/api/v1/inventario/`.
+- Migración `0002_epic6_kardex_campos` (`referencia`, `proveedor_nombre`).
+- El listado público sigue en `GET /api/v1/inventory/`.

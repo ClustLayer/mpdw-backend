@@ -10,8 +10,14 @@ Versionado del producto (**major.sprint.epica**):
 | **1.1.3** | Sprint 1 · Épica 3 (roles y permisos) |
 | **1.1.4** | Sprint 1 · Épica 4 (sedes) |
 | **1.1.5** | Sprint 1 · Cierre (Épicas 13 y 18 + endurecimiento producción) |
+| **1.2.6** | Sprint 2 · Épica 6 (inventario y kardex) |
 
 ---
+
+## 2026-11-11 — v1.2.6 Épica 6 (inventario demo)
+
+- Origen comprado/fabricado en productos; costo unitario en kardex.
+- Entrada manual, lote (escaneo/carga rápida) y validación de proveedor.
 
 ## 2026-11-06 — v1.1.5 Cierre Sprint 1 (Épicas 13 y 18 + producción)
 

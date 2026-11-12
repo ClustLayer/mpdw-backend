@@ -86,6 +86,7 @@ COLUMNAS_IMPORT = [
     "iva_porcentaje",
     "stock_minimo",
     "inventario_habilitado",
+    "origen",
 ]
 MAX_IMAGEN = 5 * 1024 * 1024
 MAX_IMPORT = 10 * 1024 * 1024
@@ -132,6 +133,7 @@ def _snap(p: Productos) -> dict[str, Any]:
         "precio_venta": str(p.precio_venta),
         "iva_porcentaje": str(p.iva_porcentaje),
         "estado": p.estado,
+        "origen": p.origen,
         "version_fila": p.version,
     }
 
@@ -214,6 +216,7 @@ class AdminCatalogoService:
                 "stock_nivel": nivel,
                 "estado": p.estado,
                 "imagen_url": p.imagen_url,
+                "origen": p.origen,
                 "version_fila": p.version,
             }
             for p, total_ex, nivel in page_rows
@@ -263,6 +266,9 @@ class AdminCatalogoService:
             raise ReglaNegocioError(MSG_RANGO_INVALIDO, codigo="STOCK_INVALIDO") from None
         if compra < 0 or venta < 0 or iva < 0 or iva > 100 or stock < 0:
             raise ReglaNegocioError(MSG_RANGO_INVALIDO, codigo="RANGO_INVALIDO")
+        origen = str(datos.get("origen") or Productos.ORIGEN_COMPRADO).strip().lower()
+        if origen not in {Productos.ORIGEN_COMPRADO, Productos.ORIGEN_FABRICADO}:
+            raise ReglaNegocioError(MSG_RANGO_INVALIDO, codigo="ORIGEN_INVALIDO")
         dup = Productos.objects.filter(codigo_producto__iexact=codigo)
         if propio:
             dup = dup.exclude(pk=propio)
@@ -295,6 +301,7 @@ class AdminCatalogoService:
             "iva_porcentaje": iva,
             "stock_minimo": stock,
             "inventario_habilitado": bool(datos.get("inventario_habilitado", True)),
+            "origen": origen,
             "advertencia_precio": venta < compra,
         }
 
@@ -603,6 +610,7 @@ class AdminCatalogoService:
                     "iva_porcentaje": fila.get("iva_porcentaje", ""),
                     "stock_minimo": fila.get("stock_minimo", ""),
                     "inventario_habilitado": str(fila.get("inventario_habilitado", "")).strip().upper() in {"SI", "1", "TRUE", "YES"},
+                    "origen": (fila.get("origen") or Productos.ORIGEN_COMPRADO).strip().lower(),
                 }
                 self.crear(ctx, datos)
                 ok += 1
@@ -620,7 +628,7 @@ class AdminCatalogoService:
         if data["total"] == 0:
             raise ReglaNegocioError(MSG_EXPORT_VACIO, codigo="EXPORT_VACIO")
         fecha = timezone.localdate().isoformat()
-        headers = ["codigo", "nombre", "categoria", "marca", "tipo", "precio_venta", "existencia", "estado"]
+        headers = ["codigo", "nombre", "categoria", "marca", "tipo", "origen", "precio_venta", "existencia", "estado"]
         rows = []
         for item in data["items"]:
             rows.append([
@@ -629,6 +637,7 @@ class AdminCatalogoService:
                 item["categoria"],
                 item["marca"],
                 item["tipo"],
+                item.get("origen", Productos.ORIGEN_COMPRADO),
                 item["precio_venta"],
                 "N/A" if item["existencia"] is None else item["existencia"],
                 "Activo" if item["estado"] else "Inactivo",

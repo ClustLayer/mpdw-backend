@@ -179,3 +179,14 @@ def test_reglas_extra_catalogo(ctx, params):
     wb.save(raw)
     imp = svc.importar(ctx, "carga.xlsx", raw.getvalue())
     assert imp["cargados"] == 1
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_origen_comprado_fabricado(ctx, params):
+    cat, marca, tipo = params
+    svc = AdminCatalogoService()
+    body, _ = svc.crear(ctx, _payload(cat, marca, tipo, codigo_producto="FAB-99", origen="fabricado"))
+    assert body["origen"] == "fabricado"
+    with pytest.raises(ReglaNegocioError):
+        svc.crear(ctx, _payload(cat, marca, tipo, codigo_producto="BAD-ORI", origen="importado"))

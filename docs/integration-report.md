@@ -75,3 +75,12 @@ No se levanto el par navegador-API contra la base de Supabase durante esta ejecu
 | CRUD producto y parámetros | PASS | `test_epic5_catalogo.py` |
 | Importación no sobrescribe | PASS | `test_import_csv_no_sobrescribe` |
 | UI panel | Frontend | `panel-productos-page.tsx` |
+
+## Épica 6 — Inventario y kardex
+**Validated:** 2026-11-11
+
+| Criterio | Estado | Evidencia |
+|---|---|---|
+| Existencias, kardex y movimientos | PASS | `test_epic6_inventario.py` |
+| Stock insuficiente | PASS | `ReglaNegocioError` en merma |
+| UI panel | Frontend | `panel-inventario-page.tsx` |

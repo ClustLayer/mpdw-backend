@@ -692,6 +692,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotReadyResponse'
           description: ''
+  /api/v1/inventario/existencias/:
+    get:
+      operationId: inventario_existencias
+      tags:
+      - inventario
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/inventario/kardex/:
+    get:
+      operationId: inventario_kardex
+      tags:
+      - inventario
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/inventario/movimientos/{accion}/:
+    post:
+      operationId: inventario_movimiento
+      parameters:
+      - in: path
+        name: accion
+        schema:
+          type: string
+        required: true
+      tags:
+      - inventario
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/inventario/movimientos/entrada-lote/:
+    post:
+      operationId: inventario_entrada_lote
+      tags:
+      - inventario
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/inventario/productos-opciones/:
+    get:
+      operationId: inventario_productos_opciones
+      tags:
+      - inventario
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/inventory/:
     get:
       operationId: inventory_list
