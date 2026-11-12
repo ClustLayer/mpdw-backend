@@ -18,6 +18,12 @@ Versionado del producto: **MAJOR.SPRINT.EPIC_IN_SPRINT** (`1` = major del sistem
 
 ---
 
+## 2026-11-12 — Mejoras integrales Sprint 2 (iteración 12)
+
+- Catálogo: `SET_NULL` en categoría, eliminación de parámetros, exportación enriquecida.
+- Clientes: color en tipos de cliente; resumen con permisos granulares; eventos con imagen por archivo.
+- QA: `docs/correcciones-iteracion-12.md`, `tests/unit/test_sprint2_mejoras.py`.
+
 ## 2026-11-12 — v1.2.5 Épica 14 (proveedores e inventario)
 
 - App `m14_proveedores`, API `/api/v1/proveedores/`, auditoría y concurrencia.

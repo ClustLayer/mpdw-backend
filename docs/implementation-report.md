@@ -133,3 +133,10 @@
 
 - App `m14_proveedores`, FK en kardex, purga de datos de prueba de inventario.
 - Pruebas: `tests/unit/test_epic14_proveedores.py`; suite unitaria 292 passed, cobertura ≥ 90%.
+
+## Iteración 12 — Mejoras integrales Sprint 2 (backend)
+**Status:** COMPLETED  
+**Date:** 2026-11-12  
+**Branch:** `epicas-12-14-eventos-proveedores`
+
+- Ver `docs/correcciones-iteracion-12.md`. Suite: 300 passed, cobertura 90.03%.

@@ -115,3 +115,13 @@ No se levanto el par navegador-API contra la base de Supabase durante esta ejecu
 | FK inventario + purga | PASS | `0004_epic14_proveedor_fk`, `test_epic6_inventario.py` |
 | Selector activos | PASS | `/proveedores/activos/`, inventario combobox |
 | UI panel | Frontend | `panel-proveedores-page.tsx`, `panel-inventario-page.tsx` |
+
+## Iteración 12 — Mejoras integrales Sprint 2
+**Validated:** 2026-11-12
+
+| Criterio | Estado | Evidencia |
+|---|---|---|
+| Resumen permisos | PASS | `GET /api/v1/auth/panel-resumen/`, `test_sprint2_mejoras.py` |
+| Exportación catálogo | PASS | columnas extendidas, alcance página/filtrado |
+| Tipos cliente color | PASS | migración `0003_tipos_cliente_color` |
+| Eventos imagen archivo | PASS | `POST .../imagen/` |
