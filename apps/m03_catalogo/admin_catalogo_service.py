@@ -49,6 +49,8 @@ from apps.m03_catalogo.mensajes import (
     MSG_OBLIGATORIOS,
     MSG_PARAM_CREADO,
     MSG_PARAM_EDITAR_ERROR,
+    MSG_PARAM_ELIMINADO,
+    MSG_PARAM_ELIMINAR_ERROR,
     MSG_PARAM_GUARDAR_ERROR,
     MSG_PARAM_OK,
     MSG_PARAMETRO_INACTIVO,
@@ -91,6 +93,7 @@ COLUMNAS_IMPORT = [
 MAX_IMAGEN = 5 * 1024 * 1024
 MAX_IMPORT = 10 * 1024 * 1024
 MIME_OK = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
+ORIGEN_ETIQUETA = dict(Productos.ORIGEN_CHOICES)
 
 
 def _d(value: Any) -> Decimal:
@@ -190,7 +193,7 @@ class AdminCatalogoService:
         campos = {
             "codigo": lambda r: r[0].codigo_producto,
             "nombre": lambda r: r[0].nombre.lower(),
-            "categoria": lambda r: r[0].id_categoria.nombre.lower(),
+            "categoria": lambda r: (r[0].id_categoria.nombre if r[0].id_categoria else "").lower(),
             "marca": lambda r: (r[0].id_marca.nombre if r[0].id_marca else "").lower(),
             "tipo": lambda r: (r[0].id_tipo_producto.nombre if r[0].id_tipo_producto else "").lower(),
             "precio": lambda r: r[0].precio_venta,
@@ -208,10 +211,13 @@ class AdminCatalogoService:
                 "id_producto": p.id_producto,
                 "codigo_producto": p.codigo_producto,
                 "nombre": p.nombre,
-                "categoria": p.id_categoria.nombre,
+                "categoria": p.id_categoria.nombre if p.id_categoria else "",
                 "marca": p.id_marca.nombre if p.id_marca else "",
                 "tipo": p.id_tipo_producto.nombre if p.id_tipo_producto else "",
+                "precio_compra": str(p.precio_compra),
                 "precio_venta": str(p.precio_venta),
+                "iva_porcentaje": str(p.iva_porcentaje),
+                "unidad_medida": p.unidad_medida,
                 "existencia": None if not p.inventario_habilitado else str(total_ex),
                 "stock_nivel": nivel,
                 "estado": p.estado,
@@ -230,7 +236,7 @@ class AdminCatalogoService:
         data.update(
             {
                 "descripcion": p.descripcion,
-                "id_categoria": p.id_categoria_id,
+                "id_categoria": p.id_categoria_id if p.id_categoria_id else None,
                 "id_marca": p.id_marca_id,
                 "id_tipo_producto": p.id_tipo_producto_id,
                 "unidad_medida": p.unidad_medida,
@@ -543,6 +549,24 @@ class AdminCatalogoService:
             logger.exception("editar_param")
             raise DominioError(MSG_PARAM_EDITAR_ERROR, codigo="PARAM_EDITAR_ERROR") from None
 
+    def eliminar_param(self, ctx: AuthContext, tipo: str, id_row: int) -> str:
+        modelo: Any = {"categorias": Categorias_producto, "marcas": Marcas, "tipos": Tipos_producto}[tipo]
+        etiqueta = {"categorias": "Categoría", "marcas": "Marca", "tipos": "Tipo"}[tipo]
+        try:
+            with transaction.atomic():
+                row = modelo.objects.select_for_update().get(pk=id_row)
+                if tipo == "tipos" and getattr(row, "es_base", False):
+                    raise ReglaNegocioError(MSG_TIPO_BASE, codigo="TIPO_BASE")
+                antes = {"nombre": row.nombre, "estado": row.estado}
+                row.delete()
+                _audit(ctx, "ELIMINAR_PARAMETRO", modelo.__name__, id_row, antes, None)
+            return MSG_PARAM_ELIMINADO.format(tipo=etiqueta)
+        except (ReglaNegocioError, modelo.DoesNotExist):
+            raise
+        except Exception:  # pragma: no cover
+            logger.exception("eliminar_param")
+            raise DominioError(MSG_PARAM_ELIMINAR_ERROR, codigo="PARAM_ELIMINAR_ERROR") from None
+
     def plantilla_xlsx(self) -> bytes:
         from openpyxl import Workbook  # type: ignore[import-untyped]
 
@@ -623,22 +647,53 @@ class AdminCatalogoService:
                 errores.append({"fila": i, "columna": "", "motivo": MSG_IMPORT_ERROR})
         return {"mensaje": MSG_IMPORT_OK.format(n=ok, m=len(errores)), "cargados": ok, "errores": errores}
 
-    def exportar(self, q: str, filtros: dict[str, str], formato: str) -> tuple[str, bytes, str]:
-        data = self.listar(q, filtros, 1, 5000, "nombre")
+    def exportar(
+        self,
+        q: str,
+        filtros: dict[str, str],
+        formato: str,
+        *,
+        page: int = 1,
+        page_size: int = 5000,
+        alcance: str = "filtro",
+    ) -> tuple[str, bytes, str]:
+        alcance_norm = (alcance or "filtro").strip().lower()
+        if alcance_norm == "pagina":
+            limite = min(max(1, page_size), 5000)
+            data = self.listar(q, filtros, max(1, page), limite, "nombre")
+        else:
+            data = self.listar(q, filtros, 1, 5000, "nombre")
         if data["total"] == 0:
             raise ReglaNegocioError(MSG_EXPORT_VACIO, codigo="EXPORT_VACIO")
         fecha = timezone.localdate().isoformat()
-        headers = ["codigo", "nombre", "categoria", "marca", "tipo", "origen", "precio_venta", "existencia", "estado"]
+        headers = [
+            "codigo_producto",
+            "nombre",
+            "precio_compra",
+            "precio_venta",
+            "iva_porcentaje",
+            "categoria",
+            "marca",
+            "tipo",
+            "unidad_medida",
+            "origen",
+            "existencia",
+            "estado",
+        ]
         rows = []
         for item in data["items"]:
+            origen = item.get("origen", Productos.ORIGEN_COMPRADO)
             rows.append([
                 item["codigo_producto"],
                 item["nombre"],
+                item["precio_compra"],
+                item["precio_venta"],
+                item["iva_porcentaje"],
                 item["categoria"],
                 item["marca"],
                 item["tipo"],
-                item.get("origen", Productos.ORIGEN_COMPRADO),
-                item["precio_venta"],
+                item["unidad_medida"],
+                ORIGEN_ETIQUETA.get(origen, origen),
                 "N/A" if item["existencia"] is None else item["existencia"],
                 "Activo" if item["estado"] else "Inactivo",
             ])
@@ -647,7 +702,7 @@ class AdminCatalogoService:
             writer = csv.writer(buff)
             writer.writerow(headers)
             writer.writerows(rows)
-            return f"catalogo-productos-{fecha}.csv", buff.getvalue().encode("utf-8-sig"), "text/csv"
+            return f"{fecha}-catalogo-productos.csv", buff.getvalue().encode("utf-8-sig"), "text/csv"
         if formato == "xlsx":
             from openpyxl import Workbook
 
@@ -658,5 +713,5 @@ class AdminCatalogoService:
                 ws.append(row)
             raw = io.BytesIO()
             wb.save(raw)
-            return f"catalogo-productos-{fecha}.xlsx", raw.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            return f"{fecha}-catalogo-productos.xlsx", raw.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         raise DominioError(MSG_EXPORT_ERROR, codigo="EXPORT_ERROR")

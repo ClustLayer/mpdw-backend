@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.m01_identidad.admin_roles_views import AccesosPanelView
+from apps.m01_identidad.admin_roles_views import AccesosPanelView, PanelResumenView
 from apps.m01_identidad.views import (
     CambiarContrasenaView,
     ContratoAuthView,
@@ -28,4 +28,5 @@ urlpatterns = [
     path("reenviar-2fa", Reenviar2FAView.as_view(), name="auth-reenviar-2fa"),
     path("contrato", ContratoAuthView.as_view(), name="auth-contrato"),
     path("accesos-panel", AccesosPanelView.as_view(), name="auth-accesos-panel"),
+    path("panel-resumen", PanelResumenView.as_view(), name="auth-panel-resumen"),
 ]
