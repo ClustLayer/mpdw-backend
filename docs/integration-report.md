@@ -95,3 +95,23 @@ No se levanto el par navegador-API contra la base de Supabase durante esta ejecu
 | Historial y métricas | PASS | `Detalle_factura` + rol Gerente/Admin |
 | OpenAPI | PASS | `docs/openapi.yaml` regenerado |
 | UI panel | Frontend | `panel-clientes-page.tsx` |
+
+## Épica 12 — Eventos y novedades
+**Validated:** 2026-11-12
+
+| Criterio | Estado | Evidencia |
+|---|---|---|
+| CRUD eventos / filtros | PASS | `test_epic12_eventos.py` |
+| Exposición pública | PASS | `GET /api/v1/eventos/publicos/` |
+| OpenAPI | PASS | `docs/openapi.yaml` |
+| UI panel | Frontend | `panel-eventos-page.tsx` |
+
+## Épica 14 — Proveedores e inventario
+**Validated:** 2026-11-12
+
+| Criterio | Estado | Evidencia |
+|---|---|---|
+| CRUD proveedores | PASS | `test_epic14_proveedores.py` |
+| FK inventario + purga | PASS | `0004_epic14_proveedor_fk`, `test_epic6_inventario.py` |
+| Selector activos | PASS | `/proveedores/activos/`, inventario combobox |
+| UI panel | Frontend | `panel-proveedores-page.tsx`, `panel-inventario-page.tsx` |

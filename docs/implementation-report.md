@@ -115,3 +115,21 @@
 - CRUD clientes/tipos, e.164, consentimiento Habeas Data, WhatsApp, historial/métricas.
 - Pruebas: `tests/unit/test_epic7_clientes.py`; OpenAPI regenerado.
 - `make calidad` en verde; cobertura unitaria ≥ 90%.
+
+## Épica 12 — Eventos y novedades
+**Status:** COMPLETED  
+**Date:** 2026-11-12  
+**Branch:** `epicas-12-14-eventos-proveedores`  
+**Version:** v1.2.4
+
+- Modelo ampliado, admin API, endpoint público y sedes activas.
+- Pruebas: `tests/unit/test_epic12_eventos.py`.
+
+## Épica 14 — Proveedores e integración inventario
+**Status:** COMPLETED  
+**Date:** 2026-11-12  
+**Branch:** `epicas-12-14-eventos-proveedores`  
+**Version:** v1.2.5
+
+- App `m14_proveedores`, FK en kardex, purga de datos de prueba de inventario.
+- Pruebas: `tests/unit/test_epic14_proveedores.py`; suite unitaria 292 passed, cobertura ≥ 90%.

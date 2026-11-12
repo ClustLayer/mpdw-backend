@@ -13,8 +13,21 @@ Versionado del producto: **MAJOR.SPRINT.EPIC_IN_SPRINT** (`1` = major del sistem
 | **1.2.1** | Sprint 2 · Épica 5 (catálogo de productos) |
 | **1.2.2** | Sprint 2 · Épica 6 (inventario y kardex) |
 | **1.2.3** | Sprint 2 · Épica 7 (directorio de clientes y Habeas Data) |
+| **1.2.4** | Sprint 2 · Épica 12 (eventos y novedades) |
+| **1.2.5** | Sprint 2 · Épica 14 (proveedores e integración inventario) |
 
 ---
+
+## 2026-11-12 — v1.2.5 Épica 14 (proveedores e inventario)
+
+- App `m14_proveedores`, API `/api/v1/proveedores/`, auditoría y concurrencia.
+- Inventario: FK `id_proveedor`, purga de kardex de prueba, regla comprado/fabricado.
+- QA: `docs/qa-epic-14.md`.
+
+## 2026-11-12 — v1.2.4 Épica 12 (eventos y novedades)
+
+- Modelo y admin `/api/v1/eventos/`, validaciones HU, exposición pública.
+- QA: `docs/qa-epic-12.md`.
 
 ## 2026-11-12 — v1.2.3 Épica 7 (directorio de clientes y Habeas Data)
 
