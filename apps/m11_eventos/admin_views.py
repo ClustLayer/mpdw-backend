@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -7,6 +8,7 @@ from rest_framework.views import APIView
 
 from apps.m01_identidad.permissions import HasDynamicPermission
 from apps.m11_eventos.admin_eventos_service import AdminEventosService
+from apps.m11_eventos.mensajes import MSG_ARCHIVO
 from apps.m11_eventos.models import Eventos_novedades
 from contratos.dtos import AuthContext
 from contratos.excepciones import ReglaNegocioError
@@ -105,3 +107,20 @@ class EventoAdminDetailView(APIView):
         except ReglaNegocioError as exc:
             return _err(exc, request)
         return Response(data)
+
+
+class EventoImagenView(APIView):
+    permission_classes = [IsAuthenticated, HasDynamicPermission]
+    required_permission = PERM_EDITAR
+    parser_classes = [MultiPartParser, FormParser]
+
+    @extend_schema(operation_id="eventos_imagen")
+    def post(self, request: Request, pk: int) -> Response:
+        archivo = request.FILES.get("imagen")
+        if not archivo:
+            return Response({"codigo": "ARCHIVO_INVALIDO", "mensaje": MSG_ARCHIVO}, status=400)
+        try:
+            ruta = AdminEventosService().guardar_imagen_evento(pk, archivo.name, archivo.read(), archivo.content_type or "")
+            return Response({"imagen_url": ruta, "mensaje": "Imagen cargada."})
+        except ReglaNegocioError as exc:
+            return _err(exc, request)

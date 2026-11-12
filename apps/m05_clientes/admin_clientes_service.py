@@ -26,6 +26,7 @@ from apps.m05_clientes.mensajes import (
     MSG_SIN_COINCIDENCIAS,
     MSG_TELEFONO,
     MSG_TIPO_ACTUALIZADO,
+    MSG_TIPO_COLOR_INVALIDO,
     MSG_TIPO_COMUN_DUP,
     MSG_TIPO_COMUN_PROTEGIDO,
     MSG_TIPO_CREADO,
@@ -40,6 +41,14 @@ from contratos.excepciones import ReglaNegocioError
 E164_RE = re.compile(r"^\+?[1-9]\d{6,14}$")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 ESTADOS_ANULADOS = frozenset({"ANULADA", "anulada", "Anulada"})
+COLOR_DEFAULT = "#64748B"
+
+
+def _validar_color(valor: str | None) -> str:
+    color = (valor or COLOR_DEFAULT).strip()
+    if not re.match(r"^#[0-9A-Fa-f]{6}$", color):
+        raise ReglaNegocioError(MSG_TIPO_COLOR_INVALIDO, codigo="COLOR_INVALIDO")
+    return color
 
 
 def _nombre_completo(c: Clientes) -> str:
@@ -147,6 +156,7 @@ class AdminClientesService:
                 "estado": t.estado,
                 "es_tipo_predeterminado": t.es_tipo_predeterminado,
                 "version_fila": t.version_fila,
+                "color": t.color,
             }
             for t in qs
         ]
@@ -317,10 +327,12 @@ class AdminClientesService:
             raise ReglaNegocioError(MSG_TIPO_COMUN_DUP, codigo="TIPO_COMUN")
         if Tipos_cliente.objects.filter(nombre__iexact=nombre).exists():
             raise ReglaNegocioError("Ya existe un tipo de cliente con este nombre.", codigo="NOMBRE_DUP")
+        color = _validar_color(datos.get("color"))
         row = Tipos_cliente.objects.create(
             nombre=nombre[:50],
             descripcion=(datos.get("descripcion") or "").strip(),
             estado=True,
+            color=color,
         )
         _auditar(ctx, "CREAR", "Tipos_cliente", row.id_tipo_cliente, None, {"nombre": row.nombre}, self._audit)
         return {
@@ -332,6 +344,7 @@ class AdminClientesService:
                 "estado": row.estado,
                 "es_tipo_predeterminado": row.es_tipo_predeterminado,
                 "version_fila": row.version_fila,
+                "color": row.color,
             },
         }
 
@@ -349,6 +362,8 @@ class AdminClientesService:
         row.nombre = nombre[:50]
         row.descripcion = (datos.get("descripcion") or row.descripcion or "").strip()
         row.estado = bool(datos.get("estado", row.estado))
+        if "color" in datos:
+            row.color = _validar_color(datos.get("color"))
         row.version_fila = int(row.version_fila) + 1
         row.save()
         _auditar(ctx, "EDITAR", "Tipos_cliente", row.id_tipo_cliente, antes, {"nombre": row.nombre, "estado": row.estado}, self._audit)
@@ -361,6 +376,7 @@ class AdminClientesService:
                 "estado": row.estado,
                 "es_tipo_predeterminado": row.es_tipo_predeterminado,
                 "version_fila": row.version_fila,
+                "color": row.color,
             },
         }
 

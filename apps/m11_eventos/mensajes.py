@@ -12,3 +12,4 @@ MSG_FECHAS = "La fecha de finalización debe ser igual o posterior a la fecha de
 MSG_IMPACTO = "El nivel de impacto no es válido."
 MSG_CONCURRENCIA = "El registro fue modificado por otro usuario. Por favor recargue la página."
 MSG_PUBLICOS = "Eventos visibles en el sitio público."
+MSG_ARCHIVO = "El archivo debe ser de tipo JPG, JPEG, PNG o WEBP y pesar máximo 5 MB."

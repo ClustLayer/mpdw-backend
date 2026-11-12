@@ -19,6 +19,7 @@ MSG_TIPO_ACTUALIZAR_ERROR = "No fue posible actualizar el tipo de cliente. Inten
 MSG_TIPO_NOMBRE_OBL = "El nombre del tipo de cliente es obligatorio."
 MSG_TIPO_COMUN_DUP = "El tipo Común ya existe y no puede duplicarse."
 MSG_TIPO_COMUN_PROTEGIDO = "El tipo Común no puede ser modificado ni desactivado."
+MSG_TIPO_COLOR_INVALIDO = "El color debe ser un código hexadecimal válido (#RRGGBB)."
 MSG_HISTORIAL = "Mostrando {n} facturas del cliente."
 MSG_HISTORIAL_VACIO = "Este cliente aún no registra compras."
 MSG_HISTORIAL_ERROR = "No fue posible cargar el historial del cliente. Intente nuevamente."

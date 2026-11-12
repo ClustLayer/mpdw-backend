@@ -74,7 +74,13 @@ class Productos(models.Model):
     iva_porcentaje = models.DecimalField(max_digits=5, decimal_places=2, default=0, db_column="iva_porcentaje")
     stock_minimo = models.PositiveIntegerField(default=0, db_column="stock_minimo")
     imagen_url = models.CharField(max_length=500, blank=True, default="", db_column="imagen_url")
-    id_categoria = models.ForeignKey(Categorias_producto, on_delete=models.PROTECT, db_column="id_categoria")
+    id_categoria = models.ForeignKey(
+        Categorias_producto,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column="id_categoria",
+    )
     id_marca = models.ForeignKey(Marcas, on_delete=models.SET_NULL, null=True, blank=True, db_column="id_marca")
     id_tipo_producto = models.ForeignKey(Tipos_producto, on_delete=models.SET_NULL, null=True, blank=True, db_column="id_tipo_producto")
     inventario_habilitado = models.BooleanField(default=True, db_column="inventario_habilitado")  # BR-07

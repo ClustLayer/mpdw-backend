@@ -56,7 +56,7 @@ class Eventos_novedades(models.Model):
     )
     estado = models.BooleanField(default=True, db_column="estado")
     visible_sitio = models.BooleanField(default=False, db_column="visible_sitio")
-    imagen_url = models.URLField(max_length=500, blank=True, default="", db_column="imagen_url")
+    imagen_url = models.CharField(max_length=500, blank=True, default="", db_column="imagen_url")
     importancia_clave = models.BooleanField(default=False, db_column="importancia_clave")
     version_fila = models.PositiveIntegerField(default=1, db_column="version_fila")
     fecha_registro = models.DateTimeField(auto_now_add=True, db_column="fecha_registro")
