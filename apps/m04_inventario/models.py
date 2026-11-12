@@ -40,6 +40,8 @@ class Movimientos_inventario(models.Model):
     cantidad_anterior = models.DecimalField(max_digits=14, decimal_places=2, db_column="cantidad_anterior")
     cantidad_nueva = models.DecimalField(max_digits=14, decimal_places=2, db_column="cantidad_nueva")
     motivo = models.TextField(db_column="motivo")
+    referencia = models.CharField(max_length=80, blank=True, default="", db_column="referencia")
+    proveedor_nombre = models.CharField(max_length=255, blank=True, default="", db_column="proveedor_nombre")
     id_usuario = models.ForeignKey(
         "m01_identidad.Usuarios",
         on_delete=models.DO_NOTHING,
