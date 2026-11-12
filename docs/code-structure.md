@@ -38,3 +38,8 @@
 - `docs/openapi.yaml` — contrato publicado. Se regenera con `manage.py spectacular`.
 - `apps/m10_auditoria/` — repositorio de auditoría append-only; vistas de bitácora bajo `urls.py` y `config/urls.py` (`api/v1/auditoria/`).
 - `.env` — fuera de Git. El pipeline ejecuta `scripts/scan_secrets.py` sobre los archivos versionados.
+
+## Épica 5 — Catálogo
+- `apps/m03_catalogo/admin_catalogo_service.py`, `admin_views.py`, `urls_admin.py` — `/api/v1/catalogo/`.
+- Migración `0002_epic5_catalogo_backoffice` (precios, imagen, parámetros, tipos base).
+- RBAC: mapas de permiso en una pasada (`PermissionRepository._mapas`) y alta masiva de la matriz.

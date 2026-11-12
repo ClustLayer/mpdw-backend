@@ -66,3 +66,12 @@ No se levanto el par navegador-API contra la base de Supabase durante esta ejecu
 | Migraciones Supabase | Ops | `0002_ep13_auditoria_campos`, `0011_gerente_auditoria_consultar` |
 | Cliente integrado | Frontend | `mpdw-frontend` rama homónima, `pnpm run calidad` |
 | QA manual | Docs | `docs/qa-sprint1-closing.md` |
+
+## Épica 5 — Catálogo
+**Validated:** 2026-11-11
+
+| Criterio | Estado | Evidencia |
+|---|---|---|
+| CRUD producto y parámetros | PASS | `test_epic5_catalogo.py` |
+| Importación no sobrescribe | PASS | `test_import_csv_no_sobrescribe` |
+| UI panel | Frontend | `panel-productos-page.tsx` |

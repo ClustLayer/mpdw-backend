@@ -18,6 +18,7 @@ urlpatterns = [
     path("api/v1/branches/", include("apps.m02_sedes.urls")),
     path("api/v1/sedes/", include("apps.m02_sedes.urls")),
     path("api/v1/products/", include("apps.m03_catalogo.urls")),
+    path("api/v1/catalogo/", include("apps.m03_catalogo.urls_admin")),
     path("api/v1/inventory/", include("apps.m04_inventario.urls")),
     path("api/v1/auditoria/", include("apps.m10_auditoria.urls")),
 ]

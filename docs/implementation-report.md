@@ -88,3 +88,11 @@
 - `make calidad`: 9 puertas en verde; cobertura unitaria ≥90%.
 - Pruebas: `tests/unit/test_epic13_bitacora_service.py`, `test_epic13_auditoria_sanitize.py`; ajustes en `test_epic2_usuarios.py`, `test_epic4_sedes.py`.
 - OpenAPI: `docs/openapi.yaml` regenerado.
+
+## Épica 5 — Catálogo de productos
+**Status:** COMPLETED
+**Date:** 2026-11-11
+
+- Alta, listado filtrado, edición con historial de precio, estado, parámetros, importación CSV/XLSX y exportación.
+- Pruebas: `tests/unit/test_epic5_catalogo.py`.
+- Permisos de matriz: deja de ejecutar un `get_or_create` por celda en cada lectura.

@@ -150,3 +150,16 @@ Migraciones: `0002_epic4_sedes_horarios`, permisos demo `0009`/`0010`, seed `000
 
 - **HU 96 / 97 (API y dominio):** revalidación de permisos en servidor; HTTP 409 ante conflicto de versión; motivo obligatorio en cambios críticos de usuario donde aplica; mensajes `mensajes.py` / excepciones.
 - **Frontend:** implementado en el repositorio `mpdw-frontend` (diálogos y conflictos de edición).
+
+## Épica 5 — Catálogo de productos (2026-11-11) — **Status:** COMPLETED
+
+| Historia | Estado | Evidencia |
+|----------|--------|-----------|
+| HU_MPDW_01_22 Crear producto | COMPLETED | `POST /api/v1/catalogo/productos/` |
+| HU_MPDW_01_23 Listado y filtros | COMPLETED | `GET /api/v1/catalogo/productos/` |
+| HU_MPDW_01_24 Editar producto | COMPLETED | `PATCH /api/v1/catalogo/productos/{id}/` |
+| HU_MPDW_01_25 Cambiar estado | COMPLETED | `POST /api/v1/catalogo/productos/{id}/estado/` |
+| HU_MPDW_01_26 Historial de precios | COMPLETED | `GET /api/v1/catalogo/productos/{id}/historial/` |
+| HU_MPDW_01_27 / 28 Parámetros | COMPLETED | `/api/v1/catalogo/parametros/{tipo}/` |
+| HU_MPDW_01_29 Importar | COMPLETED | `POST /api/v1/catalogo/productos/importar/` |
+| HU_MPDW_01_30 Exportar | COMPLETED | `GET /api/v1/catalogo/productos/exportar/` |
