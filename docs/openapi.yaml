@@ -654,6 +654,117 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/clientes/:
+    get:
+      operationId: clientes_listar
+      tags:
+      - clientes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: clientes_crear
+      tags:
+      - clientes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/clientes/{id}/:
+    get:
+      operationId: clientes_detalle
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - clientes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: clientes_actualizar
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - clientes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/clientes/{id}/historial/:
+    get:
+      operationId: clientes_historial
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - clientes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/clientes/tipos/:
+    get:
+      operationId: tipos_cliente_listar
+      tags:
+      - clientes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: tipos_cliente_crear
+      tags:
+      - clientes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/clientes/tipos/{id}/:
+    patch:
+      operationId: tipos_cliente_actualizar
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - clientes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/clientes/verificar-telefono/:
+    get:
+      operationId: clientes_verificar_telefono
+      tags:
+      - clientes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/health/live:
     get:
       operationId: health_live_retrieve

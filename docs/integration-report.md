@@ -84,3 +84,14 @@ No se levanto el par navegador-API contra la base de Supabase durante esta ejecu
 | Existencias, kardex y movimientos | PASS | `test_epic6_inventario.py` |
 | Stock insuficiente | PASS | `ReglaNegocioError` en merma |
 | UI panel | Frontend | `panel-inventario-page.tsx` |
+
+## Épica 7 — Clientes y Habeas Data
+**Validated:** 2026-11-12
+
+| Criterio | Estado | Evidencia |
+|---|---|---|
+| CRUD clientes / tipos | PASS | `test_epic7_clientes.py` |
+| Duplicado teléfono / concurrencia | PASS | códigos `TELEFONO_DUPLICADO`, HTTP 409 |
+| Historial y métricas | PASS | `Detalle_factura` + rol Gerente/Admin |
+| OpenAPI | PASS | `docs/openapi.yaml` regenerado |
+| UI panel | Frontend | `panel-clientes-page.tsx` |

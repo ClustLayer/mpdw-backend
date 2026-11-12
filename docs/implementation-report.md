@@ -105,3 +105,13 @@
 - Existencias, kardex, entrada, ajuste/merma y traslado en `AdminInventarioService`.
 - Pruebas: `tests/unit/test_epic6_inventario.py`.
 - Cobertura unitaria ≥ 90%.
+
+## Épica 7 — Directorio de clientes y Habeas Data
+**Status:** COMPLETED  
+**Date:** 2026-11-12  
+**Branch:** `epica-7-directorio-clientes-habeas-data`  
+**Version:** v1.2.3
+
+- CRUD clientes/tipos, e.164, consentimiento Habeas Data, WhatsApp, historial/métricas.
+- Pruebas: `tests/unit/test_epic7_clientes.py`; OpenAPI regenerado.
+- `make calidad` en verde; cobertura unitaria ≥ 90%.
