@@ -4,6 +4,109 @@ info:
   version: 1.0.0
   description: API REST transaccional para la gestión comercial y multi-sede de MPDW
 paths:
+  /api/v1/auditoria/bitacora/:
+    get:
+      operationId: auditoria_bitacora_retrieve
+      tags:
+      - auditoria
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BitacoraListResponse'
+          description: ''
+  /api/v1/auditoria/bitacora/acciones/:
+    get:
+      operationId: auditoria_bitacora_acciones_retrieve
+      description: Acciones distintas registradas, para el filtro desplegable.
+      tags:
+      - auditoria
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccionesBitacora'
+          description: ''
+  /api/v1/auditoria/bitacora/usuarios/:
+    get:
+      operationId: auditoria_bitacora_usuarios_list
+      description: Opciones de usuario para filtro con búsqueda (CA 2.1).
+      tags:
+      - auditoria
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UsuarioOpcion'
+          description: ''
+  /api/v1/auth/accesos-panel:
+    get:
+      operationId: auth_accesos_panel
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccesosPanelResponse'
+          description: ''
+  /api/v1/auth/cambiar-contrasena:
+    post:
+      operationId: auth_cambiar_contrasena_create
+      summary: Cambiar contraseña autenticado
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarContrasenaRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CambiarContrasenaRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CambiarContrasenaRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CambiarContrasenaResponse'
+          description: ''
+  /api/v1/auth/contrato:
+    get:
+      operationId: auth_contrato_retrieve
+      description: Contrato legible para el frontend. No expone secretos.
+      summary: Contrato de autenticacion para el frontend
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContratoAuth'
+          description: ''
   /api/v1/auth/login:
     post:
       operationId: auth_login_create
@@ -59,7 +162,22 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LogoutResponse'
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/auth/politica-sesion:
+    get:
+      operationId: auth_politica_sesion_retrieve
+      summary: Politica publica de vigencia de sesion
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoliticaSesion'
           description: ''
   /api/v1/auth/profile:
     get:
@@ -77,11 +195,90 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserProfile'
           description: ''
+    patch:
+      operationId: auth_profile_update
+      summary: Actualizar perfil propio (HU 12)
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPerfilUpdateRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPerfilUpdateRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPerfilUpdateRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerfilUpdateResponse'
+          description: ''
+  /api/v1/auth/recuperar:
+    post:
+      operationId: auth_recuperar_create
+      summary: Solicitar enlace de recuperacion
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecuperarRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecuperarRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecuperarRequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/auth/reenviar-2fa:
+    post:
+      operationId: auth_reenviar_2fa_create
+      summary: Reenviar codigo de segundo factor
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reenviar2FARequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Reenviar2FARequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Reenviar2FARequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reenviar2FAResponse'
+          description: ''
   /api/v1/auth/refresh:
     post:
       operationId: auth_refresh_create
-      description: Rotacion opaca de refresh token (cookie HttpOnly o body) (ADR-006).
-      summary: Refresco de token de acceso
+      summary: Continuar sesion
       tags:
       - auth
       requestBody:
@@ -104,11 +301,64 @@ paths:
               schema:
                 $ref: '#/components/schemas/RefreshResponse'
           description: ''
+  /api/v1/auth/restablecer:
+    post:
+      operationId: auth_restablecer_create
+      summary: Restablecer contraseña con enlace de un solo uso
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestablecerRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RestablecerRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RestablecerRequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/auth/verificar-2fa:
+    post:
+      operationId: auth_verificar_2fa_create
+      summary: Verificar codigo de segundo factor
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Codigo2FARequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Codigo2FARequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Codigo2FARequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+          description: ''
   /api/v1/branches/:
     get:
       operationId: branches_list
-      description: Consulta pública de sedes habilitadas.
-      summary: Listado de sedes
       tags:
       - branches
       security:
@@ -120,7 +370,93 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Sede'
+                  $ref: '#/components/schemas/SedePublic'
+          description: ''
+  /api/v1/branches/consolidado/:
+    get:
+      operationId: branches_consolidado_retrieve
+      tags:
+      - branches
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/branches/gestion/:
+    get:
+      operationId: branches_gestion_list
+      tags:
+      - branches
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SedePublic'
+          description: ''
+    post:
+      operationId: branches_gestion_create
+      tags:
+      - branches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearSedeRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CrearSedeRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CrearSedeRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/branches/gestion/{id_sede}/:
+    patch:
+      operationId: branches_gestion_partial_update
+      parameters:
+      - in: path
+        name: id_sede
+        schema:
+          type: integer
+        required: true
+      tags:
+      - branches
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarSedeRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarSedeRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarSedeRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
           description: ''
   /api/v1/health/live:
     get:
@@ -325,8 +661,904 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProductoResponse'
           description: ''
+  /api/v1/roles-permisos/matriz:
+    get:
+      operationId: matriz_get
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatrizResponse'
+          description: ''
+    put:
+      operationId: matriz_save
+      tags:
+      - roles-permisos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuardarMatrizRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GuardarMatrizRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GuardarMatrizRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/roles-permisos/permisos:
+    get:
+      operationId: permisos_catalog_list
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermisoListResponse'
+          description: ''
+    post:
+      operationId: permisos_create
+      tags:
+      - roles-permisos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearPermisoRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CrearPermisoRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CrearPermisoRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/roles-permisos/permisos/{id_permiso}:
+    patch:
+      operationId: permisos_update
+      parameters:
+      - in: path
+        name: id_permiso
+        schema:
+          type: integer
+        required: true
+      tags:
+      - roles-permisos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarPermisoRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarPermisoRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarPermisoRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermisoListItem'
+          description: ''
+  /api/v1/roles-permisos/permisos/catalogos:
+    get:
+      operationId: permisos_catalogos
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogosPermisoResponse'
+          description: ''
+  /api/v1/roles-permisos/roles:
+    get:
+      operationId: roles_list
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolListResponse'
+          description: ''
+    post:
+      operationId: roles_create
+      tags:
+      - roles-permisos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearRolRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CrearRolRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CrearRolRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolDetalleResponse'
+          description: ''
+  /api/v1/roles-permisos/roles/{id_rol}:
+    get:
+      operationId: roles_detail
+      parameters:
+      - in: path
+        name: id_rol
+        schema:
+          type: integer
+        required: true
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolDetalleResponse'
+          description: ''
+    patch:
+      operationId: roles_update
+      parameters:
+      - in: path
+        name: id_rol
+        schema:
+          type: integer
+        required: true
+      tags:
+      - roles-permisos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarRolRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarRolRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarRolRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolDetalleResponse'
+          description: ''
+    delete:
+      operationId: roles_delete
+      parameters:
+      - in: path
+        name: id_rol
+        schema:
+          type: integer
+        required: true
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/roles-permisos/roles/catalogo/activos:
+    get:
+      operationId: roles_activos_catalogo
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolesCatalogoResponse'
+          description: ''
+  /api/v1/roles-permisos/usuarios-activos:
+    get:
+      operationId: usuarios_activos_matriz
+      tags:
+      - roles-permisos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioCatalogoResponse'
+          description: ''
+  /api/v1/sedes/:
+    get:
+      operationId: sedes_list
+      tags:
+      - sedes
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SedePublic'
+          description: ''
+  /api/v1/sedes/consolidado/:
+    get:
+      operationId: sedes_consolidado_retrieve
+      tags:
+      - sedes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/sedes/gestion/:
+    get:
+      operationId: sedes_gestion_list
+      tags:
+      - sedes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SedePublic'
+          description: ''
+    post:
+      operationId: sedes_gestion_create
+      tags:
+      - sedes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearSedeRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CrearSedeRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CrearSedeRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/sedes/gestion/{id_sede}/:
+    patch:
+      operationId: sedes_gestion_partial_update
+      parameters:
+      - in: path
+        name: id_sede
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sedes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarSedeRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarSedeRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarSedeRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/usuarios/:
+    get:
+      operationId: usuarios_admin_list
+      summary: Listar usuarios
+      tags:
+      - usuarios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioListResponse'
+          description: ''
+    post:
+      operationId: usuarios_admin_create
+      summary: Crear usuario
+      tags:
+      - usuarios
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearUsuarioRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CrearUsuarioRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CrearUsuarioRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioDetalle'
+          description: ''
+  /api/v1/usuarios/{id_usuario}:
+    get:
+      operationId: usuarios_admin_detail
+      summary: Detalle de usuario
+      parameters:
+      - in: path
+        name: id_usuario
+        schema:
+          type: integer
+        required: true
+      tags:
+      - usuarios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioDetalle'
+          description: ''
+    patch:
+      operationId: usuarios_admin_update
+      summary: Editar usuario
+      parameters:
+      - in: path
+        name: id_usuario
+        schema:
+          type: integer
+        required: true
+      tags:
+      - usuarios
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarUsuarioRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarUsuarioRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEditarUsuarioRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioDetalle'
+          description: ''
+  /api/v1/usuarios/{id_usuario}/contrasena-temporal:
+    post:
+      operationId: usuarios_admin_contrasena_temporal
+      summary: Generar contraseña temporal
+      parameters:
+      - in: path
+        name: id_usuario
+        schema:
+          type: integer
+        required: true
+      tags:
+      - usuarios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContrasenaTemporalResponse'
+          description: ''
+  /api/v1/usuarios/{id_usuario}/estado:
+    post:
+      operationId: usuarios_admin_estado
+      summary: Cambiar estado de usuario
+      parameters:
+      - in: path
+        name: id_usuario
+        schema:
+          type: integer
+        required: true
+      tags:
+      - usuarios
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarEstadoRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CambiarEstadoRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CambiarEstadoRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MensajeResponse'
+          description: ''
+  /api/v1/usuarios/roles:
+    get:
+      operationId: usuarios_roles_catalogo
+      summary: Roles activos para formularios de usuario
+      tags:
+      - usuarios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolesCatalogoResponse'
+          description: ''
 components:
   schemas:
+    AccesosPanelResponse:
+      type: object
+      properties:
+        modulos:
+          type: array
+          items:
+            type: string
+        acciones_por_modulo:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+      - acciones_por_modulo
+      - modulos
+    AccionEnum:
+      enum:
+      - activar
+      - desactivar
+      - bloquear
+      type: string
+      description: |-
+        * `activar` - activar
+        * `desactivar` - desactivar
+        * `bloquear` - bloquear
+    AccionesBitacora:
+      type: object
+      properties:
+        acciones:
+          type: array
+          items:
+            type: string
+      required:
+      - acciones
+    AuditoriaFila:
+      type: object
+      properties:
+        id_auditoria:
+          type: integer
+        fecha_hora:
+          type: string
+          nullable: true
+        usuario:
+          $ref: '#/components/schemas/UsuarioBitacoraAnidado'
+        accion:
+          type: string
+        entidad:
+          type: string
+        id_entidad:
+          type: integer
+        ip_origen:
+          type: string
+        resumen:
+          type: string
+        datos_anteriores:
+          nullable: true
+        datos_nuevos:
+          nullable: true
+        motivo:
+          type: string
+        resultado:
+          type: string
+      required:
+      - accion
+      - datos_anteriores
+      - datos_nuevos
+      - entidad
+      - fecha_hora
+      - id_auditoria
+      - id_entidad
+      - ip_origen
+      - motivo
+      - resultado
+      - resumen
+      - usuario
+    BitacoraListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditoriaFila'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        mensaje:
+          type: string
+      required:
+      - items
+      - mensaje
+      - page
+      - page_size
+      - total
+    CambiarContrasenaRequestRequest:
+      type: object
+      properties:
+        password_actual:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+          maxLength: 64
+        confirmar:
+          type: string
+          minLength: 1
+          maxLength: 64
+      required:
+      - confirmar
+      - password
+      - password_actual
+    CambiarContrasenaResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+        mensaje:
+          type: string
+        requiere_2fa:
+          type: boolean
+        redireccion:
+          type: string
+        desafio_token:
+          type: string
+          nullable: true
+      required:
+      - access_token
+      - mensaje
+      - redireccion
+      - requiere_2fa
+      - token_type
+    CambiarEstadoRequestRequest:
+      type: object
+      properties:
+        accion:
+          $ref: '#/components/schemas/AccionEnum'
+        motivo:
+          type: string
+          default: ''
+          maxLength: 255
+      required:
+      - accion
+    CatalogosPermisoResponse:
+      type: object
+      properties:
+        modulos:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        acciones:
+          type: array
+          items:
+            type: string
+      required:
+      - acciones
+      - modulos
+    Codigo2FARequestRequest:
+      type: object
+      properties:
+        codigo:
+          type: string
+          minLength: 6
+          maxLength: 6
+        desafio_token:
+          type: string
+      required:
+      - codigo
+    ContrasenaTemporalResponse:
+      type: object
+      properties:
+        mensaje:
+          type: string
+        contrasena_temporal:
+          type: string
+        leyenda:
+          type: string
+      required:
+      - contrasena_temporal
+      - leyenda
+      - mensaje
+    ContratoAuth:
+      type: object
+      properties:
+        endpoints:
+          type: object
+          additionalProperties: {}
+        mensajes:
+          type: object
+          additionalProperties: {}
+      required:
+      - endpoints
+      - mensajes
+    CrearPermisoRequestRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 100
+        modulo:
+          type: string
+          minLength: 1
+          maxLength: 100
+        accion:
+          type: string
+          minLength: 1
+          maxLength: 50
+        descripcion:
+          type: string
+          default: ''
+          maxLength: 200
+      required:
+      - accion
+      - modulo
+      - nombre
+    CrearRolRequestRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 30
+        descripcion:
+          type: string
+          default: ''
+          maxLength: 200
+      required:
+      - nombre
+    CrearSedeRequestRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 255
+        direccion:
+          type: string
+          minLength: 1
+          maxLength: 255
+        telefono:
+          type: string
+          minLength: 1
+          maxLength: 20
+        whatsapp:
+          type: string
+          default: ''
+          maxLength: 20
+        ciudad:
+          type: string
+          default: Cali
+          maxLength: 50
+        maps_url:
+          type: string
+          default: ''
+          maxLength: 500
+        map_query:
+          type: string
+          default: ''
+          maxLength: 255
+        orden:
+          type: integer
+          default: 10
+        es_principal:
+          type: boolean
+          default: false
+        id_usuario_responsable:
+          type: integer
+          nullable: true
+        horarios:
+          type: array
+          items:
+            $ref: '#/components/schemas/HorarioRequest'
+      required:
+      - direccion
+      - nombre
+      - telefono
+    CrearUsuarioRequestRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 255
+        apellido:
+          type: string
+          minLength: 1
+          maxLength: 255
+        documento:
+          type: string
+          minLength: 1
+          maxLength: 20
+        telefono:
+          type: string
+          default: ''
+          maxLength: 20
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 255
+        id_rol:
+          type: integer
+          minimum: 1
+        sedes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SedeAsignadaRequest'
+          minItems: 1
+      required:
+      - apellido
+      - documento
+      - email
+      - id_rol
+      - nombre
+      - sedes
+    GuardarMatrizRequestRequest:
+      type: object
+      properties:
+        tipo:
+          $ref: '#/components/schemas/TipoEnum'
+        id_destino:
+          type: integer
+        cambios:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatrizCambioRequest'
+      required:
+      - cambios
+      - id_destino
+      - tipo
+    Horario:
+      type: object
+      properties:
+        dia_semana:
+          type: integer
+          maximum: 7
+          minimum: 1
+        hora_apertura:
+          type: string
+          nullable: true
+        hora_cierre:
+          type: string
+          nullable: true
+        cerrado:
+          type: boolean
+          default: false
+      required:
+      - dia_semana
+    HorarioRequest:
+      type: object
+      properties:
+        dia_semana:
+          type: integer
+          maximum: 7
+          minimum: 1
+        hora_apertura:
+          type: string
+          nullable: true
+        hora_cierre:
+          type: string
+          nullable: true
+        cerrado:
+          type: boolean
+          default: false
+      required:
+      - dia_semana
     Inventario:
       type: object
       properties:
@@ -362,17 +1594,13 @@ components:
       - status
     LoginRequestRequest:
       type: object
-      description: Esquema de entrada para solicitud de inicio de sesión.
       properties:
         email:
           type: string
-          format: email
-          minLength: 1
-          maxLength: 150
+          maxLength: 255
         password:
           type: string
           writeOnly: true
-          minLength: 1
           maxLength: 128
       required:
       - email
@@ -383,7 +1611,82 @@ components:
         refresh_token:
           type: string
           minLength: 1
-    LogoutResponse:
+    MatrizCambioRequest:
+      type: object
+      properties:
+        id_permiso:
+          type: integer
+        permitido:
+          type: boolean
+        eliminar_excepcion:
+          type: boolean
+          default: false
+      required:
+      - id_permiso
+      - permitido
+    MatrizFilaResponse:
+      type: object
+      properties:
+        id_permiso:
+          type: integer
+        modulo:
+          type: string
+        accion:
+          type: string
+        nombre:
+          type: string
+        asignado:
+          type: boolean
+        permitido:
+          type: boolean
+          nullable: true
+        heredado_de_rol:
+          type: boolean
+          nullable: true
+        tiene_excepcion:
+          type: boolean
+      required:
+      - accion
+      - id_permiso
+      - modulo
+      - nombre
+    MatrizModuloResponse:
+      type: object
+      properties:
+        panel:
+          type: string
+        etiqueta:
+          type: string
+        modulo:
+          type: string
+        detalle:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatrizFilaResponse'
+      required:
+      - detalle
+      - etiqueta
+      - modulo
+      - panel
+    MatrizResponse:
+      type: object
+      properties:
+        tipo:
+          type: string
+        id_destino:
+          type: integer
+        nombre_destino:
+          type: string
+        filas:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatrizModuloResponse'
+      required:
+      - filas
+      - id_destino
+      - nombre_destino
+      - tipo
+    MensajeResponse:
       type: object
       properties:
         mensaje:
@@ -426,6 +1729,161 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ProductoResponse'
+    PatchedEditarPermisoRequestRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 100
+        modulo:
+          type: string
+          minLength: 1
+          maxLength: 100
+        accion:
+          type: string
+          minLength: 1
+          maxLength: 50
+        descripcion:
+          type: string
+          maxLength: 200
+        estado:
+          type: boolean
+        version_fila:
+          type: integer
+    PatchedEditarRolRequestRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 30
+        descripcion:
+          type: string
+          maxLength: 200
+        estado:
+          type: boolean
+        version_fila:
+          type: integer
+    PatchedEditarSedeRequestRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 255
+        direccion:
+          type: string
+          minLength: 1
+          maxLength: 255
+        telefono:
+          type: string
+          minLength: 1
+          maxLength: 20
+        whatsapp:
+          type: string
+          default: ''
+          maxLength: 20
+        ciudad:
+          type: string
+          default: Cali
+          maxLength: 50
+        maps_url:
+          type: string
+          default: ''
+          maxLength: 500
+        map_query:
+          type: string
+          default: ''
+          maxLength: 255
+        orden:
+          type: integer
+          default: 10
+        es_principal:
+          type: boolean
+          default: false
+        id_usuario_responsable:
+          type: integer
+          nullable: true
+        horarios:
+          type: array
+          items:
+            $ref: '#/components/schemas/HorarioRequest'
+        estado:
+          type: boolean
+        version_fila:
+          type: integer
+          minimum: 1
+    PatchedEditarUsuarioRequestRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 255
+        apellido:
+          type: string
+          minLength: 1
+          maxLength: 255
+        documento:
+          type: string
+          minLength: 1
+          maxLength: 20
+        telefono:
+          type: string
+          default: ''
+          maxLength: 20
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 255
+        id_rol:
+          type: integer
+          minimum: 1
+        sedes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SedeAsignadaRequest'
+          minItems: 1
+        version_fila:
+          type: integer
+          minimum: 1
+    PatchedPerfilUpdateRequestRequest:
+      type: object
+      description: Campos opcionales en PATCH; el servicio completa con el perfil
+        actual.
+      properties:
+        nombre:
+          type: string
+          maxLength: 255
+        apellido:
+          type: string
+          maxLength: 255
+        telefono:
+          type: string
+          default: ''
+          maxLength: 20
+        tipo_sangre:
+          type: string
+          default: ''
+          maxLength: 5
+        fecha_nacimiento:
+          type: string
+          format: date
+          nullable: true
+        direccion:
+          type: string
+          default: ''
+          maxLength: 255
+        contacto_emergencia_nombre:
+          type: string
+          default: ''
+          maxLength: 255
+        contacto_emergencia_telefono:
+          type: string
+          default: ''
+          maxLength: 20
     PatchedProductoUpdatePrecioRequest:
       type: object
       description: Esquema de entrada para actualización de precio con motivo y versión
@@ -442,6 +1900,134 @@ components:
         version:
           type: integer
           minimum: 1
+    PerfilUpdateResponse:
+      type: object
+      properties:
+        mensaje:
+          type: string
+        id_usuario:
+          type: integer
+        email:
+          type: string
+          format: email
+        documento:
+          type: string
+        nombre:
+          type: string
+        apellido:
+          type: string
+        telefono:
+          type: string
+        tipo_sangre:
+          type: string
+        fecha_nacimiento:
+          type: string
+          format: date
+          nullable: true
+        direccion:
+          type: string
+        contacto_emergencia_nombre:
+          type: string
+        contacto_emergencia_telefono:
+          type: string
+        rol_nombre:
+          type: string
+        dosfa_habilitado:
+          type: boolean
+        debe_cambiar_password:
+          type: boolean
+        ultimo_acceso:
+          type: string
+          format: date-time
+          nullable: true
+        version_fila:
+          type: integer
+      required:
+      - apellido
+      - contacto_emergencia_nombre
+      - contacto_emergencia_telefono
+      - debe_cambiar_password
+      - direccion
+      - documento
+      - dosfa_habilitado
+      - email
+      - fecha_nacimiento
+      - id_usuario
+      - mensaje
+      - nombre
+      - rol_nombre
+      - telefono
+      - tipo_sangre
+      - ultimo_acceso
+      - version_fila
+    PermisoListItem:
+      type: object
+      properties:
+        id_permiso:
+          type: integer
+        nombre:
+          type: string
+        modulo:
+          type: string
+        accion:
+          type: string
+        descripcion:
+          type: string
+        estado:
+          type: boolean
+        version_fila:
+          type: integer
+      required:
+      - accion
+      - descripcion
+      - estado
+      - id_permiso
+      - modulo
+      - nombre
+      - version_fila
+    PermisoListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermisoListItem'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        mensaje:
+          type: string
+      required:
+      - items
+      - mensaje
+      - page
+      - page_size
+      - total
+    PoliticaSesion:
+      type: object
+      properties:
+        access_minutos:
+          type: integer
+        refresh_dias:
+          type: integer
+        inactividad_minutos:
+          type: integer
+        aviso_minutos:
+          type: integer
+        intentos_maximos:
+          type: integer
+        bloqueo_minutos:
+          type: integer
+      required:
+      - access_minutos
+      - aviso_minutos
+      - bloqueo_minutos
+      - inactividad_minutos
+      - intentos_maximos
+      - refresh_dias
     ProductoCreateRequest:
       type: object
       description: Validación y sanitización estricta para creación de productos.
@@ -569,6 +2155,33 @@ components:
       - database
       - status
       - storage
+    RecuperarRequestRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+      - email
+    Reenviar2FARequestRequest:
+      type: object
+      properties:
+        desafio_token:
+          type: string
+          minLength: 1
+      required:
+      - desafio_token
+    Reenviar2FAResponse:
+      type: object
+      properties:
+        mensaje:
+          type: string
+        desafio_token:
+          type: string
+      required:
+      - desafio_token
+      - mensaje
     RefreshRequestRequest:
       type: object
       properties:
@@ -582,33 +2195,179 @@ components:
           type: string
         token_type:
           type: string
+        mensaje:
+          type: string
       required:
       - access_token
+      - mensaje
       - token_type
-    Sede:
+    RestablecerRequestRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+          maxLength: 64
+        confirmar:
+          type: string
+          minLength: 1
+          maxLength: 64
+      required:
+      - confirmar
+      - password
+      - token
+    RolCatalogoItem:
+      type: object
+      properties:
+        id_rol:
+          type: integer
+        nombre:
+          type: string
+      required:
+      - id_rol
+      - nombre
+    RolDetalleResponse:
+      type: object
+      properties:
+        id_rol:
+          type: integer
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        estado:
+          type: boolean
+        es_rol_base:
+          type: boolean
+        version_fila:
+          type: integer
+        mensaje:
+          type: string
+      required:
+      - descripcion
+      - es_rol_base
+      - estado
+      - id_rol
+      - nombre
+      - version_fila
+    RolListItem:
+      type: object
+      properties:
+        id_rol:
+          type: integer
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        estado:
+          type: boolean
+        es_rol_base:
+          type: boolean
+        version_fila:
+          type: integer
+      required:
+      - descripcion
+      - es_rol_base
+      - estado
+      - id_rol
+      - nombre
+      - version_fila
+    RolListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RolListItem'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        mensaje:
+          type: string
+      required:
+      - items
+      - mensaje
+      - page
+      - page_size
+      - total
+    RolesCatalogoResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RolCatalogoItem'
+      required:
+      - items
+    SedeAsignada:
       type: object
       properties:
         id_sede:
           type: integer
-          readOnly: true
-        nombre:
-          type: string
-          maxLength: 100
-        direccion:
-          type: string
-          maxLength: 200
-        telefono:
-          type: string
-          maxLength: 20
-        ciudad:
-          type: string
-          maxLength: 50
-        estado:
+          minimum: 1
+        es_principal:
           type: boolean
       required:
-      - direccion
+      - es_principal
       - id_sede
+    SedeAsignadaRequest:
+      type: object
+      properties:
+        id_sede:
+          type: integer
+          minimum: 1
+        es_principal:
+          type: boolean
+      required:
+      - es_principal
+      - id_sede
+    SedePublic:
+      type: object
+      properties:
+        id_sede:
+          type: integer
+        nombre:
+          type: string
+        direccion:
+          type: string
+        ciudad:
+          type: string
+        telefono:
+          type: string
+        whatsapp:
+          type: string
+        maps_url:
+          type: string
+        map_query:
+          type: string
+        orden:
+          type: integer
+        es_principal:
+          type: boolean
+        horarios:
+          type: array
+          items:
+            $ref: '#/components/schemas/Horario'
+        schedule_text:
+          type: string
+      required:
+      - ciudad
+      - direccion
+      - horarios
+      - id_sede
+      - map_query
+      - maps_url
       - nombre
+      - orden
+      - schedule_text
+      - telefono
+      - whatsapp
     StockInicialInputRequest:
       type: object
       description: Stock de apertura por sede para el alta de producto.
@@ -623,12 +2382,20 @@ components:
       required:
       - cantidad_inicial
       - id_sede
+    TipoEnum:
+      enum:
+      - rol
+      - usuario
+      type: string
+      description: |-
+        * `rol` - rol
+        * `usuario` - usuario
     TokenResponse:
       type: object
-      description: Respuesta con token de acceso JWT y metadatos de usuario.
       properties:
         access_token:
           type: string
+          nullable: true
         token_type:
           type: string
           default: Bearer
@@ -639,21 +2406,27 @@ components:
           type: integer
         email:
           type: string
+        nombre:
+          type: string
         rol:
           type: string
         sedes_asignadas:
           type: array
           items:
             type: integer
-      required:
-      - access_token
-      - email
-      - id_usuario
-      - rol
-      - sedes_asignadas
+        mensaje:
+          type: string
+        debe_cambiar_password:
+          type: boolean
+        requiere_2fa:
+          type: boolean
+        redireccion:
+          type: string
+        desafio_token:
+          type: string
+          nullable: true
     UserProfile:
       type: object
-      description: Perfil del usuario autenticado (whitelist explícita).
       properties:
         id_usuario:
           type: integer
@@ -667,18 +2440,224 @@ components:
           readOnly: true
         nombre:
           type: string
-          maxLength: 150
+          maxLength: 255
+        apellido:
+          type: string
+          maxLength: 255
+        telefono:
+          type: string
+          maxLength: 20
+        tipo_sangre:
+          type: string
+          maxLength: 5
+        fecha_nacimiento:
+          type: string
+          format: date
+          nullable: true
+        direccion:
+          type: string
+          maxLength: 255
+        contacto_emergencia_nombre:
+          type: string
+          maxLength: 255
+        contacto_emergencia_telefono:
+          type: string
+          maxLength: 20
         rol_nombre:
           type: string
           readOnly: true
         dosfa_habilitado:
           type: boolean
+          readOnly: true
+        debe_cambiar_password:
+          type: boolean
+          readOnly: true
+        ultimo_acceso:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        version_fila:
+          type: integer
+          readOnly: true
       required:
+      - debe_cambiar_password
       - documento
+      - dosfa_habilitado
       - email
       - id_usuario
       - nombre
       - rol_nombre
+      - ultimo_acceso
+      - version_fila
+    UsuarioBitacoraAnidado:
+      type: object
+      properties:
+        id_usuario:
+          type: integer
+          nullable: true
+        nombre:
+          type: string
+        email:
+          type: string
+          nullable: true
+      required:
+      - email
+      - id_usuario
+      - nombre
+    UsuarioCatalogoItem:
+      type: object
+      properties:
+        id_usuario:
+          type: integer
+        label:
+          type: string
+        rol:
+          type: string
+      required:
+      - id_usuario
+      - label
+      - rol
+    UsuarioCatalogoResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsuarioCatalogoItem'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+      required:
+      - items
+      - page
+      - page_size
+      - total
+    UsuarioDetalle:
+      type: object
+      properties:
+        id_usuario:
+          type: integer
+        nombre:
+          type: string
+        apellido:
+          type: string
+        nombre_completo:
+          type: string
+        documento:
+          type: string
+        telefono:
+          type: string
+        email:
+          type: string
+          format: email
+        id_rol:
+          type: integer
+        rol:
+          type: string
+        estado:
+          type: boolean
+        estado_etiqueta:
+          type: string
+        version_fila:
+          type: integer
+        sedes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SedeAsignada'
+        acciones_estado:
+          type: array
+          items:
+            type: string
+        puede_contrasena_temporal:
+          type: boolean
+        mensaje:
+          type: string
+      required:
+      - acciones_estado
+      - apellido
+      - documento
+      - email
+      - estado
+      - estado_etiqueta
+      - id_rol
+      - id_usuario
+      - nombre
+      - nombre_completo
+      - puede_contrasena_temporal
+      - rol
+      - sedes
+      - telefono
+      - version_fila
+    UsuarioListItem:
+      type: object
+      properties:
+        id_usuario:
+          type: integer
+        nombre_completo:
+          type: string
+        documento:
+          type: string
+        email:
+          type: string
+          format: email
+        rol:
+          type: string
+        estado:
+          type: string
+        ultimo_acceso:
+          type: string
+          format: date-time
+          nullable: true
+        sede_principal:
+          type: string
+      required:
+      - documento
+      - email
+      - estado
+      - id_usuario
+      - nombre_completo
+      - rol
+      - sede_principal
+      - ultimo_acceso
+    UsuarioListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsuarioListItem'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        mensaje:
+          type: string
+      required:
+      - items
+      - mensaje
+      - page
+      - page_size
+      - total
+    UsuarioOpcion:
+      type: object
+      properties:
+        id_usuario:
+          type: integer
+        etiqueta:
+          type: string
+        email:
+          type: string
+          format: email
+      required:
+      - email
+      - etiqueta
+      - id_usuario
   securitySchemes:
     jwtAuth:
       type: http

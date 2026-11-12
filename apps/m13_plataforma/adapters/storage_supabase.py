@@ -39,7 +39,9 @@ class SupabaseStorageAdapter(FileStoragePort):
 
     def subir_archivo_publico(self, contenido: bytes, ruta_destino: str, tipo_mime: str) -> str:
         """Sube un archivo al bucket publico y retorna la URL publica."""
-        url = f"{self._base_url}/storage/v1/object/{self._bucket_publico}/{ruta_destino.lstrip('/')}"
+        url = (
+            f"{self._base_url}/storage/v1/object/{self._bucket_publico}/{ruta_destino.lstrip('/')}"
+        )
         headers = self._headers(content_type=tipo_mime)
 
         try:
@@ -54,7 +56,9 @@ class SupabaseStorageAdapter(FileStoragePort):
 
     def subir_archivo_privado(self, contenido: bytes, ruta_destino: str, tipo_mime: str) -> str:
         """Sube un archivo al bucket privado y retorna la ruta interna."""
-        url = f"{self._base_url}/storage/v1/object/{self._bucket_privado}/{ruta_destino.lstrip('/')}"
+        url = (
+            f"{self._base_url}/storage/v1/object/{self._bucket_privado}/{ruta_destino.lstrip('/')}"
+        )
         headers = self._headers(content_type=tipo_mime)
 
         try:

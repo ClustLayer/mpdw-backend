@@ -41,6 +41,7 @@ coverage.xml
 .env
 .env.*
 !.env.example
+!.env.test.example
 cookies.txt
 test_*.json
 

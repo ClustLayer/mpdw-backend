@@ -1,5 +1,12 @@
 # Mundo Pinturas Diana Web (MPDW) - Backend & ETL
 
+[![CI](https://github.com/ClustLayer/mpdw-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/ClustLayer/mpdw-backend/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/Django-5.2%20LTS-092E20)](https://www.djangoproject.com/)
+[![License](https://img.shields.io/badge/license-Privada-red)](LICENSE)
+
+**Versión del producto:** 1.1.5 (Sprint 1 — cierre Épicas 13 y 18; épicas anteriores 1.1.1–1.1.4).
+
 Repositorio oficial del backend y proceso de analítica por lotes (ETL) de **Mundo Pinturas Diana Web (MPDW)**. Diseñado con una arquitectura por capas modularizada por dominio (Aplicación → Negocio → Persistencia) sobre **Python 3.13**, **Django 5.2 LTS**, **Django REST Framework** y **PostgreSQL 16 en Supabase**, garantizando fronteras transaccionales atómicas locales (`transaction.atomic`), control de concurrencia optimista (`version` con HTTP 409), bloqueo acotado de filas, auditoría transaccional inmutable (`Auditoria`) y exclusión estricta de componentes no contemplados (sin DIAN, sin Celery, sin Redis, sin dependencias a Supabase en el cliente).
 
 ---

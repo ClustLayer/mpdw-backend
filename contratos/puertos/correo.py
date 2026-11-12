@@ -13,3 +13,14 @@ class EmailPort(ABC):
         """Envía el enlace de un solo uso para restablecer contraseña."""
         pass
 
+    @abstractmethod
+    def enviar_codigo_2fa(self, destinatario: str, codigo: str) -> bool:
+        """Envía el código de un solo uso del segundo factor. No registra el código."""
+        pass
+
+    @abstractmethod
+    def enviar_contrasena_inicial(
+        self, destinatario: str, nombre: str, contrasena_plana: str
+    ) -> bool:
+        """Entrega la contraseña inicial por correo. No debe registrarse contrasena_plana en logs ni auditoria."""
+        pass

@@ -38,6 +38,9 @@ class JWTAuthentication(BaseAuthentication):
             raise AuthenticationFailed("Token de acceso invalido.") from err
 
         user_id = payload.get("sub")
+        if payload.get("typ") == "2fa":
+            raise AuthenticationFailed("El desafio de verificacion no autoriza el acceso.")
+
         if not user_id:
             raise AuthenticationFailed("Token de acceso sin identificador de usuario.")
 
@@ -49,14 +52,23 @@ class JWTAuthentication(BaseAuthentication):
         if not user.estado or user.esta_bloqueado:
             raise AuthenticationFailed("Usuario inactivo o bloqueado.")
 
+        token_cv = payload.get("cv")
+        user_cv = int(getattr(user, "credential_version", 1) or 1)
+        if token_cv is not None and int(token_cv) != user_cv:
+            raise AuthenticationFailed("El token de acceso fue revocado.")
+
         sedes = tuple(
-            Usuario_sede.objects.filter(id_usuario=user, estado=True).values_list("id_sede_id", flat=True)
+            Usuario_sede.objects.filter(id_usuario=user, estado=True).values_list(
+                "id_sede_id", flat=True
+            )
         )
         es_global = user.id_rol.nombre == "Administrador"
 
         correlation_id = getattr(request, "correlation_id", "")
         ip = request.META.get("REMOTE_ADDR", "127.0.0.1")
         user_agent = request.META.get("HTTP_USER_AGENT", "Unknown")
+
+        self._exigir_paso_pendiente(request, payload)
 
         auth_context = AuthContext(
             id_usuario=user.id_usuario,
@@ -70,7 +82,26 @@ class JWTAuthentication(BaseAuthentication):
         )
 
         request.auth_context = auth_context
+        request.jwt_payload = payload
         return (user, auth_context)
+
+    def _exigir_paso_pendiente(self, request, payload: dict[str, Any]) -> None:
+        ruta = request.path.rstrip("/")
+        cambio = {
+            "/api/v1/auth/logout",
+            "/api/v1/auth/refresh",
+            "/api/v1/auth/profile",
+            "/api/v1/auth/cambiar-contrasena",
+            "/api/v1/auth/politica-sesion",
+        }
+        doble_factor = cambio | {
+            "/api/v1/auth/verificar-2fa",
+            "/api/v1/auth/reenviar-2fa",
+        }
+        if payload.get("mcp") and ruta not in cambio:
+            raise AuthenticationFailed("Debe cambiar su contraseña antes de continuar.")
+        if payload.get("mfa_pendiente") and not payload.get("mcp") and ruta not in doble_factor:
+            raise AuthenticationFailed("Debe completar la verificación en dos pasos.")
 
 
 class JWTAuthenticationExtension(OpenApiAuthenticationExtension):
@@ -83,4 +114,3 @@ class JWTAuthenticationExtension(OpenApiAuthenticationExtension):
             "scheme": "bearer",
             "bearerFormat": "JWT",
         }
-

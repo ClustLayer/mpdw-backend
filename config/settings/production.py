@@ -50,3 +50,16 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 
+# Pooler Supabase: SSL + sin cursores server-side (ADR-003)
+for _db in DATABASES.values():  # noqa: F405
+    if not isinstance(_db, dict):
+        continue
+    _db["DISABLE_SERVER_SIDE_CURSORS"] = True
+    _db["CONN_MAX_AGE"] = 0
+    _opts_raw = _db.get("OPTIONS")
+    _opts: dict[str, object] = dict(_opts_raw) if isinstance(_opts_raw, dict) else {}
+    _opts["prepare_threshold"] = None
+    if "sslmode" not in _opts:
+        _opts["sslmode"] = "require"
+    _db["OPTIONS"] = _opts
+

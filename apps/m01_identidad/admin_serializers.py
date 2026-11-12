@@ -1,0 +1,115 @@
+from rest_framework import serializers
+
+
+class SedeAsignadaSerializer(serializers.Serializer):
+    id_sede = serializers.IntegerField(min_value=1)
+    es_principal = serializers.BooleanField()
+
+
+class CrearUsuarioRequestSerializer(serializers.Serializer):
+    nombre = serializers.CharField(max_length=255)
+    apellido = serializers.CharField(max_length=255)
+    documento = serializers.CharField(max_length=20)
+    telefono = serializers.CharField(max_length=20, required=False, allow_blank=True, default="")
+    email = serializers.EmailField(max_length=255)
+    id_rol = serializers.IntegerField(min_value=1)
+    sedes = serializers.ListField(child=SedeAsignadaSerializer(), min_length=1)
+
+
+class EditarUsuarioRequestSerializer(CrearUsuarioRequestSerializer):
+    version_fila = serializers.IntegerField(min_value=1)
+
+
+class CambiarEstadoRequestSerializer(serializers.Serializer):
+    accion = serializers.ChoiceField(choices=["activar", "desactivar", "bloquear"])
+    motivo = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
+
+
+class PerfilUpdateRequestSerializer(serializers.Serializer):
+    """Campos opcionales en PATCH; el servicio completa con el perfil actual."""
+
+    nombre = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    apellido = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    telefono = serializers.CharField(max_length=20, required=False, allow_blank=True, default="")
+    tipo_sangre = serializers.CharField(max_length=5, required=False, allow_blank=True, default="")
+    fecha_nacimiento = serializers.DateField(required=False, allow_null=True)
+    direccion = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
+    contacto_emergencia_nombre = serializers.CharField(
+        max_length=255, required=False, allow_blank=True, default=""
+    )
+    contacto_emergencia_telefono = serializers.CharField(
+        max_length=20, required=False, allow_blank=True, default=""
+    )
+
+
+class UsuarioListItemSerializer(serializers.Serializer):
+    id_usuario = serializers.IntegerField()
+    nombre_completo = serializers.CharField()
+    documento = serializers.CharField()
+    email = serializers.EmailField()
+    rol = serializers.CharField()
+    estado = serializers.CharField()
+    ultimo_acceso = serializers.DateTimeField(allow_null=True)
+    sede_principal = serializers.CharField(allow_blank=True)
+
+
+class UsuarioListResponseSerializer(serializers.Serializer):
+    items = UsuarioListItemSerializer(many=True)
+    total = serializers.IntegerField()
+    page = serializers.IntegerField()
+    page_size = serializers.IntegerField()
+    mensaje = serializers.CharField()
+
+
+class UsuarioDetalleSerializer(serializers.Serializer):
+    id_usuario = serializers.IntegerField()
+    nombre = serializers.CharField()
+    apellido = serializers.CharField()
+    nombre_completo = serializers.CharField()
+    documento = serializers.CharField()
+    telefono = serializers.CharField()
+    email = serializers.EmailField()
+    id_rol = serializers.IntegerField()
+    rol = serializers.CharField()
+    estado = serializers.BooleanField()
+    estado_etiqueta = serializers.CharField()
+    version_fila = serializers.IntegerField()
+    sedes = SedeAsignadaSerializer(many=True)
+    acciones_estado = serializers.ListField(child=serializers.CharField())
+    puede_contrasena_temporal = serializers.BooleanField()
+    mensaje = serializers.CharField(required=False)
+
+
+class ContrasenaTemporalResponseSerializer(serializers.Serializer):
+    mensaje = serializers.CharField()
+    contrasena_temporal = serializers.CharField()
+    leyenda = serializers.CharField()
+
+
+class RolCatalogoItemSerializer(serializers.Serializer):
+    id_rol = serializers.IntegerField()
+    nombre = serializers.CharField()
+
+
+class RolesCatalogoResponseSerializer(serializers.Serializer):
+    items = RolCatalogoItemSerializer(many=True)
+
+
+class PerfilUpdateResponseSerializer(serializers.Serializer):
+    mensaje = serializers.CharField()
+    id_usuario = serializers.IntegerField()
+    email = serializers.EmailField()
+    documento = serializers.CharField()
+    nombre = serializers.CharField()
+    apellido = serializers.CharField()
+    telefono = serializers.CharField()
+    tipo_sangre = serializers.CharField()
+    fecha_nacimiento = serializers.DateField(allow_null=True)
+    direccion = serializers.CharField()
+    contacto_emergencia_nombre = serializers.CharField()
+    contacto_emergencia_telefono = serializers.CharField()
+    rol_nombre = serializers.CharField()
+    dosfa_habilitado = serializers.BooleanField()
+    debe_cambiar_password = serializers.BooleanField()
+    ultimo_acceso = serializers.DateTimeField(allow_null=True)
+    version_fila = serializers.IntegerField()

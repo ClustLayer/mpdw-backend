@@ -13,9 +13,13 @@ urlpatterns = [
     # Rutas por Módulo de Dominio
     path("api/v1/health/", include("apps.m13_plataforma.urls")),
     path("api/v1/auth/", include("apps.m01_identidad.urls")),
+    path("api/v1/usuarios/", include("apps.m01_identidad.urls_usuarios")),
+    path("api/v1/roles-permisos/", include("apps.m01_identidad.urls_roles_permisos")),
     path("api/v1/branches/", include("apps.m02_sedes.urls")),
+    path("api/v1/sedes/", include("apps.m02_sedes.urls")),
     path("api/v1/products/", include("apps.m03_catalogo.urls")),
     path("api/v1/inventory/", include("apps.m04_inventario.urls")),
+    path("api/v1/auditoria/", include("apps.m10_auditoria.urls")),
 ]
 
 # Swagger UI interactivo habilitado exclusivamente en entorno de desarrollo (SAD §9.1)

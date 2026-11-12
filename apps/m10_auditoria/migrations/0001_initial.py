@@ -3,6 +3,39 @@
 # SAD Ref: M10, ADR-008, RI-16, QA-08
 # ==============================================================================
 from django.db import migrations, models
+
+
+def aplicar_trigger_inmutabilidad(apps, schema_editor):
+    if schema_editor.connection.vendor != "postgresql":
+        return
+    cursor = schema_editor.connection.cursor()
+    cursor.execute(
+        """
+            CREATE OR REPLACE FUNCTION rechazar_modificacion_auditoria()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                RAISE EXCEPTION 'Violacion de inmutabilidad (RI-16): No se permite modificar ni borrar registros de Auditoria';
+            END;
+            $$ LANGUAGE plpgsql;
+
+            DROP TRIGGER IF EXISTS trg_auditoria_inmutable ON "Auditoria";
+            CREATE TRIGGER trg_auditoria_inmutable
+            BEFORE UPDATE OR DELETE ON "Auditoria"
+            FOR EACH ROW EXECUTE FUNCTION rechazar_modificacion_auditoria();
+        """
+    )
+
+
+def revertir_trigger_inmutabilidad(apps, schema_editor):
+    if schema_editor.connection.vendor != "postgresql":
+        return
+    cursor = schema_editor.connection.cursor()
+    cursor.execute(
+        """
+            DROP TRIGGER IF EXISTS trg_auditoria_inmutable ON "Auditoria";
+            DROP FUNCTION IF EXISTS rechazar_modificacion_auditoria();
+        """
+    )
 import django.db.models.deletion
 
 
@@ -59,25 +92,6 @@ class Migration(migrations.Migration):
             model_name="auditoria",
             index=models.Index(fields=["accion", "fecha_hora"], name="idx_auditoria_accion"),
         ),
-        # RI-16: Trigger PostgreSQL que rechaza UPDATE y DELETE sobre la tabla Auditoria
-        migrations.RunSQL(
-            sql="""
-            CREATE OR REPLACE FUNCTION rechazar_modificacion_auditoria()
-            RETURNS TRIGGER AS $$
-            BEGIN
-                RAISE EXCEPTION 'Violacion de inmutabilidad (RI-16): No se permite modificar ni borrar registros de Auditoria';
-            END;
-            $$ LANGUAGE plpgsql;
-
-            DROP TRIGGER IF EXISTS trg_auditoria_inmutable ON "Auditoria";
-            CREATE TRIGGER trg_auditoria_inmutable
-            BEFORE UPDATE OR DELETE ON "Auditoria"
-            FOR EACH ROW EXECUTE FUNCTION rechazar_modificacion_auditoria();
-            """,
-            reverse_sql="""
-            DROP TRIGGER IF EXISTS trg_auditoria_inmutable ON "Auditoria";
-            DROP FUNCTION IF EXISTS rechazar_modificacion_auditoria();
-            """,
-        ),
+        migrations.RunPython(aplicar_trigger_inmutabilidad, revertir_trigger_inmutabilidad),
     ]
 
