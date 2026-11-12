@@ -164,4 +164,17 @@ Migraciones: `0002_epic4_sedes_horarios`, permisos demo `0009`/`0010`, seed `000
 | HU_MPDW_01_29 Importar | COMPLETED | `POST /api/v1/catalogo/productos/importar/` |
 | HU_MPDW_01_30 Exportar | COMPLETED | `GET /api/v1/catalogo/productos/exportar/` |
 
-Cierre parámetros (2026-11-12): `seed_catalogo_parametros`, accesos-panel con `categorias`/`marcas`/`tipos_producto`; docs `qa-epic-5.md`, `user-stories-epic-5-extras.md`.
+Cierre parámetros (2026-11-12): `seed_catalogo_parametros`, accesos-panel con `categorias`/`marcas`/`tipos_producto`; docs `qa-epic-5.md`. Extras de sprint 2: `docs/user-stories-sprint2-extras.md`.
+
+## Épica 6 — Inventario y kardex (2026-11-11) — **Status:** COMPLETED
+
+| Historia | Estado | Evidencia |
+|----------|--------|-----------|
+| HU_MPDW_01_31 Existencias por sede | COMPLETED | `GET /api/v1/inventario/existencias/` |
+| HU_MPDW_01_32 Entrada de mercancía | COMPLETED | `POST /api/v1/inventario/movimientos/entrada/` |
+| HU_MPDW_01_33 Ajuste y merma | COMPLETED | `POST /api/v1/inventario/movimientos/ajuste/` |
+| HU_MPDW_01_34 Traslado entre sedes | COMPLETED | `POST /api/v1/inventario/movimientos/traslado/` |
+| HU_MPDW_01_35 Kardex | COMPLETED | `GET /api/v1/inventario/kardex/` |
+| HU_MPDW_01_36 Alerta de stock bajo | COMPLETED | campo `alerta` en existencias |
+
+Campos de demo (proveedor en texto y referencia) en `Movimientos_inventario`. QA: `docs/qa-epic-6.md`.

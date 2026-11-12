@@ -96,3 +96,12 @@
 - Alta, listado filtrado, edición con historial de precio, estado, parámetros, importación CSV/XLSX y exportación.
 - Pruebas: `tests/unit/test_epic5_catalogo.py`.
 - Permisos de matriz: deja de ejecutar un `get_or_create` por celda en cada lectura.
+
+## Épica 6 — Inventario y kardex
+**Status:** COMPLETED
+**Date:** 2026-11-11
+**Branch:** `epica-6-inventario-kardex`
+
+- Existencias, kardex, entrada, ajuste/merma y traslado en `AdminInventarioService`.
+- Pruebas: `tests/unit/test_epic6_inventario.py`.
+- Cobertura unitaria ≥ 90%.
