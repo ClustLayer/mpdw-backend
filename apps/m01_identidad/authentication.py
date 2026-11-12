@@ -76,6 +76,7 @@ class JWTAuthentication(BaseAuthentication):
             rol_nombre=user.id_rol.nombre,
             sedes_asignadas=sedes,
             es_global=es_global,
+            id_rol=user.id_rol_id,
             ip=ip,
             user_agent=user_agent,
             id_correlacion=correlation_id,

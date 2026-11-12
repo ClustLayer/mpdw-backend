@@ -702,7 +702,7 @@ class PermissionService:
             return False
 
     def accesos_panel(self, ctx: AuthContext) -> dict[str, Any]:
-        from apps.m01_identidad.panel_accesos import MODULO_A_PANEL
+        from apps.m01_identidad.panel_accesos import CATALOGO_PRODUCTOS_PANEL, MODULO_A_PANEL
 
         id_rol = ctx.id_rol
         if id_rol is None:
@@ -719,11 +719,17 @@ class PermissionService:
         for modulo_dom, acts in por_modulo.items():
             if acts == {"Sin acceso"}:
                 continue
-            clave = MODULO_A_PANEL.get(modulo_dom)
-            if not clave:
+            lista = sorted(a for a in acts if a != "Sin acceso")
+            if modulo_dom == "catalogo_productos":
+                for clave_catalogo in CATALOGO_PRODUCTOS_PANEL:
+                    modulos_panel.append(clave_catalogo)
+                    acciones[clave_catalogo] = lista
                 continue
-            modulos_panel.append(clave)
-            acciones[clave] = sorted(a for a in acts if a != "Sin acceso")
+            clave_panel = MODULO_A_PANEL.get(modulo_dom)
+            if clave_panel is None:
+                continue
+            modulos_panel.append(clave_panel)
+            acciones[clave_panel] = lista
         if "resumen" not in modulos_panel and por_modulo.get("autenticacion_perfil"):
             modulos_panel.insert(0, "resumen")
         return {"modulos": sorted(set(modulos_panel)), "acciones_por_modulo": acciones}

@@ -458,6 +458,202 @@ paths:
               schema:
                 $ref: '#/components/schemas/MensajeResponse'
           description: ''
+  /api/v1/catalogo/media/{ruta}/:
+    get:
+      operationId: catalogo_media_retrieve
+      parameters:
+      - in: path
+        name: ruta
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalogo
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/parametros/{tipo}/:
+    get:
+      operationId: catalogo_parametros_retrieve
+      parameters:
+      - in: path
+        name: tipo
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: catalogo_parametros_create
+      parameters:
+      - in: path
+        name: tipo
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/parametros/{tipo}/{id}/:
+    patch:
+      operationId: catalogo_parametros_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: tipo
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/productos/:
+    get:
+      operationId: catalogo_productos_list
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: catalogo_productos_create
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/productos/{id}/:
+    get:
+      operationId: catalogo_productos_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: catalogo_productos_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/productos/{id}/estado/:
+    post:
+      operationId: catalogo_productos_estado_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/productos/{id}/historial/:
+    get:
+      operationId: catalogo_productos_historial_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/productos/{id}/imagen/:
+    post:
+      operationId: catalogo_productos_imagen_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/productos/exportar/:
+    get:
+      operationId: catalogo_productos_exportar_retrieve
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/productos/importar/:
+    post:
+      operationId: catalogo_productos_importar_create
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/productos/plantilla/:
+    get:
+      operationId: catalogo_productos_plantilla_retrieve
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/health/live:
     get:
       operationId: health_live_retrieve
@@ -2089,7 +2285,7 @@ components:
           maxLength: 50
         nombre:
           type: string
-          maxLength: 200
+          maxLength: 255
         descripcion:
           type: string
         precio_venta:

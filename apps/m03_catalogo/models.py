@@ -10,9 +10,10 @@ class Categorias_producto(models.Model):
     """Categorías de productos (SAD §8.1)."""
 
     id_categoria = models.BigAutoField(primary_key=True, db_column="id_categoria")
-    nombre = models.CharField(max_length=100, unique=True, db_column="nombre")
-    descripcion = models.CharField(max_length=200, blank=True, default="", db_column="descripcion")
+    nombre = models.CharField(max_length=255, unique=True, db_column="nombre")
+    descripcion = models.TextField(blank=True, default="", db_column="descripcion")
     estado = models.BooleanField(default=True, db_column="estado")
+    version_fila = models.PositiveIntegerField(default=1, db_column="version_fila")
 
     class Meta:
         db_table = "Categorias_producto"
@@ -25,8 +26,10 @@ class Marcas(models.Model):
     """Marcas de fabricantes (SAD §8.1)."""
 
     id_marca = models.BigAutoField(primary_key=True, db_column="id_marca")
-    nombre = models.CharField(max_length=100, unique=True, db_column="nombre")
+    nombre = models.CharField(max_length=255, unique=True, db_column="nombre")
+    descripcion = models.TextField(blank=True, default="", db_column="descripcion")
     estado = models.BooleanField(default=True, db_column="estado")
+    version_fila = models.PositiveIntegerField(default=1, db_column="version_fila")
 
     class Meta:
         db_table = "Marcas"
@@ -39,8 +42,12 @@ class Tipos_producto(models.Model):
     """Tipos de productos (SAD §8.1)."""
 
     id_tipo_producto = models.BigAutoField(primary_key=True, db_column="id_tipo_producto")
-    nombre = models.CharField(max_length=100, unique=True, db_column="nombre")
+    nombre = models.CharField(max_length=255, unique=True, db_column="nombre")
+    descripcion = models.TextField(blank=True, default="", db_column="descripcion")
+    afecta_venta_diaria = models.BooleanField(default=True, db_column="afecta_venta_diaria")
+    es_base = models.BooleanField(default=False, db_column="es_base")
     estado = models.BooleanField(default=True, db_column="estado")
+    version_fila = models.PositiveIntegerField(default=1, db_column="version_fila")
 
     class Meta:
         db_table = "Tipos_producto"
@@ -55,9 +62,14 @@ class Productos(models.Model):
     id_producto = models.BigAutoField(primary_key=True, db_column="id_producto")
     codigo_producto = models.CharField(max_length=50, unique=True, db_column="codigo_producto")  # RI-02
     codigo_barras = models.CharField(max_length=50, unique=True, null=True, blank=True, db_column="codigo_barras")  # RI-02
-    nombre = models.CharField(max_length=200, db_column="nombre")
+    nombre = models.CharField(max_length=255, db_column="nombre")
     descripcion = models.TextField(blank=True, default="", db_column="descripcion")
+    unidad_medida = models.CharField(max_length=20, default="UND", db_column="unidad_medida")
+    precio_compra = models.DecimalField(max_digits=14, decimal_places=2, default=0, db_column="precio_compra")
     precio_venta = models.DecimalField(max_digits=14, decimal_places=2, db_column="precio_venta")
+    iva_porcentaje = models.DecimalField(max_digits=5, decimal_places=2, default=0, db_column="iva_porcentaje")
+    stock_minimo = models.PositiveIntegerField(default=0, db_column="stock_minimo")
+    imagen_url = models.CharField(max_length=500, blank=True, default="", db_column="imagen_url")
     id_categoria = models.ForeignKey(Categorias_producto, on_delete=models.PROTECT, db_column="id_categoria")
     id_marca = models.ForeignKey(Marcas, on_delete=models.SET_NULL, null=True, blank=True, db_column="id_marca")
     id_tipo_producto = models.ForeignKey(Tipos_producto, on_delete=models.SET_NULL, null=True, blank=True, db_column="id_tipo_producto")
@@ -69,12 +81,13 @@ class Productos(models.Model):
     class Meta:
         db_table = "Productos"
         indexes = [
-            # IX-1: Búsqueda rápida por nombre con trigramas
             GinIndex(
                 name="idx_productos_nombre_trgm",
                 fields=["nombre"],
                 opclasses=["gin_trgm_ops"],
             ),
+            models.Index(fields=["estado", "nombre"], name="idx_productos_estado_nombre"),
+            models.Index(fields=["id_categoria", "estado"], name="idx_productos_cat_estado"),
         ]
 
     def __str__(self) -> str:
@@ -88,6 +101,9 @@ class Historial_precios(models.Model):
     id_producto = models.ForeignKey(Productos, on_delete=models.CASCADE, db_column="id_producto", related_name="historial_precios")
     precio_anterior = models.DecimalField(max_digits=14, decimal_places=2, db_column="precio_anterior")
     precio_nuevo = models.DecimalField(max_digits=14, decimal_places=2, db_column="precio_nuevo")
+    precio_compra = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True, db_column="precio_compra")
+    iva_porcentaje = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, db_column="iva_porcentaje")
+    fecha_inicio = models.DateTimeField(null=True, blank=True, db_column="fecha_inicio")
     motivo = models.TextField(db_column="motivo")  # TX-06: motivo obligatorio
     id_usuario = models.ForeignKey(
         "m01_identidad.Usuarios",
@@ -108,5 +124,8 @@ class Historial_precios(models.Model):
                 condition=models.Q(fecha_fin__isnull=True),
                 name="uq_historial_precio_vigente",
             ),
+        ]
+        indexes = [
+            models.Index(fields=["id_producto", "-fecha_cambio"], name="idx_historial_prod_fecha"),
         ]
 
