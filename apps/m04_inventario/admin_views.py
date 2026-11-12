@@ -42,6 +42,31 @@ class KardexView(APIView):
         return Response(AdminInventarioService().kardex(filtros))
 
 
+class ProductosOpcionesView(APIView):
+    permission_classes = [IsAuthenticated, HasDynamicPermission]
+    required_permission = PERM
+
+    @extend_schema(operation_id="inventario_productos_opciones")
+    def get(self, request: Request) -> Response:
+        q = str(request.query_params.get("q") or "")
+        return Response(AdminInventarioService().productos_opciones(q))
+
+
+class EntradaLoteView(APIView):
+    permission_classes = [IsAuthenticated, HasDynamicPermission]
+    required_permission = PERM_W
+
+    @extend_schema(operation_id="inventario_entrada_lote")
+    def post(self, request: Request) -> Response:
+        body = request.data if isinstance(request.data, dict) else {}
+        svc = AdminInventarioService()
+        try:
+            msg = svc.entrada_lote(_ctx(request), body)
+        except (ReglaNegocioError, DominioError) as exc:
+            return Response({"mensaje": exc.mensaje, "codigo": exc.codigo}, status=400)
+        return Response({"mensaje": msg}, status=201)
+
+
 class MovimientoView(APIView):
     permission_classes = [IsAuthenticated, HasDynamicPermission]
     required_permission = PERM_W

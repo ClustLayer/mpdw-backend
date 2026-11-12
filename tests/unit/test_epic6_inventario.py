@@ -38,7 +38,17 @@ def test_entrada_y_traslado(ctx):
         unidad_medida="UND",
     )
     svc = AdminInventarioService()
-    msg = svc.entrada(ctx, {"id_producto": prod.id_producto, "id_sede": sede_a.id_sede, "cantidad": "5", "motivo": "Compra"})
+    msg = svc.entrada(
+        ctx,
+        {
+            "id_producto": prod.id_producto,
+            "id_sede": sede_a.id_sede,
+            "cantidad": "5",
+            "motivo": "Compra",
+            "proveedor": "Proveedor Demo",
+            "costo_unitario": "8",
+        },
+    )
     assert "correctamente" in msg
     assert Inventarios.objects.get(id_producto=prod, id_sede=sede_a).cantidad_actual == 5
     svc.traslado(ctx, {"id_producto": prod.id_producto, "id_sede": sede_a.id_sede, "id_sede_destino": sede_b.id_sede, "cantidad": "2", "motivo": "Traslado"})
@@ -65,5 +75,100 @@ def test_api_inventario():
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.access_token}")
     assert client.get("/api/v1/inventario/existencias/").status_code == 200
     assert client.get("/api/v1/inventario/kardex/").status_code == 200
+    assert client.get("/api/v1/inventario/productos-opciones/?q=").status_code == 200
+    assert client.post("/api/v1/inventario/movimientos/entrada-lote/", {"id_sede": 1, "lineas": []}, format="json").status_code == 400
     assert client.post("/api/v1/inventario/movimientos/nope/", {}, format="json").status_code == 404
     assert client.post("/api/v1/inventario/movimientos/entrada/", {}, format="json").status_code == 400
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_existencias_busca_barras(ctx):
+    cat = Categorias_producto.objects.create(nombre="Cat Bar")
+    marca = Marcas.objects.create(nombre="Marca Bar")
+    tipo, _ = Tipos_producto.objects.get_or_create(nombre="Insumo", defaults={"es_base": True})
+    Productos.objects.create(
+        codigo_producto="BAR-1",
+        codigo_barras="7701234567890",
+        nombre="Con barras",
+        id_categoria=cat,
+        id_marca=marca,
+        id_tipo_producto=tipo,
+        precio_venta=Decimal("1"),
+        unidad_medida="UND",
+    )
+    svc = AdminInventarioService()
+    assert svc.existencias("7701234567890", None)["items"]
+    assert svc.productos_opciones("BAR")["items"]
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_entrada_proveedor_y_fabricado(ctx):
+    cat = Categorias_producto.objects.create(nombre="Cat Ori")
+    marca = Marcas.objects.create(nombre="Marca Ori")
+    tipo, _ = Tipos_producto.objects.get_or_create(nombre="Insumo", defaults={"es_base": True})
+    sede = Sedes.objects.create(nombre="Sede Ori", direccion="Calle 3", estado=True)
+    comprado = Productos.objects.create(
+        codigo_producto="CMP-1",
+        nombre="Comprado",
+        id_categoria=cat,
+        id_marca=marca,
+        id_tipo_producto=tipo,
+        precio_venta=Decimal("10"),
+        unidad_medida="UND",
+        origen=Productos.ORIGEN_COMPRADO,
+    )
+    fabricado = Productos.objects.create(
+        codigo_producto="FAB-1",
+        nombre="Fabricado",
+        id_categoria=cat,
+        id_marca=marca,
+        id_tipo_producto=tipo,
+        precio_venta=Decimal("10"),
+        unidad_medida="UND",
+        origen=Productos.ORIGEN_FABRICADO,
+    )
+    svc = AdminInventarioService()
+    with pytest.raises(ReglaNegocioError):
+        svc.entrada(ctx, {"id_producto": comprado.id_producto, "id_sede": sede.id_sede, "cantidad": "1", "motivo": "x"})
+    svc.entrada(ctx, {"id_producto": comprado.id_producto, "id_sede": sede.id_sede, "cantidad": "1", "motivo": "x", "proveedor": "ACME"})
+    svc.entrada(ctx, {"id_producto": fabricado.id_producto, "id_sede": sede.id_sede, "cantidad": "1", "motivo": "Prod interna"})
+    lote = svc.entrada_lote(
+        ctx,
+        {
+            "id_sede": sede.id_sede,
+            "proveedor": "ACME",
+            "lineas": [{"codigo": "FAB-1", "cantidad": "2", "costo_unitario": "5"}],
+        },
+    )
+    assert "registrada" in lote
+    data = svc.productos_opciones("Comprado")
+    assert data["items"]
+    k = svc.kardex({})
+    assert any(i.get("costo_unitario") for i in k["items"])
+    with pytest.raises(ReglaNegocioError):
+        svc.entrada(ctx, {"id_producto": comprado.id_producto, "id_sede": sede.id_sede, "cantidad": "1", "motivo": "x", "costo_unitario": "-1"})
+    with pytest.raises(ReglaNegocioError):
+        svc.entrada_lote(ctx, {"id_sede": sede.id_sede, "lineas": [{"id_producto": comprado.id_producto, "cantidad": "1"}]})
+    with pytest.raises(ReglaNegocioError):
+        svc._resolver_producto({"codigo": "ZZZ-NO-EXISTE"})
+    svc.entrada_lote(
+        ctx,
+        {
+            "id_sede": sede.id_sede,
+            "proveedor": "ACME",
+            "lineas": [
+                {"id_producto": comprado.id_producto, "cantidad": "1"},
+                {"id_producto": comprado.id_producto, "cantidad": "2"},
+            ],
+        },
+    )
+    svc.kardex({"desde": "2020-01-01", "hasta": "2099-12-31", "tipo": "entrada_compra", "id_sede": str(sede.id_sede)})
+    with pytest.raises(ReglaNegocioError):
+        svc.entrada(ctx, {"id_producto": 0, "id_sede": sede.id_sede, "cantidad": "1", "motivo": "x", "proveedor": "X"})
+    with pytest.raises(ReglaNegocioError):
+        svc.entrada_lote(ctx, {"id_sede": 0, "lineas": [{"id_producto": comprado.id_producto, "cantidad": "1"}]})
+    with pytest.raises(ReglaNegocioError):
+        svc.ajuste(ctx, {"id_producto": comprado.id_producto, "id_sede": sede.id_sede, "cantidad": "1", "motivo": "x", "tipo": "invalido"})
+    assert AdminInventarioService().totales()["existencia_total"] >= 0

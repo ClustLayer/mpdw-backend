@@ -728,6 +728,26 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/inventario/movimientos/entrada-lote/:
+    post:
+      operationId: inventario_entrada_lote
+      tags:
+      - inventario
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/inventario/productos-opciones/:
+    get:
+      operationId: inventario_productos_opciones
+      tags:
+      - inventario
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/inventory/:
     get:
       operationId: inventory_list
