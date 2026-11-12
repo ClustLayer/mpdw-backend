@@ -59,6 +59,10 @@ class Tipos_producto(models.Model):
 class Productos(models.Model):
     """Entidad principal de producto con control de concurrencia optimista (G-08)."""
 
+    ORIGEN_COMPRADO = "comprado"
+    ORIGEN_FABRICADO = "fabricado"
+    ORIGEN_CHOICES = [(ORIGEN_COMPRADO, "Comprado"), (ORIGEN_FABRICADO, "Fabricado")]
+
     id_producto = models.BigAutoField(primary_key=True, db_column="id_producto")
     codigo_producto = models.CharField(max_length=50, unique=True, db_column="codigo_producto")  # RI-02
     codigo_barras = models.CharField(max_length=50, unique=True, null=True, blank=True, db_column="codigo_barras")  # RI-02
@@ -74,6 +78,12 @@ class Productos(models.Model):
     id_marca = models.ForeignKey(Marcas, on_delete=models.SET_NULL, null=True, blank=True, db_column="id_marca")
     id_tipo_producto = models.ForeignKey(Tipos_producto, on_delete=models.SET_NULL, null=True, blank=True, db_column="id_tipo_producto")
     inventario_habilitado = models.BooleanField(default=True, db_column="inventario_habilitado")  # BR-07
+    origen = models.CharField(
+        max_length=20,
+        choices=ORIGEN_CHOICES,
+        default=ORIGEN_COMPRADO,
+        db_column="origen",
+    )
     version = models.IntegerField(default=1, db_column="version")  # G-08: Concurrencia optimista
     estado = models.BooleanField(default=True, db_column="estado")
     fecha_creacion = models.DateTimeField(auto_now_add=True, db_column="fecha_creacion")
