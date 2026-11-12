@@ -3,7 +3,16 @@
 from apps.m01_identidad.permiso_eval import ACCIONES_CATALOGO
 from contratos.catalogos import MATRIZ_ANEXO_A
 
-__all__ = ["ACCIONES_CATALOGO", "MODULOS_CATALOGO", "MODULO_A_PANEL", "PANEL_A_MODULO"]
+# Pantallas del catálogo de productos que comparten permisos del dominio catalogo_productos (HU 18 / demo).
+CATALOGO_PRODUCTOS_PANEL: tuple[str, ...] = ("productos", "categorias", "marcas", "tipos_producto")
+
+__all__ = [
+    "ACCIONES_CATALOGO",
+    "CATALOGO_PRODUCTOS_PANEL",
+    "MODULOS_CATALOGO",
+    "MODULO_A_PANEL",
+    "PANEL_A_MODULO",
+]
 
 MODULO_A_PANEL: dict[str, str] = {
     "autenticacion_perfil": "resumen",
@@ -19,7 +28,7 @@ MODULO_A_PANEL: dict[str, str] = {
     "facturas": "ventas",
     "domicilios": "domicilios",
     "facturacion_electronica": "facturacion",
-    "categorias_movimientos": "categorias",
+    "categorias_movimientos": "categorias_caja",
     "gastos_frecuentes": "conceptos",
     "cierre_jornada": "cierre",
     "eventos": "eventos",
