@@ -55,7 +55,14 @@ for _db in DATABASES.values():  # noqa: F405
     if not isinstance(_db, dict):
         continue
     _db["DISABLE_SERVER_SIDE_CURSORS"] = True
-    _db["CONN_MAX_AGE"] = 0
+    _db["CONN_HEALTH_CHECKS"] = True
+    # Pooler en modo transacción (puerto 6543) no reutiliza sesión; CONN_MAX_AGE alto rompe el pooler.
+    _puerto = str(_db.get("PORT") or "")
+    _host = str(_db.get("HOST") or "")
+    if "pooler.supabase.com" in _host and _puerto == "6543":
+        _db["CONN_MAX_AGE"] = 0
+    else:
+        _db["CONN_MAX_AGE"] = int(os.environ.get("DB_CONN_MAX_AGE", "60"))
     _opts_raw = _db.get("OPTIONS")
     _opts: dict[str, object] = dict(_opts_raw) if isinstance(_opts_raw, dict) else {}
     _opts["prepare_threshold"] = None

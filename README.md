@@ -131,6 +131,18 @@ try {
 
 ---
 
+## 3.1 Postgres local opcional
+
+`docker-compose.dev.yml` levanta Postgres 16 en el puerto 5432 (usuario `mpdw`, base `mpdw`). No modifica `.env`.
+
+```bash
+docker compose -f docker-compose.dev.yml up -d
+```
+
+Para usarla, el desarrollador cambia **por su cuenta** `DATABASE_URL` a `postgresql://mpdw:mpdw@localhost:5432/mpdw` y ejecuta `python manage.py migrate` más el seed existente (`create_initial_admin`, `seed_catalogo_parametros`).
+
+El pooler de Supabase en puerto 6543 (modo transacción) mantiene `CONN_MAX_AGE=0`. En sesión directa el valor sale de `DB_CONN_MAX_AGE` (60 s por defecto) con `CONN_HEALTH_CHECKS`.
+
 ## 4. Desarrollo Local sin Docker (con uv)
 
 ```bash

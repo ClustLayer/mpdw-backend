@@ -197,12 +197,24 @@ AUTH_PASSWORD_VALIDATORS = [
 # ------------------------------------------------------------------------------
 # Caché de Base de Datos para Throttles (SAD ADR-010, I-01)
 # ------------------------------------------------------------------------------
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
-        "LOCATION": "django_cache",
+if os.environ.get("REDIS_URL"):
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": os.environ["REDIS_URL"],
+        }
     }
-}
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "mpdw-default",
+        }
+    }
+
+for _db in DATABASES.values():
+    _db["CONN_HEALTH_CHECKS"] = True
+    _db["CONN_MAX_AGE"] = int(os.environ.get("DB_CONN_MAX_AGE", "60"))
 
 # ------------------------------------------------------------------------------
 # Django REST Framework (SAD §9.1, §10.5)
