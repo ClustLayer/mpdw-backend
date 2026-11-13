@@ -18,6 +18,11 @@ Versionado del producto: **MAJOR.SPRINT.EPIC_IN_SPRINT** (`1` = major del sistem
 
 ---
 
+## 2026-11-13 — Rendimiento y correcciones (iteración 13)
+
+- Paginación SQL del catálogo, caché en memoria, timeout de cliente, saludo en Bogotá, WhatsApp y matriz sin catálogo editable en la UI.
+- Detalle: `docs/correcciones-iteracion-13.md`.
+
 ## 2026-11-12 — Mejoras integrales Sprint 2 (iteración 12)
 
 - Catálogo: `SET_NULL` en categoría, eliminación de parámetros, exportación enriquecida.
