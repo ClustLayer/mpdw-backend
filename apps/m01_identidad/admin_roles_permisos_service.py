@@ -500,6 +500,13 @@ class AdminRolesPermisosService:
                     usuario.save(update_fields=["credential_version"])
                     entidad, id_ent = "Usuarios", usuario.id_usuario
                 self._auditar(ctx, "MATRIZ_PERMISOS", entidad, id_ent, antes, despues)
+            from django.core.cache import cache as dj_cache
+
+            dj_cache.add("permisos:version", 1, None)
+            try:
+                dj_cache.incr("permisos:version")
+            except ValueError:
+                dj_cache.set("permisos:version", 2, None)
             return MSG_MATRIZ_GUARDADA
         except ReglaNegocioError:
             raise

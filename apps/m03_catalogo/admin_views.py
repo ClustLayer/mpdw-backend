@@ -64,7 +64,7 @@ class ProductoAdminListCreateView(APIView):
         params = request.query_params
         try:
             page = max(1, int(params.get("page") or 1))
-            page_size = min(50, max(1, int(params.get("page_size") or 10)))
+            page_size = min(100, max(1, int(params.get("page_size") or 20)))
         except (TypeError, ValueError):
             return Response({"codigo": "PAGINACION_INVALIDA", "mensaje": "Paginación inválida."}, status=400)
         try:

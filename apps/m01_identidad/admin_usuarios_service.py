@@ -436,6 +436,7 @@ class AdminUsuariosService:
             "nombre_completo": nombre_completo(usuario),
             "documento": usuario.documento,
             "email": usuario.email,
+            "telefono": usuario.telefono or "",
             "rol": usuario.id_rol.nombre,
             "estado": estado_etiqueta(usuario),
             "ultimo_acceso": usuario.ultimo_acceso,

@@ -11,8 +11,10 @@ from pathlib import Path
 from typing import Any
 
 from django.conf import settings
+from django.core.cache import cache
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import DecimalField, F, OuterRef, Q, Subquery, Sum
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from PIL import Image
 
@@ -141,8 +143,69 @@ def _snap(p: Productos) -> dict[str, Any]:
     }
 
 
+def _nivel_stock(habilitado: bool, total: Decimal, minimo: int) -> str:
+    if not habilitado:
+        return "na"
+    if total == 0:
+        return "agotado"
+    if total <= minimo:
+        return "bajo"
+    return "ok"
+
+
+def _orden_sql(orden: str) -> list[str]:
+    clave = (orden or "nombre").lstrip("-")
+    prefijo = "-" if (orden or "").startswith("-") else ""
+    mapa = {
+        "codigo": "codigo_producto",
+        "nombre": "nombre",
+        "categoria": "id_categoria__nombre",
+        "marca": "id_marca__nombre",
+        "tipo": "id_tipo_producto__nombre",
+        "precio": "precio_venta",
+        "existencia": "stock_total",
+        "estado": "estado",
+    }
+    return [f"{prefijo}{mapa.get(clave, 'nombre')}", "id_producto"]
+
+
+def _anotar_stock(qs: Any) -> Any:
+    stock_sq = (
+        Inventarios.objects.filter(id_producto_id=OuterRef("pk"), id_sede__estado=True)
+        .values("id_producto")
+        .annotate(total=Sum("cantidad_actual"))
+        .values("total")[:1]
+    )
+    return qs.annotate(
+        stock_total=Coalesce(
+            Subquery(stock_sq, output_field=DecimalField(max_digits=14, decimal_places=2)),
+            Decimal("0"),
+        )
+    )
+
+
+def _filtrar_nivel(qs: Any, stock: str) -> Any:
+    if stock == "con_stock":
+        return qs.filter(inventario_habilitado=True, stock_total__gt=F("stock_minimo"))
+    if stock == "bajo":
+        return qs.filter(inventario_habilitado=True, stock_total__gt=0, stock_total__lte=F("stock_minimo"))
+    if stock == "agotado":
+        return qs.filter(inventario_habilitado=True, stock_total=0)
+    return qs
+
+
 class AdminCatalogoService:
-    def listar(self, q: str, filtros: dict[str, str], page: int, page_size: int, orden: str) -> dict[str, Any]:
+    def listar(
+        self,
+        q: str,
+        filtros: dict[str, str],
+        page: int,
+        page_size: int,
+        orden: str,
+        *,
+        tope: int = 100,
+    ) -> dict[str, Any]:
+        page_size = min(max(1, page_size), tope)
         qs = Productos.objects.select_related("id_categoria", "id_marca", "id_tipo_producto")
         texto = (q or "").strip()
         if texto:
@@ -163,70 +226,33 @@ class AdminCatalogoService:
             qs = qs.filter(estado=True)
         elif estado == "inactivo":
             qs = qs.filter(estado=False)
-        stock = (filtros.get("stock") or "todos").lower()
-        ids = list(qs.values_list("id_producto", flat=True)[:5000])
-        existencias = {
-            row["id_producto"]: row["total"] or Decimal("0")
-            for row in Inventarios.objects.filter(id_producto_id__in=ids, id_sede__estado=True)
-            .values("id_producto")
-            .annotate(total=Sum("cantidad_actual"))
-        }
-        items_src = list(qs.order_by("nombre")[:5000])
-        filas = []
-        for p in items_src:
-            total = existencias.get(p.id_producto, Decimal("0"))
-            if not p.inventario_habilitado:
-                nivel = "na"
-            elif total == 0:
-                nivel = "agotado"
-            elif total <= p.stock_minimo:
-                nivel = "bajo"
-            else:
-                nivel = "ok"
-            if stock == "con_stock" and nivel != "ok":
-                continue
-            if stock == "bajo" and nivel != "bajo":
-                continue
-            if stock == "agotado" and nivel != "agotado":
-                continue
-            filas.append((p, total, nivel))
-        campos = {
-            "codigo": lambda r: r[0].codigo_producto,
-            "nombre": lambda r: r[0].nombre.lower(),
-            "categoria": lambda r: (r[0].id_categoria.nombre if r[0].id_categoria else "").lower(),
-            "marca": lambda r: (r[0].id_marca.nombre if r[0].id_marca else "").lower(),
-            "tipo": lambda r: (r[0].id_tipo_producto.nombre if r[0].id_tipo_producto else "").lower(),
-            "precio": lambda r: r[0].precio_venta,
-            "existencia": lambda r: r[1],
-            "estado": lambda r: r[0].estado,
-        }
-        clave = (orden or "nombre").lstrip("-")
-        reverse = (orden or "").startswith("-")
-        filas.sort(key=campos.get(clave, campos["nombre"]), reverse=reverse)
-        total = len(filas)
-        offset = max(0, (page - 1) * page_size)
-        page_rows = filas[offset : offset + page_size]
-        items = [
-            {
-                "id_producto": p.id_producto,
-                "codigo_producto": p.codigo_producto,
-                "nombre": p.nombre,
-                "categoria": p.id_categoria.nombre if p.id_categoria else "",
-                "marca": p.id_marca.nombre if p.id_marca else "",
-                "tipo": p.id_tipo_producto.nombre if p.id_tipo_producto else "",
-                "precio_compra": str(p.precio_compra),
-                "precio_venta": str(p.precio_venta),
-                "iva_porcentaje": str(p.iva_porcentaje),
-                "unidad_medida": p.unidad_medida,
-                "existencia": None if not p.inventario_habilitado else str(total_ex),
-                "stock_nivel": nivel,
-                "estado": p.estado,
-                "imagen_url": p.imagen_url,
-                "origen": p.origen,
-                "version_fila": p.version,
-            }
-            for p, total_ex, nivel in page_rows
-        ]
+        qs = _filtrar_nivel(_anotar_stock(qs), (filtros.get("stock") or "todos").lower())
+        total = qs.count()
+        offset = max(0, (max(1, page) - 1) * page_size)
+        page_rows = list(qs.order_by(*_orden_sql(orden))[offset : offset + page_size])
+        items = []
+        for p in page_rows:
+            total_ex = p.stock_total or Decimal("0")
+            items.append(
+                {
+                    "id_producto": p.id_producto,
+                    "codigo_producto": p.codigo_producto,
+                    "nombre": p.nombre,
+                    "categoria": p.id_categoria.nombre if p.id_categoria else "",
+                    "marca": p.id_marca.nombre if p.id_marca else "",
+                    "tipo": p.id_tipo_producto.nombre if p.id_tipo_producto else "",
+                    "precio_compra": str(p.precio_compra),
+                    "precio_venta": str(p.precio_venta),
+                    "iva_porcentaje": str(p.iva_porcentaje),
+                    "unidad_medida": p.unidad_medida,
+                    "existencia": None if not p.inventario_habilitado else str(total_ex),
+                    "stock_nivel": _nivel_stock(p.inventario_habilitado, total_ex, p.stock_minimo),
+                    "estado": p.estado,
+                    "imagen_url": p.imagen_url,
+                    "origen": p.origen,
+                    "version_fila": p.version,
+                }
+            )
         mensaje = MSG_SIN_COINCIDENCIAS if total == 0 else MSG_LISTADO.format(n=len(items), total=total)
         return {"items": items, "total": total, "page": page, "page_size": page_size, "mensaje": mensaje}
 
@@ -329,12 +355,18 @@ class AdminCatalogoService:
                     id_usuario_id=_usuario_id(ctx),
                 )
                 if producto.inventario_habilitado:
-                    for sede in Sedes.objects.filter(estado=True).only("id_sede"):
-                        Inventarios.objects.get_or_create(
-                            id_producto=producto,
-                            id_sede=sede,
-                            defaults={"cantidad_actual": 0, "cantidad_reservada": 0},
-                        )
+                    Inventarios.objects.bulk_create(
+                        [
+                            Inventarios(
+                                id_producto=producto,
+                                id_sede=sede,
+                                cantidad_actual=0,
+                                cantidad_reservada=0,
+                            )
+                            for sede in Sedes.objects.filter(estado=True).only("id_sede")
+                        ],
+                        ignore_conflicts=True,
+                    )
                 _audit(ctx, "CREAR_PRODUCTO", "Productos", producto.id_producto, None, _snap(producto))
             body = self.detalle(producto.id_producto)
             body["advertencia_precio"] = aviso
@@ -474,12 +506,20 @@ class AdminCatalogoService:
         return rel
 
     def catalogos_activos(self) -> dict[str, Any]:
-        return {
+        clave = "catalogos:activos"
+        if not getattr(settings, "TESTING", False):
+            hit = cache.get(clave)
+            if hit is not None:
+                return hit
+        data = {
             "categorias": list(Categorias_producto.objects.filter(estado=True).order_by("nombre").values("id_categoria", "nombre")),
             "marcas": list(Marcas.objects.filter(estado=True).order_by("nombre").values("id_marca", "nombre")),
             "tipos": list(Tipos_producto.objects.filter(estado=True).order_by("nombre").values("id_tipo_producto", "nombre", "es_base")),
             "unidades": list(UNIDADES),
         }
+        if not getattr(settings, "TESTING", False):
+            cache.set(clave, data, 60)
+        return data
 
     def listar_param(self, tipo: str) -> list[dict[str, Any]]:
         modelo: Any = {"categorias": Categorias_producto, "marcas": Marcas, "tipos": Tipos_producto}[tipo]
@@ -660,9 +700,9 @@ class AdminCatalogoService:
         alcance_norm = (alcance or "filtro").strip().lower()
         if alcance_norm == "pagina":
             limite = min(max(1, page_size), 5000)
-            data = self.listar(q, filtros, max(1, page), limite, "nombre")
+            data = self.listar(q, filtros, max(1, page), limite, "nombre", tope=5000)
         else:
-            data = self.listar(q, filtros, 1, 5000, "nombre")
+            data = self.listar(q, filtros, 1, 5000, "nombre", tope=5000)
         if data["total"] == 0:
             raise ReglaNegocioError(MSG_EXPORT_VACIO, codigo="EXPORT_VACIO")
         fecha = timezone.localdate().isoformat()
