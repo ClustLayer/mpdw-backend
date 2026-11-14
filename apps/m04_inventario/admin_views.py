@@ -42,6 +42,15 @@ class KardexView(APIView):
         return Response(AdminInventarioService().kardex(filtros))
 
 
+class ProveedoresActivosView(APIView):
+    permission_classes = [IsAuthenticated, HasDynamicPermission]
+    required_permission = PERM
+
+    @extend_schema(operation_id="inventario_proveedores_activos")
+    def get(self, request: Request) -> Response:
+        return Response(AdminInventarioService().proveedores_activos())
+
+
 class ProductosOpcionesView(APIView):
     permission_classes = [IsAuthenticated, HasDynamicPermission]
     required_permission = PERM

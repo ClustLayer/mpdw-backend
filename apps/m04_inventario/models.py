@@ -41,7 +41,13 @@ class Movimientos_inventario(models.Model):
     cantidad_nueva = models.DecimalField(max_digits=14, decimal_places=2, db_column="cantidad_nueva")
     motivo = models.TextField(db_column="motivo")
     referencia = models.CharField(max_length=80, blank=True, default="", db_column="referencia")
-    proveedor_nombre = models.CharField(max_length=255, blank=True, default="", db_column="proveedor_nombre")
+    id_proveedor = models.ForeignKey(
+        "m14_proveedores.Proveedores",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column="id_proveedor",
+    )
     costo_unitario = models.DecimalField(
         max_digits=14,
         decimal_places=2,

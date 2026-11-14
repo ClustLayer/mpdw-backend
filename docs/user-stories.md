@@ -191,3 +191,21 @@ Campos de demo (proveedor en texto y referencia) en `Movimientos_inventario`. QA
 | HU_MPDW_01_42 Detalle, historial y métricas | COMPLETED | `GET /api/v1/clientes/{id}/historial/` |
 
 QA: `docs/qa-epic-7.md`. Extras demo: `docs/user-stories-sprint2-extras.md` (S2_13–S2_15).
+
+## Épica 12 — Eventos y novedades (2026-11-12) — **v1.2.4** — **Status:** COMPLETED
+
+| Historia | Estado | Evidencia |
+|----------|--------|-----------|
+| HU_MPDW_01_80 Crear evento | COMPLETED | `POST /api/v1/eventos/`, validaciones HU, sede global opcional |
+| HU_MPDW_01_81 Editar / desactivar evento | COMPLETED | `PATCH /api/v1/eventos/{id}/`, auditoría, `version_fila` |
+
+QA: `docs/qa-epic-12.md`. Público: `GET /api/v1/eventos/publicos/`. Extras: `docs/user-stories-sprint2-extras.md` (S2_16–S2_18).
+
+## Épica 14 — Proveedores e inventario (2026-11-12) — **v1.2.5** — **Status:** COMPLETED
+
+| Historia | Estado | Evidencia |
+|----------|--------|-----------|
+| HU_MPDW_01_84 Crear proveedor | COMPLETED | `POST /api/v1/proveedores/`, RBAC módulo 19 |
+| HU_MPDW_01_85 Editar / activar proveedor | COMPLETED | `PATCH /api/v1/proveedores/{id}/`, concurrencia, auditoría |
+
+Integración inventario: FK `id_proveedor` en `Movimientos_inventario` (`0004_epic14_proveedor_fk`). QA: `docs/qa-epic-14.md`. Extras: S2_19.

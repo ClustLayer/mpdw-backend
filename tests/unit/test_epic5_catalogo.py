@@ -190,3 +190,23 @@ def test_origen_comprado_fabricado(ctx, params):
     assert body["origen"] == "fabricado"
     with pytest.raises(ReglaNegocioError):
         svc.crear(ctx, _payload(cat, marca, tipo, codigo_producto="BAD-ORI", origen="importado"))
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_listado_pagina_en_sql(ctx, params):
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    cat, marca, tipo = params
+    svc = AdminCatalogoService()
+    svc.crear(ctx, _payload(cat, marca, tipo, codigo_producto="PAG-01", nombre="Alfa"))
+    svc.crear(ctx, _payload(cat, marca, tipo, codigo_producto="PAG-02", nombre="Beta"))
+    with CaptureQueriesContext(connection) as ctxq:
+        data = svc.listar("", {"estado": "todos", "stock": "todos"}, 1, 20, "nombre")
+    assert data["page_size"] == 20
+    assert len(data["items"]) <= 20
+    assert len(ctxq.captured_queries) <= 8
+    assert svc.listar("", {"stock": "bajo"}, 1, 20, "-nombre")["page_size"] == 20
+    assert svc.listar("", {"stock": "agotado"}, 1, 20, "existencia")["total"] >= 0
+    assert svc.listar("", {"stock": "con_stock"}, 1, 20, "categoria")["total"] >= 0

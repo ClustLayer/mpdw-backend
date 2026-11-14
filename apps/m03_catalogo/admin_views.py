@@ -64,7 +64,7 @@ class ProductoAdminListCreateView(APIView):
         params = request.query_params
         try:
             page = max(1, int(params.get("page") or 1))
-            page_size = min(50, max(1, int(params.get("page_size") or 10)))
+            page_size = min(100, max(1, int(params.get("page_size") or 20)))
         except (TypeError, ValueError):
             return Response({"codigo": "PAGINACION_INVALIDA", "mensaje": "Paginación inválida."}, status=400)
         try:
@@ -195,6 +195,17 @@ class ParametroDetalleView(APIView):
     permission_classes = [IsAuthenticated, HasDynamicPermission]
     required_permission = PERM_EDITAR
 
+    def delete(self, request: Request, tipo: str, pk: int) -> Response:
+        modelos = {"categorias": Categorias_producto, "marcas": Marcas, "tipos": Tipos_producto}
+        if tipo not in modelos:
+            return Response({"codigo": "TIPO", "mensaje": "Parámetro no válido."}, status=400)
+        try:
+            return Response({"mensaje": _svc().eliminar_param(_ctx(request), tipo, pk)})
+        except modelos[tipo].DoesNotExist:  # type: ignore[attr-defined]
+            return Response({"codigo": "NO_ENCONTRADO", "mensaje": "Registro no encontrado."}, status=404)
+        except (ReglaNegocioError, DominioError) as exc:
+            return _err(exc, request)
+
     def patch(self, request: Request, tipo: str, pk: int) -> Response:
         modelos = {"categorias": Categorias_producto, "marcas": Marcas, "tipos": Tipos_producto}
         if tipo not in modelos:
@@ -247,17 +258,26 @@ class ExportarProductosView(APIView):
         formato = (request.query_params.get("formato") or "").lower()
         if formato not in {"csv", "xlsx"}:
             return Response({"codigo": "FORMATO", "mensaje": "Seleccione Excel o CSV."}, status=400)
+        params = request.query_params
+        try:
+            page = max(1, int(params.get("page") or 1))
+            page_size = min(5000, max(1, int(params.get("page_size") or 10)))
+        except (TypeError, ValueError):
+            return Response({"codigo": "PAGINACION_INVALIDA", "mensaje": "Paginación inválida."}, status=400)
         try:
             nombre, contenido, mime = _svc().exportar(
-                request.query_params.get("q") or "",
+                params.get("q") or "",
                 {
-                    "id_categoria": request.query_params.get("id_categoria") or "",
-                    "id_marca": request.query_params.get("id_marca") or "",
-                    "id_tipo": request.query_params.get("id_tipo") or "",
-                    "estado": request.query_params.get("estado") or "todos",
-                    "stock": request.query_params.get("stock") or "todos",
+                    "id_categoria": params.get("id_categoria") or "",
+                    "id_marca": params.get("id_marca") or "",
+                    "id_tipo": params.get("id_tipo") or "",
+                    "estado": params.get("estado") or "todos",
+                    "stock": params.get("stock") or "todos",
                 },
                 formato,
+                page=page,
+                page_size=page_size,
+                alcance=params.get("alcance") or "filtro",
             )
             resp = HttpResponse(contenido, content_type=mime)
             resp["Content-Disposition"] = f'attachment; filename="{nombre}"'

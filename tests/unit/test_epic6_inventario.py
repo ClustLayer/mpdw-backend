@@ -11,6 +11,7 @@ from apps.m03_catalogo.models import Categorias_producto, Marcas, Productos, Tip
 from apps.m04_inventario.admin_service import AdminInventarioService
 from apps.m04_inventario.models import Inventarios
 from apps.m13_plataforma.adapters.fakes import FakeEmailAdapter
+from apps.m14_proveedores.models import TIPO_DOC_NIT, Proveedores
 from contratos.dtos import AuthContext
 from contratos.excepciones import ReglaNegocioError
 
@@ -37,6 +38,7 @@ def test_entrada_y_traslado(ctx):
         precio_venta=Decimal("10"),
         unidad_medida="UND",
     )
+    prov = Proveedores.objects.create(nombre="Proveedor Demo", tipo_documento=TIPO_DOC_NIT, estado=True)
     svc = AdminInventarioService()
     msg = svc.entrada(
         ctx,
@@ -45,7 +47,7 @@ def test_entrada_y_traslado(ctx):
             "id_sede": sede_a.id_sede,
             "cantidad": "5",
             "motivo": "Compra",
-            "proveedor": "Proveedor Demo",
+            "id_proveedor": prov.id_proveedor,
             "costo_unitario": "8",
         },
     )
@@ -76,6 +78,7 @@ def test_api_inventario():
     assert client.get("/api/v1/inventario/existencias/").status_code == 200
     assert client.get("/api/v1/inventario/kardex/").status_code == 200
     assert client.get("/api/v1/inventario/productos-opciones/?q=").status_code == 200
+    assert client.get("/api/v1/inventario/proveedores-activos/").status_code == 200
     assert client.post("/api/v1/inventario/movimientos/entrada-lote/", {"id_sede": 1, "lineas": []}, format="json").status_code == 400
     assert client.post("/api/v1/inventario/movimientos/nope/", {}, format="json").status_code == 404
     assert client.post("/api/v1/inventario/movimientos/entrada/", {}, format="json").status_code == 400
@@ -129,16 +132,26 @@ def test_entrada_proveedor_y_fabricado(ctx):
         unidad_medida="UND",
         origen=Productos.ORIGEN_FABRICADO,
     )
+    prov = Proveedores.objects.create(nombre="ACME", tipo_documento=TIPO_DOC_NIT, estado=True)
     svc = AdminInventarioService()
     with pytest.raises(ReglaNegocioError):
         svc.entrada(ctx, {"id_producto": comprado.id_producto, "id_sede": sede.id_sede, "cantidad": "1", "motivo": "x"})
-    svc.entrada(ctx, {"id_producto": comprado.id_producto, "id_sede": sede.id_sede, "cantidad": "1", "motivo": "x", "proveedor": "ACME"})
+    svc.entrada(
+        ctx,
+        {
+            "id_producto": comprado.id_producto,
+            "id_sede": sede.id_sede,
+            "cantidad": "1",
+            "motivo": "x",
+            "id_proveedor": prov.id_proveedor,
+        },
+    )
     svc.entrada(ctx, {"id_producto": fabricado.id_producto, "id_sede": sede.id_sede, "cantidad": "1", "motivo": "Prod interna"})
     lote = svc.entrada_lote(
         ctx,
         {
             "id_sede": sede.id_sede,
-            "proveedor": "ACME",
+            "id_proveedor": prov.id_proveedor,
             "lineas": [{"codigo": "FAB-1", "cantidad": "2", "costo_unitario": "5"}],
         },
     )
@@ -157,7 +170,7 @@ def test_entrada_proveedor_y_fabricado(ctx):
         ctx,
         {
             "id_sede": sede.id_sede,
-            "proveedor": "ACME",
+            "id_proveedor": prov.id_proveedor,
             "lineas": [
                 {"id_producto": comprado.id_producto, "cantidad": "1"},
                 {"id_producto": comprado.id_producto, "cantidad": "2"},
@@ -166,9 +179,37 @@ def test_entrada_proveedor_y_fabricado(ctx):
     )
     svc.kardex({"desde": "2020-01-01", "hasta": "2099-12-31", "tipo": "entrada_compra", "id_sede": str(sede.id_sede)})
     with pytest.raises(ReglaNegocioError):
-        svc.entrada(ctx, {"id_producto": 0, "id_sede": sede.id_sede, "cantidad": "1", "motivo": "x", "proveedor": "X"})
+        svc.entrada(
+            ctx,
+            {"id_producto": 0, "id_sede": sede.id_sede, "cantidad": "1", "motivo": "x", "id_proveedor": prov.id_proveedor},
+        )
     with pytest.raises(ReglaNegocioError):
         svc.entrada_lote(ctx, {"id_sede": 0, "lineas": [{"id_producto": comprado.id_producto, "cantidad": "1"}]})
     with pytest.raises(ReglaNegocioError):
         svc.ajuste(ctx, {"id_producto": comprado.id_producto, "id_sede": sede.id_sede, "cantidad": "1", "motivo": "x", "tipo": "invalido"})
     assert AdminInventarioService().totales()["existencia_total"] >= 0
+    inactivo = Proveedores.objects.create(nombre="Inactivo", tipo_documento=TIPO_DOC_NIT, estado=False)
+    with pytest.raises(ReglaNegocioError):
+        svc.entrada(
+            ctx,
+            {
+                "id_producto": comprado.id_producto,
+                "id_sede": sede.id_sede,
+                "cantidad": "1",
+                "motivo": "x",
+                "id_proveedor": inactivo.id_proveedor,
+            },
+        )
+    svc.entrada(
+        ctx,
+        {
+            "id_producto": comprado.id_producto,
+            "id_sede": sede.id_sede,
+            "cantidad": "1",
+            "motivo": "x",
+            "proveedor": str(prov.id_proveedor),
+        },
+    )
+    assert svc.proveedores_activos()["items"]
+    with pytest.raises(ReglaNegocioError):
+        svc._resolver_id_proveedor({"id_proveedor": 999999})

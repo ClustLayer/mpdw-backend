@@ -53,3 +53,11 @@
 - `apps/m05_clientes/admin_clientes_service.py`, `admin_views.py`, `urls_admin.py` — `/api/v1/clientes/`.
 - Migración `0002_epic7_clientes` (campos HU 37–41 + índices + semilla «Común»).
 - `apps/m06_ventas/migrations/0002_detalle_factura.py` — líneas para métricas HU 42.
+
+## Épica 14 — Proveedores
+- `apps/m14_proveedores/admin_proveedores_service.py`, `admin_views.py`, `urls_admin.py` — `/api/v1/proveedores/`.
+- Inventario: FK `id_proveedor` en `Movimientos_inventario` (`0004_epic14_proveedor_fk`).
+
+## Épica 12 — Eventos y novedades
+- `apps/m11_eventos/admin_eventos_service.py`, `admin_views.py`, `urls_admin.py` — `/api/v1/eventos/`.
+- Migración `0002_epic12_eventos`.

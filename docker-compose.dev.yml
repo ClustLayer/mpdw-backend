@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: mpdw
+      POSTGRES_PASSWORD: mpdw
+      POSTGRES_DB: mpdw
+    ports:
+      - "5432:5432"
+    volumes:
+      - mpdw_pg:/var/lib/postgresql/data
+
+volumes:
+  mpdw_pg:

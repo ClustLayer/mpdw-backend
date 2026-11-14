@@ -5,7 +5,7 @@
 [![Django](https://img.shields.io/badge/Django-5.2%20LTS-092E20)](https://www.djangoproject.com/)
 [![License](https://img.shields.io/badge/license-Privada-red)](LICENSE)
 
-**Versión del producto:** 1.2.3 (Sprint 2 · Épica 7 — directorio de clientes y Habeas Data; esquema `MAJOR.SPRINT.EPIC_IN_SPRINT`: Épica 5 = 1.2.1, Épica 6 = 1.2.2).
+**Versión del producto:** 1.2.5 (Sprint 2 · Épica 14 — proveedores e integración inventario; Épica 12 = 1.2.4; esquema `MAJOR.SPRINT.EPIC_IN_SPRINT`).
 
 Repositorio oficial del backend y proceso de analítica por lotes (ETL) de **Mundo Pinturas Diana Web (MPDW)**. Diseñado con una arquitectura por capas modularizada por dominio (Aplicación → Negocio → Persistencia) sobre **Python 3.13**, **Django 5.2 LTS**, **Django REST Framework** y **PostgreSQL 16 en Supabase**, garantizando fronteras transaccionales atómicas locales (`transaction.atomic`), control de concurrencia optimista (`version` con HTTP 409), bloqueo acotado de filas, auditoría transaccional inmutable (`Auditoria`) y exclusión estricta de componentes no contemplados (sin DIAN, sin Celery, sin Redis, sin dependencias a Supabase en el cliente).
 
@@ -130,6 +130,18 @@ try {
 ```
 
 ---
+
+## 3.1 Postgres local opcional
+
+`docker-compose.dev.yml` levanta Postgres 16 en el puerto 5432 (usuario `mpdw`, base `mpdw`). No modifica `.env`.
+
+```bash
+docker compose -f docker-compose.dev.yml up -d
+```
+
+Para usarla, el desarrollador cambia **por su cuenta** `DATABASE_URL` a `postgresql://mpdw:mpdw@localhost:5432/mpdw` y ejecuta `python manage.py migrate` más el seed existente (`create_initial_admin`, `seed_catalogo_parametros`).
+
+El pooler de Supabase en puerto 6543 (modo transacción) mantiene `CONN_MAX_AGE=0`. En sesión directa el valor sale de `DB_CONN_MAX_AGE` (60 s por defecto) con `CONN_HEALTH_CHECKS`.
 
 ## 4. Desarrollo Local sin Docker (con uv)
 

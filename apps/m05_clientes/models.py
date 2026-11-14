@@ -2,12 +2,24 @@
 # Modelos del Módulo M05: Clientes - MPDW
 # SAD Ref: M05, §8.1. Tablas propias: Clientes, Tipos_cliente.
 # ==============================================================================
+from django.core.validators import RegexValidator
 from django.db import models
+
+color_cliente_validator = RegexValidator(
+    regex=r"^#[0-9A-Fa-f]{6}$",
+    message="El color debe ser un código hexadecimal (#RRGGBB).",
+)
 
 
 class Tipos_cliente(models.Model):
     id_tipo_cliente = models.BigAutoField(primary_key=True, db_column="id_tipo_cliente")
     nombre = models.CharField(max_length=50, unique=True, db_column="nombre")
+    color = models.CharField(
+        max_length=7,
+        default="#64748B",
+        db_column="color",
+        validators=[color_cliente_validator],
+    )
     descripcion = models.TextField(blank=True, default="", db_column="descripcion")
     estado = models.BooleanField(default=True, db_column="estado")
     es_tipo_predeterminado = models.BooleanField(default=False, db_column="es_tipo_predeterminado")

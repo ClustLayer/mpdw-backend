@@ -11,7 +11,7 @@ class EventoListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        eventos = Eventos_novedades.objects.all().order_by("-fecha_evento")[:20]
+        eventos = Eventos_novedades.objects.filter(estado=True).order_by("-fecha_inicio")[:20]
         serializer = EventoSerializer(eventos, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

@@ -206,6 +206,15 @@ layers = [
 ]
 
 [[tool.importlinter.contracts]]
+name = "M14 Proveedores: Capas internas (views -> services -> repositories)"
+type = "layers"
+layers = [
+    "apps.m14_proveedores.views",
+    "apps.m14_proveedores.services",
+    "apps.m14_proveedores.repositories",
+]
+
+[[tool.importlinter.contracts]]
 name = "M12 Tienda Publica: Capas internas (views -> services -> repositories)"
 type = "layers"
 layers = [
@@ -234,6 +243,7 @@ source_modules = [
     "apps.m08_caja.views",
     "apps.m09_analitica.views",
     "apps.m11_eventos.views",
+    "apps.m14_proveedores.views",
     "apps.m12_tienda_publica.views",
 ]
 forbidden_modules = [
@@ -248,6 +258,7 @@ forbidden_modules = [
     "apps.m09_analitica.repositories",
     "apps.m10_auditoria.repositories",
     "apps.m11_eventos.repositories",
+    "apps.m14_proveedores.repositories",
     "apps.m12_tienda_publica.repositories",
 ]
 
@@ -266,6 +277,7 @@ source_modules = [
     "apps.m09_analitica.services",
     "apps.m10_auditoria.services",
     "apps.m11_eventos.services",
+    "apps.m14_proveedores.services",
     "apps.m12_tienda_publica.services",
 ]
 forbidden_modules = [
@@ -290,6 +302,7 @@ forbidden_modules = [
     "apps.m08_caja.views",
     "apps.m09_analitica.views",
     "apps.m11_eventos.views",
+    "apps.m14_proveedores.views",
     "apps.m12_tienda_publica.views",
 ]
 
@@ -310,6 +323,7 @@ forbidden_modules = [
     "apps.m08_caja.views",
     "apps.m09_analitica.views",
     "apps.m11_eventos.views",
+    "apps.m14_proveedores.views",
     "apps.m12_tienda_publica.views",
 ]
 
@@ -328,6 +342,7 @@ modules = [
     "apps.m09_analitica.repositories",
     "apps.m10_auditoria.repositories",
     "apps.m11_eventos.repositories",
+    "apps.m14_proveedores.repositories",
     "apps.m12_tienda_publica.repositories",
 ]
 

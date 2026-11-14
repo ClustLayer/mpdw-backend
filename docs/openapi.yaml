@@ -164,6 +164,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/MensajeResponse'
           description: ''
+  /api/v1/auth/panel-resumen:
+    get:
+      operationId: auth_panel_resumen
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/auth/politica-sesion:
     get:
       operationId: auth_politica_sesion_retrieve
@@ -526,6 +536,26 @@ paths:
       responses:
         '200':
           description: No response body
+    delete:
+      operationId: catalogo_parametros_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: tipo
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/catalogo/productos/:
     get:
       operationId: catalogo_productos_list
@@ -765,6 +795,93 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/eventos/:
+    get:
+      operationId: eventos_listar
+      tags:
+      - eventos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: eventos_crear
+      tags:
+      - eventos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/eventos/{id}/:
+    get:
+      operationId: eventos_detalle
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - eventos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: eventos_actualizar
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - eventos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/eventos/{id}/imagen/:
+    post:
+      operationId: eventos_imagen
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - eventos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/eventos/publicos/:
+    get:
+      operationId: eventos_publicos
+      tags:
+      - eventos
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/eventos/sedes-activas/:
+    get:
+      operationId: eventos_sedes_activas
+      tags:
+      - eventos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/health/live:
     get:
       operationId: health_live_retrieve
@@ -852,6 +969,16 @@ paths:
   /api/v1/inventario/productos-opciones/:
     get:
       operationId: inventario_productos_opciones
+      tags:
+      - inventario
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/inventario/proveedores-activos/:
+    get:
+      operationId: inventario_proveedores_activos
       tags:
       - inventario
       security:
@@ -1024,6 +1151,66 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProductoResponse'
           description: ''
+  /api/v1/proveedores/:
+    get:
+      operationId: proveedores_listar
+      tags:
+      - proveedores
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: proveedores_crear
+      tags:
+      - proveedores
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/proveedores/{id}/:
+    get:
+      operationId: proveedores_detalle
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - proveedores
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: proveedores_actualizar
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - proveedores
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/proveedores/activos/:
+    get:
+      operationId: proveedores_activos
+      tags:
+      - proveedores
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/roles-permisos/matriz:
     get:
       operationId: matriz_get
