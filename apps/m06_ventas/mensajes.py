@@ -20,13 +20,17 @@ MSG_DESCUENTO_LINEA = "El descuento de la línea no puede superar su valor total
 MSG_MOTIVO_DESCUENTO = "El motivo del descuento es obligatorio."
 MSG_MARGEN_NEGATIVO = "Esta venta genera margen negativo."
 MSG_REF_TRANSFERENCIA = "Debe ingresar el número de comprobante o soporte de la transferencia."
-MSG_TRANSFERENCIA_EXCESO = "El valor de la transferencia ({monto}) no puede superar el saldo pendiente por pagar {saldo}."
+MSG_TRANSFERENCIA_EXCESO = (
+    "El valor de la transferencia ({monto}) no puede superar el saldo pendiente por pagar {saldo}."
+)
 MSG_PAGOS_INFERIORES = "La suma de los pagos ({suma}) es inferior al total de la venta ({total}). Saldo pendiente: ${saldo}."
 MSG_EMITIR_FALLA = "No fue posible emitir la factura. No se registró ninguna venta."
 MSG_ANULADA_YA = "La factura {consecutivo} ya se encuentra anulada."
 MSG_CAJA_CERRADA = "No es posible anular la factura porque la jornada de caja correspondiente ya se encuentra cerrada."
 MSG_ANULAR_FALLA = "No fue posible anular la factura. No se realizaron cambios en el sistema."
-MSG_MOTIVO_ANULACION = "El motivo de la anulación es obligatorio y debe detallar la razón de la cancelación."
+MSG_MOTIVO_ANULACION = (
+    "El motivo de la anulación es obligatorio y debe detallar la razón de la cancelación."
+)
 MSG_NO_EDITABLE = "Esta factura no puede editarse en su estado actual o con la jornada cerrada."
 MSG_EDITAR_FALLA = "No fue posible actualizar la factura. Intente nuevamente."
 MSG_DEVOLUCION_SIN_LINEA = "Seleccione al menos un producto a devolver."
@@ -35,5 +39,7 @@ MSG_MOTIVO_DEVOLUCION = "El motivo de la devolución es obligatorio."
 MSG_DEVOLUCION_FALLA = "No fue posible registrar la devolución. No se realizaron cambios."
 MSG_LISTADO_FALLA = "No fue posible cargar las facturas. Intente nuevamente."
 MSG_CORREO = "El correo electrónico ingresado no tiene un formato válido."
-MSG_AUTORIZACION = "Descuento superior al 10% o margen negativo: requiere autorización de Gerente o Administrador."
+MSG_AUTORIZACION = (
+    "Descuento superior al 10% o margen negativo: requiere autorización de Gerente o Administrador."
+)
 MSG_AUTORIZACION_INVALIDA = "Las credenciales de autorización no son válidas."

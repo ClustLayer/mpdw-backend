@@ -17,5 +17,7 @@ urlpatterns = [
     path("facturas/", FacturasListView.as_view(), name="facturas-list"),
     path("facturas/<int:pk>/", FacturaDetailView.as_view(), name="facturas-detail"),
     path("facturas/<int:pk>/anular/", FacturaAnularView.as_view(), name="facturas-anular"),
-    path("facturas/<int:pk>/devolucion/", FacturaDevolucionView.as_view(), name="facturas-devolucion"),
+    path(
+        "facturas/<int:pk>/devolucion/", FacturaDevolucionView.as_view(), name="facturas-devolucion"
+    ),
 ]

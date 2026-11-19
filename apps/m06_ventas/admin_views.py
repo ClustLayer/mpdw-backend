@@ -100,7 +100,9 @@ class FacturasListView(APIView):
 
 class FacturaDetailView(APIView):
     def get_permissions(self):
-        self.required_permission = PERM_FACTURAS_TOTAL if self.request.method != "GET" else PERM_FACTURAS_VER
+        self.required_permission = (
+            PERM_FACTURAS_TOTAL if self.request.method != "GET" else PERM_FACTURAS_VER
+        )
         return [IsAuthenticated(), HasDynamicPermission()]
 
     @extend_schema(operation_id="facturas_detalle")

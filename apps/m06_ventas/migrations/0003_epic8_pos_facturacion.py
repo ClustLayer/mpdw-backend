@@ -239,37 +239,76 @@ class Migration(migrations.Migration):
             name="tipo_nota",
             field=models.CharField(blank=True, db_column="tipo_nota", default="", max_length=30),
         ),
-        migrations.AlterField(
-            model_name="consecutivos",
-            name="serie",
-            field=models.CharField(db_column="serie", max_length=30),
-        ),
-        migrations.AlterField(
-            model_name="consecutivos",
-            name="id_sede",
-            field=models.ForeignKey(
-                db_column="id_sede",
-                on_delete=django.db.models.deletion.CASCADE,
-                to="m02_sedes.sedes",
-            ),
-        ),
-        migrations.AlterField(
-            model_name="consecutivos",
-            name="ultimo_numero",
-            field=models.PositiveIntegerField(db_column="ultimo_numero", default=0),
-        ),
-        migrations.AlterField(
-            model_name="consecutivos",
-            name="version",
-            field=models.PositiveIntegerField(db_column="version", default=1),
-        ),
-        migrations.AlterModelTable(
-            name="consecutivos",
-            table="Consecutivos",
-        ),
-        migrations.AddConstraint(
-            model_name="consecutivos",
-            constraint=models.UniqueConstraint(fields=("id_sede", "serie"), name="uq_consecutivo_sede_serie"),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.CreateModel(
+                    name="Consecutivos",
+                    fields=[
+                        (
+                            "id_consecutivo",
+                            models.BigAutoField(
+                                db_column="id_consecutivo", primary_key=True, serialize=False
+                            ),
+                        ),
+                        ("serie", models.CharField(db_column="serie", max_length=30)),
+                        (
+                            "ultimo_numero",
+                            models.PositiveIntegerField(db_column="ultimo_numero", default=0),
+                        ),
+                        ("version", models.PositiveIntegerField(db_column="version", default=1)),
+                        (
+                            "id_sede",
+                            models.ForeignKey(
+                                db_column="id_sede",
+                                on_delete=django.db.models.deletion.CASCADE,
+                                to="m02_sedes.sedes",
+                            ),
+                        ),
+                    ],
+                    options={
+                        "db_table": "Consecutivos",
+                        "constraints": [
+                            models.UniqueConstraint(
+                                fields=("id_sede", "serie"), name="uq_consecutivo_sede_serie"
+                            )
+                        ],
+                    },
+                ),
+            ],
+            state_operations=[
+                migrations.AddField(
+                    model_name="consecutivos",
+                    name="id_sede",
+                    field=models.ForeignKey(
+                        db_column="id_sede",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="m02_sedes.sedes",
+                        default=1,
+                    ),
+                    preserve_default=False,
+                ),
+                migrations.AlterField(
+                    model_name="consecutivos",
+                    name="serie",
+                    field=models.CharField(db_column="serie", max_length=30),
+                ),
+                migrations.AlterField(
+                    model_name="consecutivos",
+                    name="ultimo_numero",
+                    field=models.PositiveIntegerField(db_column="ultimo_numero", default=0),
+                ),
+                migrations.AlterField(
+                    model_name="consecutivos",
+                    name="version",
+                    field=models.PositiveIntegerField(db_column="version", default=1),
+                ),
+                migrations.AddConstraint(
+                    model_name="consecutivos",
+                    constraint=models.UniqueConstraint(
+                        fields=("id_sede", "serie"), name="uq_consecutivo_sede_serie"
+                    ),
+                ),
+            ],
         ),
         migrations.AddIndex(
             model_name="facturas",

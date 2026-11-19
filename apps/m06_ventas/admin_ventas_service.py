@@ -37,14 +37,26 @@ TIPO_MOV_DEV = "entrada_devolucion"
 
 
 class AdminVentasService:
-    def __init__(self, audit: AuditService | None = None, permisos: PermissionService | None = None) -> None:
+    def __init__(
+        self, audit: AuditService | None = None, permisos: PermissionService | None = None
+    ) -> None:
         self._audit = audit or AuditService()
         self._permisos = permisos or PermissionService()
 
     def catalogos_pos(self) -> dict[str, Any]:
-        sedes = list(Sedes.objects.filter(estado=True).order_by("nombre").values("id_sede", "nombre"))
-        tipos = list(Tipos_venta.objects.filter(estado=True).order_by("nombre").values("id_tipo_venta", "nombre"))
-        metodos = list(Metodos_pago.objects.filter(estado=True).order_by("nombre").values("id_metodo_pago", "nombre"))
+        sedes = list(
+            Sedes.objects.filter(estado=True).order_by("nombre").values("id_sede", "nombre")
+        )
+        tipos = list(
+            Tipos_venta.objects.filter(estado=True)
+            .order_by("nombre")
+            .values("id_tipo_venta", "nombre")
+        )
+        metodos = list(
+            Metodos_pago.objects.filter(estado=True)
+            .order_by("nombre")
+            .values("id_metodo_pago", "nombre")
+        )
         return {"sedes": sedes, "tipos_venta": tipos, "metodos_pago": metodos}
 
     def buscar_productos(self, q: str, id_sede: int) -> dict[str, Any]:
@@ -52,13 +64,17 @@ class AdminVentasService:
         texto = (q or "").strip()
         if texto:
             qs = qs.filter(
-                Q(nombre__icontains=texto) | Q(codigo_producto__icontains=texto) | Q(codigo_barras__icontains=texto)
+                Q(nombre__icontains=texto)
+                | Q(codigo_producto__icontains=texto)
+                | Q(codigo_barras__icontains=texto)
             )
         items = []
         for p in qs.select_related("id_tipo_producto").order_by("nombre")[:24]:
             stock = None
             if p.inventario_habilitado:
-                inv = Inventarios.objects.filter(id_producto_id=p.id_producto, id_sede_id=id_sede).first()
+                inv = Inventarios.objects.filter(
+                    id_producto_id=p.id_producto, id_sede_id=id_sede
+                ).first()
                 stock = float(inv.cantidad_actual if inv else 0)
             items.append(
                 {
@@ -83,7 +99,9 @@ class AdminVentasService:
 
     def _jornada_abierta(self, id_sede: int, cuando: date | None = None) -> bool:
         dia = cuando or timezone.localdate()
-        return Reportes_diarios.objects.filter(id_sede_id=id_sede, fecha=dia, estado="ABIERTO").exists()
+        return Reportes_diarios.objects.filter(
+            id_sede_id=id_sede, fecha=dia, estado="ABIERTO"
+        ).exists()
 
     def _asegurar_jornada(self, ctx: AuthContext, id_sede: int) -> None:
         if self._jornada_abierta(id_sede):
@@ -102,7 +120,11 @@ class AdminVentasService:
         if not email or not clave:
             raise ReglaNegocioError(msg.MSG_AUTORIZACION, codigo="AUTORIZACION_REQUERIDA")
         user = Usuarios.objects.filter(email=email, estado=True).select_related("id_rol").first()
-        if not user or user.id_rol.nombre not in ROLES_AUTORIZADORES or not user.check_password(clave):
+        if (
+            not user
+            or user.id_rol.nombre not in ROLES_AUTORIZADORES
+            or not user.check_password(clave)
+        ):
             raise ReglaNegocioError(msg.MSG_AUTORIZACION_INVALIDA, codigo="AUTORIZACION_INVALIDA")
 
     def _parse_lineas(self, lineas_in: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -136,7 +158,9 @@ class AdminVentasService:
 
     def _validar_pagos(self, pagos: list[dict[str, Any]], total: Decimal) -> list[dict[str, Any]]:
         if not pagos:
-            raise ReglaNegocioError(msg.MSG_PAGOS_INFERIORES.format(suma=0, total=total, saldo=total))
+            raise ReglaNegocioError(
+                msg.MSG_PAGOS_INFERIORES.format(suma=0, total=total, saldo=total)
+            )
         normalizados: list[dict[str, Any]] = []
         saldo = total
         for p in pagos:
@@ -150,7 +174,9 @@ class AdminVentasService:
                     raise ReglaNegocioError(msg.MSG_REF_TRANSFERENCIA)
                 if valor > saldo:
                     raise ReglaNegocioError(
-                        msg.MSG_TRANSFERENCIA_EXCESO.format(monto=valor, saldo=saldo.quantize(Decimal("0.01")))
+                        msg.MSG_TRANSFERENCIA_EXCESO.format(
+                            monto=valor, saldo=saldo.quantize(Decimal("0.01"))
+                        )
                     )
             normalizados.append({"metodo": metodo, "valor": valor, "referencia": referencia})
             saldo = (saldo - valor).quantize(Decimal("0.01"))
@@ -165,7 +191,9 @@ class AdminVentasService:
             )
         return normalizados
 
-    def _bajar_stock(self, ctx: AuthContext, id_sede: int, id_producto: int, cantidad: Decimal, ref: str) -> None:
+    def _bajar_stock(
+        self, ctx: AuthContext, id_sede: int, id_producto: int, cantidad: Decimal, ref: str
+    ) -> None:
         inv, _ = Inventarios.objects.select_for_update().get_or_create(
             id_producto_id=id_producto,
             id_sede_id=id_sede,
@@ -189,7 +217,15 @@ class AdminVentasService:
             id_usuario_id=ctx.id_usuario,
         )
 
-    def _subir_stock(self, ctx: AuthContext, id_sede: int, id_producto: int, cantidad: Decimal, tipo: str, ref: str) -> None:
+    def _subir_stock(
+        self,
+        ctx: AuthContext,
+        id_sede: int,
+        id_producto: int,
+        cantidad: Decimal,
+        tipo: str,
+        ref: str,
+    ) -> None:
         inv, _ = Inventarios.objects.select_for_update().get_or_create(
             id_producto_id=id_producto,
             id_sede_id=id_sede,
@@ -237,7 +273,11 @@ class AdminVentasService:
             "id_tipo_venta": f.id_tipo_venta_id,
             "tipo_venta": f.id_tipo_venta.nombre,
             "id_cliente": f.id_cliente_id,
-            "cliente": f.id_cliente.nombre if f.id_cliente_id else f.comprador_nombre or "Consumidor final",
+            "cliente": (
+                f"{f.id_cliente.nombre} {f.id_cliente.apellido or ''}".strip()
+                if f.id_cliente_id and f.id_cliente
+                else f.comprador_nombre or "Consumidor final"
+            ),
             "id_usuario": f.id_usuario_id,
             "empleado": f"{f.id_usuario.nombre} {f.id_usuario.apellido}".strip(),
             "subtotal": float(f.subtotal),
@@ -286,7 +326,9 @@ class AdminVentasService:
 
         return emitir_factura(self, ctx, body)
 
-    def listar(self, ctx: AuthContext, filtros: dict[str, str], page: int, page_size: int) -> dict[str, Any]:
+    def listar(
+        self, ctx: AuthContext, filtros: dict[str, str], page: int, page_size: int
+    ) -> dict[str, Any]:
         from apps.m06_ventas.admin_ventas_emitir import listar_facturas
 
         return listar_facturas(self, ctx, filtros, page, page_size)

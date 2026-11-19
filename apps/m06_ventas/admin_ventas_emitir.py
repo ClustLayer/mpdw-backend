@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any
 
 from django.db import transaction
 from django.db.models import Q
-from django.utils import timezone
 
+from apps.m02_sedes.models import Sedes
 from apps.m05_clientes.models import Clientes
 from apps.m06_ventas import mensajes as msg
 from apps.m06_ventas.models import (
@@ -21,9 +21,11 @@ from apps.m06_ventas.models import (
     Pagos,
     Tipos_venta,
 )
-from apps.m06_ventas.ventas_calculo import aplicar_descuento_general, pct_descuento_acumulado, totales_factura
-from apps.m02_sedes.models import Sedes
-from apps.m03_catalogo.models import Productos
+from apps.m06_ventas.ventas_calculo import (
+    aplicar_descuento_general,
+    pct_descuento_acumulado,
+    totales_factura,
+)
 from contratos.dtos import AuditoriaDTO
 from contratos.excepciones import ReglaNegocioError
 
@@ -32,7 +34,9 @@ if TYPE_CHECKING:
     from contratos.dtos import AuthContext
 
 
-def emitir_factura(svc: AdminVentasService, ctx: AuthContext, body: dict[str, Any]) -> dict[str, Any]:
+def emitir_factura(
+    svc: AdminVentasService, ctx: AuthContext, body: dict[str, Any]
+) -> dict[str, Any]:
     lineas_in = body.get("lineas") or []
     if not lineas_in:
         raise ReglaNegocioError("Agregue al menos un producto.")
@@ -58,7 +62,9 @@ def emitir_factura(svc: AdminVentasService, ctx: AuthContext, body: dict[str, An
 
     id_cliente = body.get("id_cliente")
     comprador_correo = (body.get("comprador_correo") or "").strip()
-    if comprador_correo and not __import__("re").match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", comprador_correo):
+    if comprador_correo and not __import__("re").match(
+        r"^[^@\s]+@[^@\s]+\.[^@\s]+$", comprador_correo
+    ):
         raise ReglaNegocioError(msg.MSG_CORREO)
     if id_cliente:
         Clientes.objects.get(pk=int(id_cliente), estado=True)
@@ -66,7 +72,12 @@ def emitir_factura(svc: AdminVentasService, ctx: AuthContext, body: dict[str, An
     clave = body.get("clave_idempotencia")
     if clave and Facturas.objects.filter(clave_idempotencia=clave).exists():
         existente = Facturas.objects.get(clave_idempotencia=clave)
-        return {"factura": svc._factura_dict(existente, True), "mensaje": msg.MSG_EMITIDA.format(consecutivo=existente.serie + "-" + existente.numero_factura)}
+        return {
+            "factura": svc._factura_dict(existente, True),
+            "mensaje": msg.MSG_EMITIDA.format(
+                consecutivo=existente.serie + "-" + existente.numero_factura
+            ),
+        }
 
     try:
         with transaction.atomic():
@@ -74,9 +85,11 @@ def emitir_factura(svc: AdminVentasService, ctx: AuthContext, body: dict[str, An
                 if ln["inventario_habilitado"]:
                     pid = int(ln["id_producto"])
                     cant = Decimal(str(ln["cantidad"]))
-                    inv = __import__("apps.m04_inventario.models", fromlist=["Inventarios"]).Inventarios.objects.filter(
-                        id_producto_id=pid, id_sede_id=id_sede
-                    ).first()
+                    inv = (
+                        __import__("apps.m04_inventario.models", fromlist=["Inventarios"])
+                        .Inventarios.objects.filter(id_producto_id=pid, id_sede_id=id_sede)
+                        .first()
+                    )
                     disp = inv.cantidad_actual if inv else Decimal("0")
                     if disp < cant:
                         raise ReglaNegocioError(
@@ -121,7 +134,9 @@ def emitir_factura(svc: AdminVentasService, ctx: AuthContext, body: dict[str, An
                     subtotal=ln["total_linea"],
                 )
                 if ln["inventario_habilitado"]:
-                    svc._bajar_stock(ctx, id_sede, int(ln["id_producto"]), Decimal(str(ln["cantidad"])), ref)
+                    svc._bajar_stock(
+                        ctx, id_sede, int(ln["id_producto"]), Decimal(str(ln["cantidad"])), ref
+                    )
 
             if desc_general and (desc_general.get("motivo") or "").strip():
                 Descuentos_factura.objects.create(
@@ -149,10 +164,16 @@ def emitir_factura(svc: AdminVentasService, ctx: AuthContext, body: dict[str, An
                         id_usuario=ctx.id_usuario,
                         accion="REVISION_GERENCIAL",
                         entidad="Facturas",
-                        id_entidad=str(factura.id_factura),
+                        id_entidad=int(factura.id_factura),
+                        datos_antes=None,
+                        datos_despues={
+                            "requiere_revision_gerencial": True,
+                            "pct_descuento": float(pct),
+                        },
+                        motivo="REVISION_GERENCIAL",
+                        id_correlacion=ctx.id_correlacion,
                         ip=ctx.ip,
-                        datos_anteriores=None,
-                        datos_nuevos={"requiere_revision_gerencial": True, "pct_descuento": float(pct)},
+                        user_agent=ctx.user_agent,
                     )
                 )
 
@@ -161,10 +182,13 @@ def emitir_factura(svc: AdminVentasService, ctx: AuthContext, body: dict[str, An
                     id_usuario=ctx.id_usuario,
                     accion="EMISION_FACTURA",
                     entidad="Facturas",
-                    id_entidad=str(factura.id_factura),
+                    id_entidad=int(factura.id_factura),
+                    datos_antes=None,
+                    datos_despues={"consecutivo": ref, "total": float(tot["total"])},
+                    motivo="EMISION_FACTURA",
+                    id_correlacion=ctx.id_correlacion,
                     ip=ctx.ip,
-                    datos_anteriores=None,
-                    datos_nuevos={"consecutivo": ref, "total": float(tot["total"])},
+                    user_agent=ctx.user_agent,
                 )
             )
     except ReglaNegocioError:
@@ -172,7 +196,9 @@ def emitir_factura(svc: AdminVentasService, ctx: AuthContext, body: dict[str, An
     except Exception as exc:
         raise ReglaNegocioError(msg.MSG_EMITIR_FALLA, codigo="ERROR_TRANSACCION") from exc
 
-    factura = Facturas.objects.select_related("id_sede", "id_tipo_venta", "id_cliente", "id_usuario").get(pk=factura.id_factura)
+    factura = Facturas.objects.select_related(
+        "id_sede", "id_tipo_venta", "id_cliente", "id_usuario"
+    ).get(pk=factura.id_factura)
     return {
         "factura": svc._factura_dict(factura, True),
         "mensaje": msg.MSG_EMITIDA.format(consecutivo=ref),
@@ -180,7 +206,9 @@ def emitir_factura(svc: AdminVentasService, ctx: AuthContext, body: dict[str, An
     }
 
 
-def listar_facturas(svc: AdminVentasService, ctx: AuthContext, filtros: dict[str, str], page: int, page_size: int) -> dict[str, Any]:
+def listar_facturas(
+    svc: AdminVentasService, ctx: AuthContext, filtros: dict[str, str], page: int, page_size: int
+) -> dict[str, Any]:
     qs = Facturas.objects.select_related("id_sede", "id_tipo_venta", "id_cliente", "id_usuario")
     if not svc._permisos.tiene_permiso(ctx, "facturas", "Total"):
         qs = qs.filter(id_usuario_id=ctx.id_usuario)
@@ -201,7 +229,9 @@ def listar_facturas(svc: AdminVentasService, ctx: AuthContext, filtros: dict[str
         qs = qs.filter(id_tipo_venta_id=int(filtros["id_tipo_venta"]))
     if filtros.get("id_usuario"):
         qs = qs.filter(id_usuario_id=int(filtros["id_usuario"]))
-    if filtros.get("margen_negativo") == "1" and svc._permisos.tiene_permiso(ctx, "facturas", "Total"):
+    if filtros.get("margen_negativo") == "1" and svc._permisos.tiene_permiso(
+        ctx, "facturas", "Total"
+    ):
         qs = qs.filter(margen_negativo=True)
     desde = filtros.get("desde")
     hasta = filtros.get("hasta")
@@ -213,24 +243,38 @@ def listar_facturas(svc: AdminVentasService, ctx: AuthContext, filtros: dict[str
     page_size = min(100, max(1, page_size))
     offset = (max(1, page) - 1) * page_size
     items = [svc._factura_dict(f) for f in qs.order_by("-fecha_hora")[offset : offset + page_size]]
-    return {"items": items, "total": total, "page": page, "page_size": page_size, "mensaje": msg.MSG_LISTADO_FACTURAS.format(n=len(items), total=total)}
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "mensaje": msg.MSG_LISTADO_FACTURAS.format(n=len(items), total=total),
+    }
 
 
 def obtener_factura(svc: AdminVentasService, ctx: AuthContext, pk: int) -> dict[str, Any]:
     try:
-        f = Facturas.objects.select_related("id_sede", "id_tipo_venta", "id_cliente", "id_usuario").get(pk=pk)
+        f = Facturas.objects.select_related(
+            "id_sede", "id_tipo_venta", "id_cliente", "id_usuario"
+        ).get(pk=pk)
     except Facturas.DoesNotExist as exc:
         raise ReglaNegocioError("Factura no encontrada.", codigo="NO_ENCONTRADO") from exc
-    if f.id_usuario_id != ctx.id_usuario and not svc._permisos.tiene_permiso(ctx, "facturas", "Total"):
+    if f.id_usuario_id != ctx.id_usuario and not svc._permisos.tiene_permiso(
+        ctx, "facturas", "Total"
+    ):
         raise ReglaNegocioError("Sin permiso para ver esta factura.", codigo="NO_AUTORIZADO")
     return {"factura": svc._factura_dict(f, True)}
 
 
-def anular_factura(svc: AdminVentasService, ctx: AuthContext, pk: int, body: dict[str, Any]) -> dict[str, Any]:
+def anular_factura(
+    svc: AdminVentasService, ctx: AuthContext, pk: int, body: dict[str, Any]
+) -> dict[str, Any]:
     motivo = (body.get("motivo") or "").strip()
     if len(motivo) < 10:
         raise ReglaNegocioError(msg.MSG_MOTIVO_ANULACION)
-    puede = ctx.rol_nombre == "Administrador" or svc._permisos.tiene_permiso(ctx, "facturas", "Total")
+    puede = ctx.rol_nombre == "Administrador" or svc._permisos.tiene_permiso(
+        ctx, "facturas", "Total"
+    )
     if not puede:
         raise ReglaNegocioError("Sin permiso para anular.", codigo="NO_AUTORIZADO")
 
@@ -246,7 +290,14 @@ def anular_factura(svc: AdminVentasService, ctx: AuthContext, pk: int, body: dic
             ref = consecutivo
             for d in f.detalles.select_related("id_producto"):
                 if d.id_producto.inventario_habilitado:
-                    svc._subir_stock(ctx, f.id_sede_id, d.id_producto_id, d.cantidad - d.cantidad_devuelta, "entrada_anulacion", ref)
+                    svc._subir_stock(
+                        ctx,
+                        f.id_sede_id,
+                        d.id_producto_id,
+                        d.cantidad - d.cantidad_devuelta,
+                        "entrada_anulacion",
+                        ref,
+                    )
 
             f.estado = "ANULADA"
             f.observaciones = f"{f.observaciones}\n[ANULACIÓN]: {motivo}".strip()[:4000]
@@ -265,10 +316,13 @@ def anular_factura(svc: AdminVentasService, ctx: AuthContext, pk: int, body: dic
                     id_usuario=ctx.id_usuario,
                     accion="ANULACION_FACTURA",
                     entidad="Facturas",
-                    id_entidad=str(f.id_factura),
+                    id_entidad=int(f.id_factura),
+                    datos_antes={"estado": "EMITIDA"},
+                    datos_despues={"estado": "ANULADA", "motivo": motivo},
+                    motivo=motivo[:255],
+                    id_correlacion=ctx.id_correlacion,
                     ip=ctx.ip,
-                    datos_anteriores={"estado": "EMITIDA"},
-                    datos_nuevos={"estado": "ANULADA", "motivo": motivo},
+                    user_agent=ctx.user_agent,
                 )
             )
     except ReglaNegocioError:
@@ -279,7 +333,9 @@ def anular_factura(svc: AdminVentasService, ctx: AuthContext, pk: int, body: dic
     return {"mensaje": msg.MSG_ANULADA.format(consecutivo=consecutivo)}
 
 
-def devolucion_parcial(svc: AdminVentasService, ctx: AuthContext, pk: int, body: dict[str, Any]) -> dict[str, Any]:
+def devolucion_parcial(
+    svc: AdminVentasService, ctx: AuthContext, pk: int, body: dict[str, Any]
+) -> dict[str, Any]:
     if ctx.rol_nombre not in ("Administrador", "Gerente"):
         raise ReglaNegocioError("Sin permiso para devoluciones.", codigo="NO_AUTORIZADO")
     motivo = (body.get("motivo") or "").strip()
@@ -296,11 +352,15 @@ def devolucion_parcial(svc: AdminVentasService, ctx: AuthContext, pk: int, body:
             if f.estado == "ANULADA":
                 raise ReglaNegocioError("La factura está anulada.")
             total_dev = Decimal("0")
-            dev = Devoluciones.objects.create(id_factura=f, id_usuario_id=ctx.id_usuario, motivo=motivo[:255], total=0)
+            dev = Devoluciones.objects.create(
+                id_factura=f, id_usuario_id=ctx.id_usuario, motivo=motivo[:255], total=0
+            )
             ref = f"{f.serie}-{f.numero_factura}"
             for ln in seleccion:
-                det = Detalle_factura.objects.select_for_update().select_related("id_producto").get(
-                    pk=int(ln["id_detalle"]), id_factura_id=f.id_factura
+                det = (
+                    Detalle_factura.objects.select_for_update()
+                    .select_related("id_producto")
+                    .get(pk=int(ln["id_detalle"]), id_factura_id=f.id_factura)
                 )
                 qty = Decimal(str(ln["cantidad"]))
                 pendiente = det.cantidad - det.cantidad_devuelta
@@ -314,7 +374,9 @@ def devolucion_parcial(svc: AdminVentasService, ctx: AuthContext, pk: int, body:
                     id_devolucion=dev, id_detalle_factura=det, cantidad=qty, valor=valor
                 )
                 if det.id_producto.inventario_habilitado:
-                    svc._subir_stock(ctx, f.id_sede_id, det.id_producto_id, qty, "entrada_devolucion", ref)
+                    svc._subir_stock(
+                        ctx, f.id_sede_id, det.id_producto_id, qty, "entrada_devolucion", ref
+                    )
 
             dev.total = total_dev
             dev.save(update_fields=["total"])
@@ -327,10 +389,13 @@ def devolucion_parcial(svc: AdminVentasService, ctx: AuthContext, pk: int, body:
                     id_usuario=ctx.id_usuario,
                     accion="DEVOLUCION_PARCIAL",
                     entidad="Facturas",
-                    id_entidad=str(f.id_factura),
+                    id_entidad=int(f.id_factura),
+                    datos_antes=None,
+                    datos_despues={"total_devuelto": float(total_dev), "motivo": motivo},
+                    motivo=motivo[:255],
+                    id_correlacion=ctx.id_correlacion,
                     ip=ctx.ip,
-                    datos_anteriores=None,
-                    datos_nuevos={"total_devuelto": float(total_dev), "motivo": motivo},
+                    user_agent=ctx.user_agent,
                 )
             )
     except ReglaNegocioError:
@@ -341,7 +406,9 @@ def devolucion_parcial(svc: AdminVentasService, ctx: AuthContext, pk: int, body:
     return {"mensaje": msg.MSG_DEVOLUCION_OK, "total_devuelto": float(total_dev)}
 
 
-def editar_factura(svc: AdminVentasService, ctx: AuthContext, pk: int, body: dict[str, Any]) -> dict[str, Any]:
+def editar_factura(
+    svc: AdminVentasService, ctx: AuthContext, pk: int, body: dict[str, Any]
+) -> dict[str, Any]:
     if ctx.rol_nombre != "Administrador":
         raise ReglaNegocioError("Sin permiso para editar.", codigo="NO_AUTORIZADO")
     version = int(body.get("version_fila") or 0)
@@ -349,7 +416,9 @@ def editar_factura(svc: AdminVentasService, ctx: AuthContext, pk: int, body: dic
         with transaction.atomic():
             f = Facturas.objects.select_for_update().get(pk=pk)
             if f.version_fila != version:
-                raise ReglaNegocioError("La factura fue modificada por otro usuario.", codigo="CONCURRENCIA")
+                raise ReglaNegocioError(
+                    "La factura fue modificada por otro usuario.", codigo="CONCURRENCIA"
+                )
             if f.estado not in ("BORRADOR", "PENDIENTE_PAGO"):
                 raise ReglaNegocioError(msg.MSG_NO_EDITABLE)
             if not svc._jornada_abierta(f.id_sede_id):
@@ -365,7 +434,12 @@ def editar_factura(svc: AdminVentasService, ctx: AuthContext, pk: int, body: dic
                 Pagos.objects.filter(id_factura=f).delete()
                 pagos_norm = svc._validar_pagos(body["pagos"], f.total)
                 for p in pagos_norm:
-                    Pagos.objects.create(id_factura=f, id_metodo_pago=p["metodo"], valor=p["valor"], referencia=p["referencia"])
+                    Pagos.objects.create(
+                        id_factura=f,
+                        id_metodo_pago=p["metodo"],
+                        valor=p["valor"],
+                        referencia=p["referencia"],
+                    )
 
             f.version_fila += 1
             f.save()
@@ -374,10 +448,13 @@ def editar_factura(svc: AdminVentasService, ctx: AuthContext, pk: int, body: dic
                     id_usuario=ctx.id_usuario,
                     accion="EDICION_FACTURA",
                     entidad="Facturas",
-                    id_entidad=str(f.id_factura),
+                    id_entidad=int(f.id_factura),
+                    datos_antes=anterior,
+                    datos_despues={"observaciones": f.observaciones, "id_cliente": f.id_cliente_id},
+                    motivo="EDICION_FACTURA",
+                    id_correlacion=ctx.id_correlacion,
                     ip=ctx.ip,
-                    datos_anteriores=anterior,
-                    datos_nuevos={"observaciones": f.observaciones, "id_cliente": f.id_cliente_id},
+                    user_agent=ctx.user_agent,
                 )
             )
     except ReglaNegocioError:

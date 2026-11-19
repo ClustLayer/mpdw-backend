@@ -1734,6 +1734,109 @@ paths:
               schema:
                 $ref: '#/components/schemas/RolesCatalogoResponse'
           description: ''
+  /api/v1/ventas/facturas/:
+    get:
+      operationId: facturas_listar
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/facturas/{id}/:
+    get:
+      operationId: facturas_detalle
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: facturas_editar
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/facturas/{id}/anular/:
+    post:
+      operationId: facturas_anular
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/facturas/{id}/devolucion/:
+    post:
+      operationId: facturas_devolucion
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/pos/catalogos/:
+    get:
+      operationId: pos_catalogos
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/pos/emitir/:
+    post:
+      operationId: pos_emitir_factura
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/pos/productos/:
+    get:
+      operationId: pos_buscar_productos
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
 components:
   schemas:
     AccesosPanelResponse:
