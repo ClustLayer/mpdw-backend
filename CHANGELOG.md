@@ -15,6 +15,15 @@ Versionado del producto: **MAJOR.SPRINT.EPIC_IN_SPRINT** (`1` = major del sistem
 | **1.2.3** | Sprint 2 · Épica 7 (directorio de clientes y Habeas Data) |
 | **1.2.4** | Sprint 2 · Épica 12 (eventos y novedades) |
 | **1.2.5** | Sprint 2 · Épica 14 (proveedores e integración inventario) |
+| **1.3.1** | Sprint 3 · Épica 8 (punto de venta y facturación) |
+
+---
+
+## 2026-11-18 — v1.3.1 Épica 8 (punto de venta y facturación)
+
+- Modelos Pagos, Descuentos_factura, Devoluciones, consecutivos por sede y motor ACID de emisión.
+- API `/api/v1/ventas/` (POS, facturas, anulación, devolución).
+- QA: `docs/qa/epic-8.md`.
 
 ---
 
