@@ -7,7 +7,6 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
-from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
@@ -16,29 +15,18 @@ from apps.m01_identidad.services import PermissionService
 from apps.m02_sedes.models import Sedes
 from apps.m03_catalogo.models import Productos
 from apps.m04_inventario.models import Inventarios, Movimientos_inventario
-from apps.m05_clientes.models import Clientes
 from apps.m06_ventas import mensajes as msg
 from apps.m06_ventas.models import (
     Consecutivos,
-    Descuentos_factura,
-    Detalle_devolucion,
-    Detalle_factura,
-    Devoluciones,
     Facturas,
     Facturas_electronicas,
     Metodos_pago,
-    Pagos,
     Tipos_venta,
 )
-from apps.m06_ventas.ventas_calculo import (
-    aplicar_descuento_general,
-    calcular_lineas,
-    pct_descuento_acumulado,
-    totales_factura,
-)
+from apps.m06_ventas.ventas_calculo import calcular_lineas
 from apps.m08_caja.models import Reportes_diarios
 from apps.m10_auditoria.services import AuditService
-from contratos.dtos import AuthContext, AuditoriaDTO
+from contratos.dtos import AuthContext
 from contratos.excepciones import ReglaNegocioError
 
 CORREO_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -322,8 +310,3 @@ class AdminVentasService:
         from apps.m06_ventas.admin_ventas_emitir import editar_factura
 
         return editar_factura(self, ctx, pk, body)
-</think>
-
-
-<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
-Read
