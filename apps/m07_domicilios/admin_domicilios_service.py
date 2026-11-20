@@ -293,7 +293,7 @@ class AdminDomiciliosService:
         if not nuevo:
             raise ReglaNegocioError(msg.MSG_CAMPOS_OBLIGATORIOS, codigo="VALIDACION")
 
-        entrega = Entregas.objects.select_for_update().select_related("id_mensajero").filter(pk=id_entrega).first()
+        entrega = Entregas.objects.select_for_update().filter(pk=id_entrega).first()
         if not entrega:
             raise ReglaNegocioError(msg.MSG_ESTADO_FALLA, codigo="NO_ENCONTRADO")
 

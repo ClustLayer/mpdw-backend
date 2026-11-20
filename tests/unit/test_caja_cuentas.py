@@ -37,3 +37,34 @@ def test_crear_cuenta(ctx: AuthContext) -> None:
 def test_tipo_invalido(ctx: AuthContext) -> None:
     with pytest.raises(ReglaNegocioError):
         AdminCajaService().crear(ctx, {"nombre": "X", "tipo_cuenta": "Otro", "numero": "1"})
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_listar_y_actualizar_cuenta(ctx: AuthContext) -> None:
+    svc = AdminCajaService()
+    creada = svc.crear(
+        ctx,
+        {"nombre": "Listar Nequi", "tipo_cuenta": "Nequi", "numero": "3001112233", "estado": True},
+    )
+    pk = creada["item"]["id_cuenta_bancaria"]
+    lista = svc.listar("Listar", "activo", 1, 10)
+    assert lista["total"] >= 1
+    assert svc.listar_activas()["items"]
+    act = svc.actualizar(
+        ctx,
+        pk,
+        {
+            "nombre": "Listar Nequi",
+            "tipo_cuenta": "Nequi",
+            "numero": "3001112233",
+            "estado": True,
+            "version_fila": 1,
+        },
+    )
+    assert "actualizada" in act["mensaje"].lower()
+    assert svc.cuenta_activa(pk).nombre == "Listar Nequi"
+    with pytest.raises(ReglaNegocioError):
+        svc.cuenta_activa(999_999)
+    with pytest.raises(ReglaNegocioError):
+        svc.crear(ctx, {"nombre": "", "tipo_cuenta": "Nequi", "numero": "1"})

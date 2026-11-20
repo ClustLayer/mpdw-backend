@@ -20,6 +20,12 @@ Versionado del producto: **MAJOR.SPRINT.EPIC_IN_SPRINT** (`1` = major del sistem
 
 ---
 
+## 2026-11-19 — Iteración 14 (cierre CI épica 9)
+
+- Fix PostgreSQL `FOR UPDATE` en `cambiar_estado` / asignación de domicilios.
+- Cobertura unitaria ≥ 90%; tests ampliados épica 8/9 y caja.
+- Docs reorganizadas (`docs/qa`, `docs/fixes`, `docs/guides`); ver `docs/fixes/correcciones-iteracion-14-epic9-pos-ventas-domicilios.md`.
+
 ## 2026-11-19 — v1.3.2 Épica 9 (domicilios y mensajería) — ampliación POS
 
 - Cuentas bancarias (`/api/v1/caja/cuentas/`) con semilla Nequi/Bancolombia.
@@ -46,31 +52,31 @@ Versionado del producto: **MAJOR.SPRINT.EPIC_IN_SPRINT** (`1` = major del sistem
 ## 2026-11-13 — Rendimiento y correcciones (iteración 13)
 
 - Paginación SQL del catálogo, caché en memoria, timeout de cliente, saludo en Bogotá, WhatsApp y matriz sin catálogo editable en la UI.
-- Detalle: `docs/correcciones-iteracion-13.md`.
+- Detalle: `docs/fixes/correcciones-iteracion-13.md`.
 
 ## 2026-11-12 — Mejoras integrales Sprint 2 (iteración 12)
 
 - Catálogo: `SET_NULL` en categoría, eliminación de parámetros, exportación enriquecida.
 - Clientes: color en tipos de cliente; resumen con permisos granulares; eventos con imagen por archivo.
-- QA: `docs/correcciones-iteracion-12.md`, `tests/unit/test_sprint2_mejoras.py`.
+- QA: `docs/fixes/correcciones-iteracion-12.md`, `tests/unit/test_sprint2_mejoras.py`.
 
 ## 2026-11-12 — v1.2.5 Épica 14 (proveedores e inventario)
 
 - App `m14_proveedores`, API `/api/v1/proveedores/`, auditoría y concurrencia.
 - Inventario: FK `id_proveedor`, purga de kardex de prueba, regla comprado/fabricado.
-- QA: `docs/qa-epic-14.md`.
+- QA: `docs/qa/qa-epic-14.md`.
 
 ## 2026-11-12 — v1.2.4 Épica 12 (eventos y novedades)
 
 - Modelo y admin `/api/v1/eventos/`, validaciones HU, exposición pública.
-- QA: `docs/qa-epic-12.md`.
+- QA: `docs/qa/qa-epic-12.md`.
 
 ## 2026-11-12 — v1.2.3 Épica 7 (directorio de clientes y Habeas Data)
 
 - Modelos `Clientes` / `Tipos_cliente` ampliados (apellido, e.164, WhatsApp, ciudad, observaciones, consentimiento, `version_fila`).
 - API `/api/v1/clientes/` (CRUD, tipos, verificación de teléfono, historial y métricas).
 - Semilla del tipo predeterminado «Común»; `Detalle_factura` para ranking de productos.
-- OpenAPI sincronizado; QA en `docs/qa-epic-7.md`.
+- OpenAPI sincronizado; QA en `docs/qa/qa-epic-7.md`.
 
 ## 2026-11-11 — v1.2.2 Épica 6 (inventario demo)
 
