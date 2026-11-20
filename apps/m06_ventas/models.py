@@ -200,17 +200,25 @@ class Detalle_devolucion(models.Model):
 
 
 class Facturas_electronicas(models.Model):
+    """Registro informativo de gestión externa (B-7 / Facturas_gestion_externa). Sin integración DIAN."""
+
+    ESTADO_PENDIENTE = "PENDIENTE"
+    ESTADO_GENERADA = "GENERADA_EXTERNA"
+    ESTADO_CANCELADA = "CANCELADA"
+
     id_factura_electronica = models.BigAutoField(
         primary_key=True, db_column="id_factura_electronica"
     )
     id_factura = models.OneToOneField(Facturas, on_delete=models.CASCADE, db_column="id_factura")
-    estado = models.CharField(max_length=30, default="PENDIENTE", db_column="estado")
+    estado = models.CharField(max_length=30, default=ESTADO_PENDIENTE, db_column="estado")
     tipo_nota = models.CharField(max_length=30, blank=True, default="", db_column="tipo_nota")
     referencia_externa = models.CharField(
         max_length=100, blank=True, default="", db_column="referencia_externa"
     )
+    url_pdf = models.URLField(max_length=500, blank=True, default="", db_column="url_pdf")
     observacion = models.TextField(blank=True, default="", db_column="observacion")
     fecha_registro = models.DateTimeField(auto_now_add=True, db_column="fecha_registro")
+    version_fila = models.PositiveIntegerField(default=1, db_column="version_fila")
 
     class Meta:
         db_table = "Facturas_electronicas"
