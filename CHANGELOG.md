@@ -20,6 +20,12 @@ Versionado del producto: **MAJOR.SPRINT.EPIC_IN_SPRINT** (`1` = major del sistem
 
 ---
 
+## 2026-11-19 — v1.3.2 Épica 9 (domicilios y mensajería) — ampliación POS
+
+- Cuentas bancarias (`/api/v1/caja/cuentas/`) con semilla Nequi/Bancolombia.
+- POS: domicilio en emisión, `requiere_domicilio`, transferencias por cuenta.
+- OpenAPI actualizado.
+
 ## 2026-11-19 — v1.3.2 Épica 9 (domicilios y mensajería)
 
 - Migración `0002_epic9_domicilios`: Entregas, Historial_entregas, Mensajeros ampliados; tipo venta Domicilio.

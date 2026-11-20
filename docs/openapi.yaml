@@ -468,6 +468,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/MensajeResponse'
           description: ''
+  /api/v1/caja/cuentas/:
+    get:
+      operationId: cuentas_listar
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: cuentas_crear
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/cuentas/{id_cuenta}/:
+    patch:
+      operationId: cuentas_actualizar
+      parameters:
+      - in: path
+        name: id_cuenta
+        schema:
+          type: integer
+        required: true
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/cuentas/activas/:
+    get:
+      operationId: cuentas_activas
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/catalogo/media/{ruta}/:
     get:
       operationId: catalogo_media_retrieve
