@@ -126,6 +126,8 @@ def test_historial_cliente_inexistente(ctx):
         AdminClientesService().historial(ctx, 9_999_999, None, None, 1, 10, False)
 
 
+@pytest.mark.unit
+@pytest.mark.django_db
 def test_whatsapp_helper():
     com, _ = Tipos_cliente.objects.get_or_create(nombre="Común", defaults={"es_tipo_predeterminado": True})
     c = Clientes.objects.create(

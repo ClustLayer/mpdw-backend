@@ -193,6 +193,12 @@ class AdminDomiciliosService:
         valor_cli = _decimal(datos.get("valor_cobrado_cliente"), "valor_cobrado_cliente")
         valor_msg = _decimal(datos.get("valor_pagado_mensajero"), "valor_pagado_mensajero")
         observaciones = (datos.get("observaciones") or "").strip()[:500]
+        id_mensajero = int(datos.get("id_mensajero") or 0)
+        mensajero: Mensajeros | None = None
+        if id_mensajero:
+            mensajero = Mensajeros.objects.filter(pk=id_mensajero, estado=True).first()
+            if not mensajero:
+                raise ReglaNegocioError(msg.MSG_MENSAJERO_INACTIVO, codigo="MENSAJERO_INACTIVO")
 
         factura = Facturas.objects.select_related("id_tipo_venta").filter(pk=id_factura).first()
         if not factura or not _es_factura_domicilio(factura):
@@ -204,6 +210,8 @@ class AdminDomiciliosService:
         if not uid:
             raise ReglaNegocioError(msg.MSG_CREAR_FALLA, codigo="NO_AUTORIZADO")
 
+        estado_inicial = "ASIGNADO" if mensajero else "PENDIENTE"
+        ahora = timezone.now()
         try:
             entrega = Entregas.objects.create(
                 id_factura=factura,
@@ -212,7 +220,9 @@ class AdminDomiciliosService:
                 valor_cobrado_cliente=valor_cli,
                 valor_pagado_mensajero=valor_msg,
                 observaciones=observaciones,
-                estado="PENDIENTE",
+                id_mensajero=mensajero,
+                fecha_asignacion=ahora if mensajero else None,
+                estado=estado_inicial,
             )
         except IntegrityError as exc:
             raise ReglaNegocioError(msg.MSG_FACTURA_INVALIDA, codigo="ENTREGA_ACTIVA") from exc
@@ -220,9 +230,9 @@ class AdminDomiciliosService:
         Historial_entregas.objects.create(
             id_entrega=entrega,
             estado_anterior=None,
-            estado_nuevo="PENDIENTE",
+            estado_nuevo=estado_inicial,
             id_usuario_id=uid,
-            observaciones=observaciones,
+            observaciones=observaciones or ("Asignación en punto de venta" if mensajero else ""),
         )
         ser = _serializar_entrega(entrega)
         _auditar(ctx, "CREAR_DOMICILIO", "Entregas", entrega.id_entrega, None, ser, self._audit)
@@ -331,13 +341,25 @@ class AdminDomiciliosService:
         orden: str,
         page: int,
         page_size: int,
+        vista: str | None = None,
     ) -> dict[str, Any]:
-        qs = (
-            Entregas.objects.select_related("id_factura__id_cliente", "id_factura__id_sede", "id_mensajero")
-            .filter(estado__in=ESTADOS_BANDEJA)
+        vista_norm = (vista or "activos").strip().lower()
+        filtros_vista: dict[str, tuple[str, ...] | None] = {
+            "activos": ESTADOS_BANDEJA,
+            "entregado": ("ENTREGADO",),
+            "cancelado": ("CANCELADO",),
+            "todos": None,
+        }
+        estados_vista = filtros_vista.get(vista_norm, ESTADOS_BANDEJA)
+        qs = Entregas.objects.select_related(
+            "id_factura__id_cliente", "id_factura__id_sede", "id_mensajero"
         )
-        if estado and estado.upper() in ESTADOS_BANDEJA:
-            qs = qs.filter(estado=estado.upper())
+        if estados_vista is not None:
+            qs = qs.filter(estado__in=estados_vista)
+        if estado:
+            est_up = estado.upper()
+            if estados_vista is None or est_up in estados_vista:
+                qs = qs.filter(estado=est_up)
         if id_mensajero:
             qs = qs.filter(id_mensajero_id=id_mensajero)
         if id_sede:

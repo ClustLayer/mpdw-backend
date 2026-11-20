@@ -18,7 +18,7 @@ TRANSICIONES: dict[str, set[str]] = {
 ESTADOS_ETIQUETA = {
     "PENDIENTE": "Pendiente",
     "ASIGNADO": "Asignado",
-    "EN_CAMINO": "En camino",
+    "EN_CAMINO": "En ruta",
     "ENTREGADO": "Entregado",
     "CANCELADO": "Cancelado",
 }

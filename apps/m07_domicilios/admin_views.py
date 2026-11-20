@@ -67,6 +67,7 @@ class DomicilioBandejaView(APIView):
                 request.query_params.get("orden") or "desc",
                 max(1, _int_param(request, "page", 1)),
                 max(1, min(100, _int_param(request, "page_size", 20))),
+                request.query_params.get("vista"),
             )
         except ReglaNegocioError as exc:
             return _err(exc, request)

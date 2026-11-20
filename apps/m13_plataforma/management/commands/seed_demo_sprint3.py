@@ -55,7 +55,7 @@ class Command(BaseCommand):
             c, _ = Clientes.objects.get_or_create(
                 documento=f"DEMO-CLI-{i:03d}",
                 defaults={
-                    "nombre": f"Cliente",
+                    "nombre": "Cliente",
                     "apellido": f"Demo {i}",
                     "numero_telefono": f"+57300{i:07d}",
                     "direccion": f"Carrera {i} # 10-20",

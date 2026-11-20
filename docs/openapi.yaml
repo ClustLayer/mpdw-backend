@@ -1991,6 +1991,16 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/ventas/facturas/estadisticas/:
+    get:
+      operationId: facturas_estadisticas_mes
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/ventas/pos/catalogos/:
     get:
       operationId: pos_catalogos
