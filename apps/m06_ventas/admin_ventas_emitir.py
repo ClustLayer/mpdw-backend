@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+from calendar import monthrange
+from datetime import date, datetime, time
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Sum
+from django.utils import timezone
 
 from apps.m02_sedes.models import Sedes
 from apps.m05_clientes.models import Clientes
@@ -41,8 +44,26 @@ def emitir_factura(
     if not lineas_in:
         raise ReglaNegocioError("Agregue al menos un producto.")
     id_sede = int(body["id_sede"])
+    es_domicilio = bool(body.get("es_domicilio"))
     id_tipo = int(body["id_tipo_venta"])
     sede = Sedes.objects.get(pk=id_sede, estado=True)
+    if es_domicilio:
+        tipo_dom = Tipos_venta.objects.filter(nombre__iexact="Domicilio", estado=True).first()
+        if not tipo_dom:
+            raise ReglaNegocioError("No está configurado el tipo de venta Domicilio.")
+        id_tipo = tipo_dom.id_tipo_venta
+        dom = body.get("domicilio") or {}
+        for campo, etiqueta in (
+            (dom.get("direccion"), "dirección"),
+            (dom.get("telefono"), "teléfono"),
+            (dom.get("nombre"), "nombre"),
+        ):
+            if not (campo or "").strip():
+                raise ReglaNegocioError(f"Complete el {etiqueta} del domicilio.")
+        if not int(dom.get("id_mensajero") or 0):
+            from apps.m07_domicilios import mensajes as dom_msg
+
+            raise ReglaNegocioError(dom_msg.MSG_MENSAJERO_REQUERIDO, codigo="VALIDACION")
     Tipos_venta.objects.get(pk=id_tipo, estado=True)
     svc._asegurar_jornada(ctx, id_sede)
 
@@ -110,6 +131,7 @@ def emitir_factura(
                 total=tot["total"],
                 estado="EMITIDA",
                 requiere_factura_electronica=bool(body.get("requiere_factura_electronica")),
+                requiere_domicilio=es_domicilio,
                 requiere_revision_gerencial=necesita_auth,
                 margen_negativo=tot["margen"] < 0,
                 comprador_nombre=(body.get("comprador_nombre") or "")[:255],
@@ -157,6 +179,23 @@ def emitir_factura(
 
             if factura.requiere_factura_electronica:
                 Facturas_electronicas.objects.create(id_factura=factura, estado="PENDIENTE")
+
+            if es_domicilio:
+                from apps.m07_domicilios.admin_domicilios_service import AdminDomiciliosService
+
+                dom = body.get("domicilio") or {}
+                AdminDomiciliosService(svc._audit).crear(
+                    ctx,
+                    {
+                        "id_factura": factura.id_factura,
+                        "direccion": (dom.get("direccion") or "").strip(),
+                        "telefono_contacto": (dom.get("telefono") or "").strip(),
+                        "valor_cobrado_cliente": dom.get("valor_cobrado_cliente", 0),
+                        "valor_pagado_mensajero": dom.get("valor_pagado_mensajero", 0),
+                        "observaciones": (dom.get("observaciones") or "").strip(),
+                        "id_mensajero": int(dom.get("id_mensajero") or 0),
+                    },
+                )
 
             if necesita_auth:
                 svc._audit.registrar(
@@ -212,6 +251,9 @@ def listar_facturas(
     qs = Facturas.objects.select_related("id_sede", "id_tipo_venta", "id_cliente", "id_usuario")
     if not svc._permisos.tiene_permiso(ctx, "facturas", "Total"):
         qs = qs.filter(id_usuario_id=ctx.id_usuario)
+    numero = (filtros.get("numero") or "").strip()
+    if numero.isdigit():
+        qs = qs.filter(numero_factura__icontains=numero.zfill(10))
     q = (filtros.get("q") or "").strip()
     if q:
         qs = qs.filter(
@@ -463,3 +505,72 @@ def editar_factura(
         raise ReglaNegocioError(msg.MSG_EDITAR_FALLA) from exc
 
     return {"mensaje": msg.MSG_ACTUALIZADA, "factura": svc._factura_dict(f, True)}
+
+
+MESES_ES = (
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+)
+
+
+def _rango_mes(mes: str) -> tuple[datetime, datetime, str, str]:
+    try:
+        ano_s, mes_s = mes.split("-", 1)
+        ano, mes_i = int(ano_s), int(mes_s)
+        if mes_i < 1 or mes_i > 12:
+            raise ValueError
+    except ValueError as exc:
+        raise ReglaNegocioError("Mes inválido. Use el formato YYYY-MM.", codigo="VALIDACION") from exc
+    ultimo = monthrange(ano, mes_i)[1]
+    tz = timezone.get_current_timezone()
+    inicio = timezone.make_aware(datetime.combine(date(ano, mes_i, 1), time.min), tz)
+    fin = timezone.make_aware(datetime.combine(date(ano, mes_i, ultimo), time.max), tz)
+    etiqueta = f"{MESES_ES[mes_i - 1]} de {ano}"
+    return inicio, fin, mes, etiqueta
+
+
+def estadisticas_mes(
+    svc: AdminVentasService, ctx: AuthContext, mes: str, id_sede: int | None
+) -> dict[str, Any]:
+    inicio, fin, mes_norm, etiqueta = _rango_mes(mes or timezone.localdate().strftime("%Y-%m"))
+    qs = (
+        Facturas.objects.filter(fecha_hora__gte=inicio, fecha_hora__lte=fin)
+        .exclude(estado="ANULADA")
+        .prefetch_related("detalles__id_producto__id_tipo_producto")
+    )
+    if id_sede:
+        qs = qs.filter(id_sede_id=id_sede)
+    if not svc._permisos.tiene_permiso(ctx, "facturas", "Total"):
+        qs = qs.filter(id_usuario_id=ctx.id_usuario)
+
+    ventas = Decimal("0")
+    for f in qs:
+        for d in f.detalles.all():
+            tipo = d.id_producto.id_tipo_producto
+            if tipo and not tipo.afecta_venta_diaria:
+                continue
+            ventas += Decimal(str(d.subtotal))
+
+    dev_qs = Devoluciones.objects.filter(fecha_hora__gte=inicio, fecha_hora__lte=fin)
+    if id_sede:
+        dev_qs = dev_qs.filter(id_factura__id_sede_id=id_sede)
+    if not svc._permisos.tiene_permiso(ctx, "facturas", "Total"):
+        dev_qs = dev_qs.filter(id_usuario_id=ctx.id_usuario)
+    devoluciones = dev_qs.aggregate(total=Sum("total"))["total"] or Decimal("0")
+
+    return {
+        "mes": mes_norm,
+        "label": etiqueta,
+        "ventas": float(ventas.quantize(Decimal("0.01"))),
+        "devoluciones": float(Decimal(str(devoluciones)).quantize(Decimal("0.01"))),
+    }

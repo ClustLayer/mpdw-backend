@@ -24,7 +24,8 @@ from apps.m06_ventas.models import (
     Tipos_venta,
 )
 from apps.m06_ventas.ventas_calculo import calcular_lineas
-from apps.m08_caja.models import Reportes_diarios
+from apps.m07_domicilios.models import Mensajeros
+from apps.m08_caja.models import Cuentas_bancarias, Reportes_diarios
 from apps.m10_auditoria.services import AuditService
 from contratos.dtos import AuthContext
 from contratos.excepciones import ReglaNegocioError
@@ -57,7 +58,24 @@ class AdminVentasService:
             .order_by("nombre")
             .values("id_metodo_pago", "nombre")
         )
-        return {"sedes": sedes, "tipos_venta": tipos, "metodos_pago": metodos}
+        cuentas = [
+            {
+                "id_cuenta_bancaria": c.id_cuenta_bancaria,
+                "label": f"{c.nombre} · {c.tipo_cuenta}",
+            }
+            for c in Cuentas_bancarias.objects.filter(estado=True).order_by("nombre")
+        ]
+        mensajeros = [
+            {"id_mensajero": m.id_mensajero, "label": f"{m.nombre} {m.apellido}".strip()}
+            for m in Mensajeros.objects.filter(estado=True).order_by("nombre", "apellido")
+        ]
+        return {
+            "sedes": sedes,
+            "tipos_venta": tipos,
+            "metodos_pago": metodos,
+            "cuentas_bancarias": cuentas,
+            "mensajeros": mensajeros,
+        }
 
     def buscar_productos(self, q: str, id_sede: int) -> dict[str, Any]:
         qs = Productos.objects.filter(estado=True)
@@ -170,8 +188,12 @@ class AdminVentasService:
                 raise ReglaNegocioError("El valor del pago debe ser mayor a 0.")
             referencia = (p.get("referencia") or "").strip()
             if metodo.nombre.lower() == "transferencia":
-                if not referencia:
+                if not referencia or not referencia.isdigit():
                     raise ReglaNegocioError(msg.MSG_REF_TRANSFERENCIA)
+                cuenta = Cuentas_bancarias.objects.filter(pk=int(referencia), estado=True).first()
+                if not cuenta:
+                    raise ReglaNegocioError(msg.MSG_REF_TRANSFERENCIA)
+                referencia = f"{cuenta.nombre} · {cuenta.numero}"
                 if valor > saldo:
                     raise ReglaNegocioError(
                         msg.MSG_TRANSFERENCIA_EXCESO.format(
@@ -258,12 +280,20 @@ class AdminVentasService:
         numero = str(row.ultimo_numero).zfill(10)
         return serie, numero
 
+    def _numero_corto(self, numero: str) -> int | str:
+        digits = (numero or "").strip().lstrip("0")
+        if digits.isdigit():
+            return int(digits)
+        return numero
+
     def _factura_dict(self, f: Facturas, detalle: bool = False) -> dict[str, Any]:
         consecutivo = f"{f.serie}-{f.numero_factura}"
+        numero_corto = self._numero_corto(f.numero_factura)
         fe = Facturas_electronicas.objects.filter(id_factura_id=f.id_factura).first()
         data: dict[str, Any] = {
             "id_factura": f.id_factura,
             "consecutivo": consecutivo,
+            "numero_corto": numero_corto,
             "serie": f.serie,
             "numero_factura": f.numero_factura,
             "estado": f.estado,
@@ -287,25 +317,77 @@ class AdminVentasService:
             "margen_negativo": f.margen_negativo,
             "requiere_revision_gerencial": f.requiere_revision_gerencial,
             "requiere_factura_electronica": f.requiere_factura_electronica,
+            "requiere_domicilio": f.requiere_domicilio,
             "factura_electronica_estado": fe.estado if fe else None,
             "observaciones": f.observaciones,
             "version_fila": f.version_fila,
         }
         if not detalle:
             return data
-        data["lineas"] = [
-            {
-                "id_detalle": d.id_detalle,
-                "id_producto": d.id_producto_id,
-                "producto": d.id_producto.nombre,
-                "cantidad": float(d.cantidad),
-                "cantidad_devuelta": float(d.cantidad_devuelta),
-                "precio_unitario": float(d.precio_unitario),
-                "subtotal": float(d.subtotal),
-                "descuento_porcentaje": float(d.descuento_porcentaje),
-                "descuento_valor": float(d.descuento_valor),
+        artistic_total = Decimal("0")
+        reportable_total = Decimal("0")
+        lineas_out: list[dict[str, Any]] = []
+        for d in f.detalles.select_related("id_producto", "id_producto__id_tipo_producto").all():
+            tipo = d.id_producto.id_tipo_producto
+            afecta = tipo.afecta_venta_diaria if tipo else True
+            sub = Decimal(str(d.subtotal))
+            if afecta:
+                reportable_total += sub
+            else:
+                artistic_total += sub
+            lineas_out.append(
+                {
+                    "id_detalle": d.id_detalle,
+                    "id_producto": d.id_producto_id,
+                    "producto": d.id_producto.nombre,
+                    "cantidad": float(d.cantidad),
+                    "cantidad_devuelta": float(d.cantidad_devuelta),
+                    "precio_unitario": float(d.precio_unitario),
+                    "subtotal": float(d.subtotal),
+                    "descuento_porcentaje": float(d.descuento_porcentaje),
+                    "descuento_valor": float(d.descuento_valor),
+                    "afecta_venta_diaria": afecta,
+                }
+            )
+        data["lineas"] = lineas_out
+        data["reportable_total"] = float(reportable_total)
+        data["artistic_total"] = float(artistic_total)
+        sede = f.id_sede
+        data["sede_detalle"] = {
+            "nombre": sede.nombre,
+            "direccion": sede.direccion,
+            "telefono": sede.telefono,
+            "ciudad": sede.ciudad,
+        }
+        if f.id_cliente_id and f.id_cliente:
+            c = f.id_cliente
+            data["cliente_detalle"] = {
+                "nombre": f"{c.nombre} {c.apellido or ''}".strip(),
+                "documento": c.documento,
+                "telefono": c.numero_telefono,
+                "direccion": c.direccion,
             }
-            for d in f.detalles.select_related("id_producto").all()
+        else:
+            data["cliente_detalle"] = {
+                "nombre": f.comprador_nombre or "Cliente de mostrador",
+                "documento": f.comprador_documento,
+                "telefono": f.comprador_telefono,
+                "direccion": "",
+            }
+        data["devoluciones"] = [
+            {
+                "fecha_hora": dev.fecha_hora.isoformat(),
+                "motivo": dev.motivo,
+                "total": float(dev.total),
+                "lineas": [
+                    {
+                        "producto": dl.id_detalle_factura.id_producto.nombre,
+                        "cantidad": float(dl.cantidad),
+                    }
+                    for dl in dev.lineas.select_related("id_detalle_factura__id_producto").all()
+                ],
+            }
+            for dev in f.devoluciones.prefetch_related("lineas__id_detalle_factura__id_producto").all()
         ]
         data["pagos"] = [
             {
@@ -332,6 +414,13 @@ class AdminVentasService:
         from apps.m06_ventas.admin_ventas_emitir import listar_facturas
 
         return listar_facturas(self, ctx, filtros, page, page_size)
+
+    def estadisticas_mes(
+        self, ctx: AuthContext, mes: str, id_sede: int | None = None
+    ) -> dict[str, Any]:
+        from apps.m06_ventas.admin_ventas_emitir import estadisticas_mes
+
+        return estadisticas_mes(self, ctx, mes, id_sede)
 
     def obtener(self, ctx: AuthContext, pk: int) -> dict[str, Any]:
         from apps.m06_ventas.admin_ventas_emitir import obtener_factura

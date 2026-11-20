@@ -524,6 +524,10 @@ def test_api_ventas_pos():
     buscar = client.get(f"/api/v1/ventas/pos/productos/?q=POS&id_sede={sede.id_sede}")
     assert buscar.status_code == 200
     assert client.get("/api/v1/ventas/facturas/").status_code == 200
+    from django.utils import timezone
+
+    mes = timezone.localdate().strftime("%Y-%m")
+    assert client.get(f"/api/v1/ventas/facturas/estadisticas/?mes={mes}").status_code == 200
     assert client.get("/api/v1/ventas/facturas/999999/").status_code == 404
     body = {
         "id_sede": sede.id_sede,
@@ -553,3 +557,127 @@ def test_api_ventas_pos():
         format="json",
     )
     assert dev.status_code == 200
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_estadisticas_mes_y_catalogo_mensajeros(ctx: AuthContext) -> None:
+    from django.utils import timezone
+
+    prod, sede, id_tipo, id_ef = _producto_y_stock()
+    svc = AdminVentasService(audit=MagicMock())
+    ctx_sede = _ctx_sede(ctx, sede)
+    svc.emitir(
+        ctx_sede,
+        {
+            "id_sede": sede.id_sede,
+            "id_tipo_venta": id_tipo,
+            "lineas": [{"id_producto": prod.id_producto, "cantidad": 2}],
+            "pagos": [{"id_metodo_pago": id_ef, "valor": 23800}],
+        },
+    )
+    mes = timezone.localdate().strftime("%Y-%m")
+    stats = svc.estadisticas_mes(ctx_sede, mes, sede.id_sede)
+    assert stats["ventas"] >= 20000
+    assert stats["devoluciones"] >= 0
+    cat = svc.catalogos_pos()
+    assert "mensajeros" in cat
+    with pytest.raises(ReglaNegocioError):
+        svc.estadisticas_mes(ctx_sede, "no-es-mes", None)
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_emitir_pos_con_domicilio_y_mensajero(ctx: AuthContext) -> None:
+    from django.utils import timezone
+
+    from apps.m07_domicilios.models import Mensajeros
+
+    prod, sede, id_tipo, id_ef = _producto_y_stock()
+    tipo_dom, _ = Tipos_venta.objects.get_or_create(nombre="Domicilio", defaults={"estado": True})
+    Mensajeros.objects.create(
+        nombre="Pos",
+        apellido="Ruta",
+        documento="POS-M",
+        telefono="3001112233",
+        fecha_inicio=timezone.localdate(),
+        estado=True,
+    )
+    m = Mensajeros.objects.latest("id_mensajero")
+    svc = AdminVentasService(audit=MagicMock())
+    ctx_sede = _ctx_sede(ctx, sede)
+    out = svc.emitir(
+        ctx_sede,
+        {
+            "id_sede": sede.id_sede,
+            "id_tipo_venta": id_tipo,
+            "es_domicilio": True,
+            "lineas": [{"id_producto": prod.id_producto, "cantidad": 1}],
+            "pagos": [{"id_metodo_pago": id_ef, "valor": 11900}],
+            "domicilio": {
+                "nombre": "Cliente Dom",
+                "telefono": "+57300",
+                "direccion": "Calle 10",
+                "valor_cobrado_cliente": 5000,
+                "valor_pagado_mensajero": 0,
+                "id_mensajero": m.id_mensajero,
+            },
+        },
+    )
+    assert out["factura"]["requiere_domicilio"] is True
+    assert tipo_dom.nombre == "Domicilio"
+    lista = svc.listar(ctx_sede, {"numero": out["factura"]["numero_factura"][-3:]}, 1, 15)
+    assert lista["total"] >= 1
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_emitir_domicilio_validaciones_campo(ctx: AuthContext) -> None:
+    prod, sede, id_tipo, id_ef = _producto_y_stock()
+    Tipos_venta.objects.get_or_create(nombre="Domicilio", defaults={"estado": True})
+    svc = AdminVentasService(audit=MagicMock())
+    ctx_sede = _ctx_sede(ctx, sede)
+    body_base = {
+        "id_sede": sede.id_sede,
+        "id_tipo_venta": id_tipo,
+        "es_domicilio": True,
+        "lineas": [{"id_producto": prod.id_producto, "cantidad": 1}],
+        "pagos": [{"id_metodo_pago": id_ef, "valor": 11900}],
+    }
+    with pytest.raises(ReglaNegocioError):
+        svc.emitir(ctx_sede, {**body_base, "domicilio": {"nombre": " ", "telefono": "t", "direccion": "d", "id_mensajero": 1}})
+    Tipos_venta.objects.filter(nombre__iexact="Domicilio").update(estado=False)
+    with pytest.raises(ReglaNegocioError):
+        svc.emitir(
+            ctx_sede,
+            {
+                **body_base,
+                "domicilio": {"nombre": "N", "telefono": "300", "direccion": "Calle", "id_mensajero": 1},
+            },
+        )
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_emitir_domicilio_requiere_mensajero(ctx: AuthContext) -> None:
+    prod, sede, id_tipo, id_ef = _producto_y_stock()
+    Tipos_venta.objects.get_or_create(nombre="Domicilio", defaults={"estado": True})
+    svc = AdminVentasService(audit=MagicMock())
+    ctx_sede = _ctx_sede(ctx, sede)
+    with pytest.raises(ReglaNegocioError):
+        svc.emitir(
+            ctx_sede,
+            {
+                "id_sede": sede.id_sede,
+                "id_tipo_venta": id_tipo,
+                "es_domicilio": True,
+                "lineas": [{"id_producto": prod.id_producto, "cantidad": 1}],
+                "pagos": [{"id_metodo_pago": id_ef, "valor": 11900}],
+                "domicilio": {
+                    "nombre": "Sin",
+                    "telefono": "+57300",
+                    "direccion": "Calle",
+                    "id_mensajero": 0,
+                },
+            },
+        )

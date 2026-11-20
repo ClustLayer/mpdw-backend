@@ -1,0 +1,6 @@
+MSG_LISTADO = "Mostrando {n} cuentas."
+MSG_CREADA = "Cuenta bancaria creada correctamente."
+MSG_ACTUALIZADA = "Cuenta bancaria actualizada correctamente."
+MSG_CAMPOS = "Todos los campos obligatorios deben ser diligenciados."
+MSG_TIPO = "El tipo de cuenta no es válido."
+MSG_FALLA = "No fue posible guardar la cuenta. Intente nuevamente."

@@ -62,6 +62,7 @@ class Facturas(models.Model):
     requiere_factura_electronica = models.BooleanField(
         default=False, db_column="requiere_factura_electronica"
     )
+    requiere_domicilio = models.BooleanField(default=False, db_column="requiere_domicilio")
     requiere_revision_gerencial = models.BooleanField(
         default=False, db_column="requiere_revision_gerencial"
     )

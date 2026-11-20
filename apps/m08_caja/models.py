@@ -4,13 +4,24 @@
 # ==============================================================================
 from django.db import models
 
+TIPOS_CUENTA = (
+    "Nequi",
+    "Bancolombia",
+    "Davivienda",
+    "NuBanq",
+    "Banco Agrario",
+    "Banco AVVILLAS",
+)
+
 
 class Cuentas_bancarias(models.Model):
     id_cuenta_bancaria = models.BigAutoField(primary_key=True, db_column="id_cuenta_bancaria")
+    nombre = models.CharField(max_length=150, db_column="nombre", default="")
     banco = models.CharField(max_length=100, db_column="banco")
     tipo_cuenta = models.CharField(max_length=50, db_column="tipo_cuenta")
     numero = models.CharField(max_length=50, db_column="numero")  # G-23: cifrado/enmascarado
     estado = models.BooleanField(default=True, db_column="estado")
+    version_fila = models.PositiveIntegerField(default=1, db_column="version_fila")
 
     class Meta:
         db_table = "Cuentas_bancarias"

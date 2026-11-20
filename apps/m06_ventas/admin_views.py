@@ -82,6 +82,22 @@ class PosEmitirView(APIView):
         return Response(data, status=status.HTTP_201_CREATED)
 
 
+class FacturasEstadisticasView(APIView):
+    permission_classes = [IsAuthenticated, HasDynamicPermission]
+    required_permission = PERM_FACTURAS_VER
+
+    @extend_schema(operation_id="facturas_estadisticas_mes")
+    def get(self, request: Request) -> Response:
+        mes = str(request.query_params.get("mes") or "")
+        id_sede_raw = request.query_params.get("id_sede")
+        id_sede = int(id_sede_raw) if id_sede_raw not in (None, "") else None
+        try:
+            data = AdminVentasService().estadisticas_mes(_ctx(request), mes, id_sede)
+        except ReglaNegocioError as exc:
+            return _err(exc, request)
+        return Response(data)
+
+
 class FacturasListView(APIView):
     permission_classes = [IsAuthenticated, HasDynamicPermission]
     required_permission = PERM_FACTURAS_VER
