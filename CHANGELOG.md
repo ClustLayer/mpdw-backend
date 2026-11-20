@@ -18,8 +18,16 @@ Versionado del producto: **MAJOR.SPRINT.EPIC_IN_SPRINT** (`1` = major del sistem
 | **1.3.1** | Sprint 3 · Épica 8 (punto de venta y facturación) |
 | **1.3.2** | Sprint 3 · Épica 9 (domicilios y mensajería) |
 | **1.3.3** | Sprint 3 · Épica 10 (facturación electrónica externa — HU 59) |
+| **1.3.4** | Sprint 3 · Épica 16 (tienda pública y pedido WhatsApp — HU 88–93) |
 
 ---
+
+## 2026-11-20 — v1.3.4 Épica 16 (tienda pública WhatsApp)
+
+- Modelo `Pedidos_web` gestionado; migración `0002_pedidos_web_tabla` (B-2).
+- API pública `/api/v1/tienda/` (catálogo, detalle, validación carrito, pedido WhatsApp).
+- Slug dinámico de producto y metadatos SEO en detalle (B-9).
+- QA: `docs/qa/epic-16.md`; OpenAPI actualizado.
 
 ## 2026-11-20 — v1.3.3 Épica 10 (control facturación externa)
 
