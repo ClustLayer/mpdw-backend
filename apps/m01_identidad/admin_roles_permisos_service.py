@@ -316,17 +316,25 @@ class AdminRolesPermisosService:
 
     def _asegurar_permisos_matriz(self) -> None:
         dominios = {dominio for _, dominio, _ in PANEL_MATRIZ_ORDEN}
-        for dominio in dominios:
-            for accion in ACCIONES_CATALOGO:
-                Permisos.objects.get_or_create(
-                    modulo=dominio,
-                    accion=accion,
-                    defaults={
-                        "nombre": f"{dominio} · {accion}",
-                        "descripcion": "Catálogo matriz",
-                        "estado": True,
-                    },
-                )
+        existentes = set(
+            Permisos.objects.filter(modulo__in=dominios, accion__in=ACCIONES_CATALOGO).values_list(
+                "modulo", "accion"
+            )
+        )
+        faltantes = [
+            Permisos(
+                modulo=dominio,
+                accion=accion,
+                nombre=f"{dominio} · {accion}",
+                descripcion="Catálogo matriz",
+                estado=True,
+            )
+            for dominio in dominios
+            for accion in ACCIONES_CATALOGO
+            if (dominio, accion) not in existentes
+        ]
+        if faltantes:
+            Permisos.objects.bulk_create(faltantes, ignore_conflicts=True)
 
     def _filas_matriz_por_panel(
         self,
@@ -492,6 +500,13 @@ class AdminRolesPermisosService:
                     usuario.save(update_fields=["credential_version"])
                     entidad, id_ent = "Usuarios", usuario.id_usuario
                 self._auditar(ctx, "MATRIZ_PERMISOS", entidad, id_ent, antes, despues)
+            from django.core.cache import cache as dj_cache
+
+            dj_cache.add("permisos:version", 1, None)
+            try:
+                dj_cache.incr("permisos:version")
+            except ValueError:
+                dj_cache.set("permisos:version", 2, None)
             return MSG_MATRIZ_GUARDADA
         except ReglaNegocioError:
             raise

@@ -66,3 +66,62 @@ No se levanto el par navegador-API contra la base de Supabase durante esta ejecu
 | Migraciones Supabase | Ops | `0002_ep13_auditoria_campos`, `0011_gerente_auditoria_consultar` |
 | Cliente integrado | Frontend | `mpdw-frontend` rama homónima, `pnpm run calidad` |
 | QA manual | Docs | `docs/qa-sprint1-closing.md` |
+
+## Épica 5 — Catálogo
+**Validated:** 2026-11-11
+
+| Criterio | Estado | Evidencia |
+|---|---|---|
+| CRUD producto y parámetros | PASS | `test_epic5_catalogo.py` |
+| Importación no sobrescribe | PASS | `test_import_csv_no_sobrescribe` |
+| UI panel | Frontend | `panel-productos-page.tsx` |
+
+## Épica 6 — Inventario y kardex
+**Validated:** 2026-11-11
+
+| Criterio | Estado | Evidencia |
+|---|---|---|
+| Existencias, kardex y movimientos | PASS | `test_epic6_inventario.py` |
+| Stock insuficiente | PASS | `ReglaNegocioError` en merma |
+| UI panel | Frontend | `panel-inventario-page.tsx` |
+
+## Épica 7 — Clientes y Habeas Data
+**Validated:** 2026-11-12
+
+| Criterio | Estado | Evidencia |
+|---|---|---|
+| CRUD clientes / tipos | PASS | `test_epic7_clientes.py` |
+| Duplicado teléfono / concurrencia | PASS | códigos `TELEFONO_DUPLICADO`, HTTP 409 |
+| Historial y métricas | PASS | `Detalle_factura` + rol Gerente/Admin |
+| OpenAPI | PASS | `docs/openapi.yaml` regenerado |
+| UI panel | Frontend | `panel-clientes-page.tsx` |
+
+## Épica 12 — Eventos y novedades
+**Validated:** 2026-11-12
+
+| Criterio | Estado | Evidencia |
+|---|---|---|
+| CRUD eventos / filtros | PASS | `test_epic12_eventos.py` |
+| Exposición pública | PASS | `GET /api/v1/eventos/publicos/` |
+| OpenAPI | PASS | `docs/openapi.yaml` |
+| UI panel | Frontend | `panel-eventos-page.tsx` |
+
+## Épica 14 — Proveedores e inventario
+**Validated:** 2026-11-12
+
+| Criterio | Estado | Evidencia |
+|---|---|---|
+| CRUD proveedores | PASS | `test_epic14_proveedores.py` |
+| FK inventario + purga | PASS | `0004_epic14_proveedor_fk`, `test_epic6_inventario.py` |
+| Selector activos | PASS | `/proveedores/activos/`, inventario combobox |
+| UI panel | Frontend | `panel-proveedores-page.tsx`, `panel-inventario-page.tsx` |
+
+## Iteración 12 — Mejoras integrales Sprint 2
+**Validated:** 2026-11-12
+
+| Criterio | Estado | Evidencia |
+|---|---|---|
+| Resumen permisos | PASS | `GET /api/v1/auth/panel-resumen/`, `test_sprint2_mejoras.py` |
+| Exportación catálogo | PASS | columnas extendidas, alcance página/filtrado |
+| Tipos cliente color | PASS | migración `0003_tipos_cliente_color` |
+| Eventos imagen archivo | PASS | `POST .../imagen/` |

@@ -150,3 +150,62 @@ Migraciones: `0002_epic4_sedes_horarios`, permisos demo `0009`/`0010`, seed `000
 
 - **HU 96 / 97 (API y dominio):** revalidación de permisos en servidor; HTTP 409 ante conflicto de versión; motivo obligatorio en cambios críticos de usuario donde aplica; mensajes `mensajes.py` / excepciones.
 - **Frontend:** implementado en el repositorio `mpdw-frontend` (diálogos y conflictos de edición).
+
+## Épica 5 — Catálogo de productos (2026-11-11) — **Status:** COMPLETED
+
+| Historia | Estado | Evidencia |
+|----------|--------|-----------|
+| HU_MPDW_01_22 Crear producto | COMPLETED | `POST /api/v1/catalogo/productos/` |
+| HU_MPDW_01_23 Listado y filtros | COMPLETED | `GET /api/v1/catalogo/productos/` |
+| HU_MPDW_01_24 Editar producto | COMPLETED | `PATCH /api/v1/catalogo/productos/{id}/` |
+| HU_MPDW_01_25 Cambiar estado | COMPLETED | `POST /api/v1/catalogo/productos/{id}/estado/` |
+| HU_MPDW_01_26 Historial de precios | COMPLETED | `GET /api/v1/catalogo/productos/{id}/historial/` |
+| HU_MPDW_01_27 / 28 Parámetros | COMPLETED | `/api/v1/catalogo/parametros/{tipo}/` |
+| HU_MPDW_01_29 Importar | COMPLETED | `POST /api/v1/catalogo/productos/importar/` |
+| HU_MPDW_01_30 Exportar | COMPLETED | `GET /api/v1/catalogo/productos/exportar/` |
+
+Cierre parámetros (2026-11-12): `seed_catalogo_parametros`, accesos-panel con `categorias`/`marcas`/`tipos_producto`; docs `qa-epic-5.md`. Extras de sprint 2: `docs/user-stories-sprint2-extras.md`.
+
+## Épica 6 — Inventario y kardex (2026-11-11) — **Status:** COMPLETED
+
+| Historia | Estado | Evidencia |
+|----------|--------|-----------|
+| HU_MPDW_01_31 Existencias por sede | COMPLETED | `GET /api/v1/inventario/existencias/` |
+| HU_MPDW_01_32 Entrada de mercancía | COMPLETED | `POST /api/v1/inventario/movimientos/entrada/` |
+| HU_MPDW_01_33 Ajuste y merma | COMPLETED | `POST /api/v1/inventario/movimientos/ajuste/` |
+| HU_MPDW_01_34 Traslado entre sedes | COMPLETED | `POST /api/v1/inventario/movimientos/traslado/` |
+| HU_MPDW_01_35 Kardex | COMPLETED | `GET /api/v1/inventario/kardex/` |
+| HU_MPDW_01_36 Alerta de stock bajo | COMPLETED | campo `alerta` en existencias |
+
+Campos de demo (proveedor en texto y referencia) en `Movimientos_inventario`. QA: `docs/qa-epic-6.md`.
+
+## Épica 7 — Directorio de clientes y Habeas Data (2026-11-12) — **v1.2.3** — **Status:** COMPLETED
+
+| Historia | Estado | Evidencia |
+|----------|--------|-----------|
+| HU_MPDW_01_37 Crear cliente + consentimiento | COMPLETED | `POST /api/v1/clientes/`, e.164, Habeas Data, `fecha_consentimiento` |
+| HU_MPDW_01_38 Directorio (búsqueda/filtros/WhatsApp) | COMPLETED | `GET /api/v1/clientes/`, wa.me e.164 sanitizado |
+| HU_MPDW_01_39 Editar / desactivar cliente | COMPLETED | `PATCH /api/v1/clientes/{id}/`, concurrencia `version_fila` |
+| HU_MPDW_01_40 Crear tipo de cliente | COMPLETED | `POST /api/v1/clientes/tipos/`, semilla «Común» |
+| HU_MPDW_01_41 Editar tipo (proteger Común) | COMPLETED | `PATCH /api/v1/clientes/tipos/{id}/` |
+| HU_MPDW_01_42 Detalle, historial y métricas | COMPLETED | `GET /api/v1/clientes/{id}/historial/` |
+
+QA: `docs/qa-epic-7.md`. Extras demo: `docs/user-stories-sprint2-extras.md` (S2_13–S2_15).
+
+## Épica 12 — Eventos y novedades (2026-11-12) — **v1.2.4** — **Status:** COMPLETED
+
+| Historia | Estado | Evidencia |
+|----------|--------|-----------|
+| HU_MPDW_01_80 Crear evento | COMPLETED | `POST /api/v1/eventos/`, validaciones HU, sede global opcional |
+| HU_MPDW_01_81 Editar / desactivar evento | COMPLETED | `PATCH /api/v1/eventos/{id}/`, auditoría, `version_fila` |
+
+QA: `docs/qa-epic-12.md`. Público: `GET /api/v1/eventos/publicos/`. Extras: `docs/user-stories-sprint2-extras.md` (S2_16–S2_18).
+
+## Épica 14 — Proveedores e inventario (2026-11-12) — **v1.2.5** — **Status:** COMPLETED
+
+| Historia | Estado | Evidencia |
+|----------|--------|-----------|
+| HU_MPDW_01_84 Crear proveedor | COMPLETED | `POST /api/v1/proveedores/`, RBAC módulo 19 |
+| HU_MPDW_01_85 Editar / activar proveedor | COMPLETED | `PATCH /api/v1/proveedores/{id}/`, concurrencia, auditoría |
+
+Integración inventario: FK `id_proveedor` en `Movimientos_inventario` (`0004_epic14_proveedor_fk`). QA: `docs/qa-epic-14.md`. Extras: S2_19.

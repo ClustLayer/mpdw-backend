@@ -38,3 +38,26 @@
 - `docs/openapi.yaml` — contrato publicado. Se regenera con `manage.py spectacular`.
 - `apps/m10_auditoria/` — repositorio de auditoría append-only; vistas de bitácora bajo `urls.py` y `config/urls.py` (`api/v1/auditoria/`).
 - `.env` — fuera de Git. El pipeline ejecuta `scripts/scan_secrets.py` sobre los archivos versionados.
+
+## Épica 5 — Catálogo
+- `apps/m03_catalogo/admin_catalogo_service.py`, `admin_views.py`, `urls_admin.py` — `/api/v1/catalogo/`.
+- Migración `0002_epic5_catalogo_backoffice` (precios, imagen, parámetros, tipos base).
+- RBAC: mapas de permiso en una pasada (`PermissionRepository._mapas`) y alta masiva de la matriz.
+
+## Épica 6 — Inventario y kardex
+- `apps/m04_inventario/admin_service.py`, `admin_views.py`, `urls_admin.py` — `/api/v1/inventario/`.
+- Migración `0002_epic6_kardex_campos` (`referencia`, `proveedor_nombre`).
+- El listado público sigue en `GET /api/v1/inventory/`.
+
+## Épica 7 — Clientes y Habeas Data
+- `apps/m05_clientes/admin_clientes_service.py`, `admin_views.py`, `urls_admin.py` — `/api/v1/clientes/`.
+- Migración `0002_epic7_clientes` (campos HU 37–41 + índices + semilla «Común»).
+- `apps/m06_ventas/migrations/0002_detalle_factura.py` — líneas para métricas HU 42.
+
+## Épica 14 — Proveedores
+- `apps/m14_proveedores/admin_proveedores_service.py`, `admin_views.py`, `urls_admin.py` — `/api/v1/proveedores/`.
+- Inventario: FK `id_proveedor` en `Movimientos_inventario` (`0004_epic14_proveedor_fk`).
+
+## Épica 12 — Eventos y novedades
+- `apps/m11_eventos/admin_eventos_service.py`, `admin_views.py`, `urls_admin.py` — `/api/v1/eventos/`.
+- Migración `0002_epic12_eventos`.

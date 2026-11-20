@@ -59,6 +59,18 @@ class Facturas(models.Model):
         ]
 
 
+class Detalle_factura(models.Model):
+    """Líneas de factura para historial y métricas de cliente (HU 42)."""
+    id_detalle = models.BigAutoField(primary_key=True, db_column="id_detalle")
+    id_factura = models.ForeignKey(Facturas, on_delete=models.CASCADE, db_column="id_factura", related_name="detalles")
+    id_producto = models.ForeignKey("m03_catalogo.Productos", on_delete=models.PROTECT, db_column="id_producto")
+    cantidad = models.DecimalField(max_digits=14, decimal_places=3, db_column="cantidad")
+    subtotal = models.DecimalField(max_digits=14, decimal_places=2, db_column="subtotal")
+
+    class Meta:
+        db_table = "Detalle_factura"
+
+
 class Facturas_electronicas(models.Model):
     """Bandeja local de gestión manual externa sin integración DIAN (SAD C-01, C-05, ADR-009)."""
     id_factura_electronica = models.BigAutoField(primary_key=True, db_column="id_factura_electronica")

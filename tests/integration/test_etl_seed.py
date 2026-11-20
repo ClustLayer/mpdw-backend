@@ -36,7 +36,11 @@ def test_corrida_etl_sobre_semilla_puebla_esquema_analitica():
     tipo_cli, _ = Tipos_cliente.objects.get_or_create(nombre="Persona Natural")
     cliente, _ = Clientes.objects.get_or_create(
         documento="900123456",
-        defaults={"nombre": "Cliente ETL S.A.S.", "id_tipo_cliente": tipo_cli},
+        defaults={
+            "nombre": "Cliente ETL S.A.S.",
+            "numero_telefono": "+573001112233",
+            "id_tipo_cliente": tipo_cli,
+        },
     )
     cat, _ = Categorias_producto.objects.get_or_create(nombre="Esmaltes ETL")
     producto, _ = Productos.objects.get_or_create(

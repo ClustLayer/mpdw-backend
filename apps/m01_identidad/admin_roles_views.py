@@ -26,6 +26,7 @@ from apps.m01_identidad.admin_roles_serializers import (
 )
 from apps.m01_identidad.admin_serializers import RolesCatalogoResponseSerializer
 from apps.m01_identidad.models import Permisos, Roles, Usuarios
+from apps.m01_identidad.panel_resumen_service import construir_panel_resumen
 from apps.m01_identidad.permissions import HasDynamicPermission
 from apps.m01_identidad.serializers import MensajeResponseSerializer
 from apps.m01_identidad.services import PermissionService
@@ -365,3 +366,12 @@ class AccesosPanelView(APIView):
         ctx = _ctx(request)
         data = PermissionService().accesos_panel(ctx)
         return Response(data)
+
+
+class PanelResumenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(operation_id="auth_panel_resumen")
+    def get(self, request: Request) -> Response:
+        ctx = _ctx(request)
+        return Response(construir_panel_resumen(ctx))

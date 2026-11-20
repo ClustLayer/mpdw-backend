@@ -158,22 +158,43 @@ class SessionRepository:
 class PermissionRepository:
     """Evaluación de permisos en servidor (BR-10, ADR-007)."""
 
+    def _mapas(self, id_usuario: int, id_rol: int) -> tuple[dict[tuple[str, str], bool], dict[tuple[str, str], bool]]:
+        from django.conf import settings
+        from django.core.cache import cache as dj_cache
+
+        usar_cache = not getattr(settings, "TESTING", False)
+        ver = 1
+        clave_remota = ""
+        if usar_cache:
+            ver = int(dj_cache.get("permisos:version") or 1)
+            clave_remota = f"permmap:{ver}:{id_usuario}:{id_rol}"
+            hit = dj_cache.get(clave_remota)
+            if hit is not None:
+                return hit[0], hit[1]
+        clave = (id_usuario, id_rol)
+        cache = getattr(self, "_perm_cache", None)
+        if cache and cache[0] == clave:
+            return cache[1], cache[2]
+        overrides: dict[tuple[str, str], bool] = {}
+        for up in Usuario_permiso.objects.filter(id_usuario_id=id_usuario).select_related("id_permiso"):
+            permiso = up.id_permiso
+            if permiso.estado:
+                overrides[(permiso.modulo, permiso.accion)] = bool(up.permitido)
+        rol_map: dict[tuple[str, str], bool] = {}
+        for rp in Rol_permiso.objects.filter(id_rol_id=id_rol, permitido=True).select_related("id_permiso"):
+            permiso = rp.id_permiso
+            if permiso.estado:
+                rol_map[(permiso.modulo, permiso.accion)] = True
+        self._perm_cache = (clave, overrides, rol_map)
+        if usar_cache and clave_remota:
+            dj_cache.set(clave_remota, (overrides, rol_map), 60)
+        return overrides, rol_map
+
     def _efectivo_permitido(self, id_usuario: int, id_rol: int, modulo: str, accion: str) -> bool | None:
-        excepcion = Usuario_permiso.objects.filter(
-            id_usuario_id=id_usuario,
-            id_permiso__modulo=modulo,
-            id_permiso__accion=accion,
-            id_permiso__estado=True,
-        ).first()
-        if excepcion is not None:
-            return bool(excepcion.permitido)
-        if Rol_permiso.objects.filter(
-            id_rol_id=id_rol,
-            id_permiso__modulo=modulo,
-            id_permiso__accion=accion,
-            id_permiso__estado=True,
-            permitido=True,
-        ).exists():
+        overrides, rol_map = self._mapas(id_usuario, id_rol)
+        if (modulo, accion) in overrides:
+            return overrides[(modulo, accion)]
+        if rol_map.get((modulo, accion)):
             return True
         return None
 

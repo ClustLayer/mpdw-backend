@@ -88,3 +88,55 @@
 - `make calidad`: 9 puertas en verde; cobertura unitaria ≥90%.
 - Pruebas: `tests/unit/test_epic13_bitacora_service.py`, `test_epic13_auditoria_sanitize.py`; ajustes en `test_epic2_usuarios.py`, `test_epic4_sedes.py`.
 - OpenAPI: `docs/openapi.yaml` regenerado.
+
+## Épica 5 — Catálogo de productos
+**Status:** COMPLETED
+**Date:** 2026-11-11
+
+- Alta, listado filtrado, edición con historial de precio, estado, parámetros, importación CSV/XLSX y exportación.
+- Pruebas: `tests/unit/test_epic5_catalogo.py`.
+- Permisos de matriz: deja de ejecutar un `get_or_create` por celda en cada lectura.
+
+## Épica 6 — Inventario y kardex
+**Status:** COMPLETED
+**Date:** 2026-11-11
+**Branch:** `epica-6-inventario-kardex`
+
+- Existencias, kardex, entrada, ajuste/merma y traslado en `AdminInventarioService`.
+- Pruebas: `tests/unit/test_epic6_inventario.py`.
+- Cobertura unitaria ≥ 90%.
+
+## Épica 7 — Directorio de clientes y Habeas Data
+**Status:** COMPLETED  
+**Date:** 2026-11-12  
+**Branch:** `epica-7-directorio-clientes-habeas-data`  
+**Version:** v1.2.3
+
+- CRUD clientes/tipos, e.164, consentimiento Habeas Data, WhatsApp, historial/métricas.
+- Pruebas: `tests/unit/test_epic7_clientes.py`; OpenAPI regenerado.
+- `make calidad` en verde; cobertura unitaria ≥ 90%.
+
+## Épica 12 — Eventos y novedades
+**Status:** COMPLETED  
+**Date:** 2026-11-12  
+**Branch:** `epicas-12-14-eventos-proveedores`  
+**Version:** v1.2.4
+
+- Modelo ampliado, admin API, endpoint público y sedes activas.
+- Pruebas: `tests/unit/test_epic12_eventos.py`.
+
+## Épica 14 — Proveedores e integración inventario
+**Status:** COMPLETED  
+**Date:** 2026-11-12  
+**Branch:** `epicas-12-14-eventos-proveedores`  
+**Version:** v1.2.5
+
+- App `m14_proveedores`, FK en kardex, purga de datos de prueba de inventario.
+- Pruebas: `tests/unit/test_epic14_proveedores.py`; suite unitaria 292 passed, cobertura ≥ 90%.
+
+## Iteración 12 — Mejoras integrales Sprint 2 (backend)
+**Status:** COMPLETED  
+**Date:** 2026-11-12  
+**Branch:** `epicas-12-14-eventos-proveedores`
+
+- Ver `docs/correcciones-iteracion-12.md`. Suite: 300 passed, cobertura 90.03%.

@@ -28,6 +28,7 @@ from apps.m11_eventos.services import EventoService
 from apps.m12_tienda_publica.services import PedidoWebService
 from apps.m13_plataforma.excepciones import uniform_exception_handler
 from apps.m13_plataforma.gestor_transaccion import GestorTransaccionDjango
+from apps.m14_proveedores.services import ProveedorService
 from contratos.dtos import AuthContext
 from contratos.excepciones import (
     AutenticacionError,
@@ -76,6 +77,9 @@ def test_instanciacion_servicios_stub():
 
     e_service = EventoService()
     assert e_service is not None
+
+    prov_service = ProveedorService()
+    assert prov_service is not None
 
     p_service = PedidoWebService()
     assert p_service is not None
