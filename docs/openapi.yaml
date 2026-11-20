@@ -795,6 +795,145 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/domicilios/:
+    post:
+      operationId: domicilios_crear
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/{id_entrega}/:
+    get:
+      operationId: domicilios_detalle
+      parameters:
+      - in: path
+        name: id_entrega
+        schema:
+          type: integer
+        required: true
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/{id_entrega}/asignar/:
+    post:
+      operationId: domicilios_asignar_mensajero
+      parameters:
+      - in: path
+        name: id_entrega
+        schema:
+          type: integer
+        required: true
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/{id_entrega}/estado/:
+    post:
+      operationId: domicilios_cambiar_estado
+      parameters:
+      - in: path
+        name: id_entrega
+        schema:
+          type: integer
+        required: true
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/bandeja/:
+    get:
+      operationId: domicilios_bandeja
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/factura/{id_factura}/precarga/:
+    get:
+      operationId: domicilios_precarga_factura
+      parameters:
+      - in: path
+        name: id_factura
+        schema:
+          type: integer
+        required: true
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/historial/:
+    get:
+      operationId: domicilios_historial
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/mensajeros/:
+    get:
+      operationId: mensajeros_listar
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: mensajeros_crear
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/mensajeros/{id_mensajero}/:
+    patch:
+      operationId: mensajeros_actualizar
+      parameters:
+      - in: path
+        name: id_mensajero
+        schema:
+          type: integer
+        required: true
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/mensajeros/activos/:
+    get:
+      operationId: mensajeros_activos
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/eventos/:
     get:
       operationId: eventos_listar

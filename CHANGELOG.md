@@ -16,6 +16,16 @@ Versionado del producto: **MAJOR.SPRINT.EPIC_IN_SPRINT** (`1` = major del sistem
 | **1.2.4** | Sprint 2 · Épica 12 (eventos y novedades) |
 | **1.2.5** | Sprint 2 · Épica 14 (proveedores e integración inventario) |
 | **1.3.1** | Sprint 3 · Épica 8 (punto de venta y facturación) |
+| **1.3.2** | Sprint 3 · Épica 9 (domicilios y mensajería) |
+
+---
+
+## 2026-11-19 — v1.3.2 Épica 9 (domicilios y mensajería)
+
+- Migración `0002_epic9_domicilios`: Entregas, Historial_entregas, Mensajeros ampliados; tipo venta Domicilio.
+- API `/api/v1/domicilios/` (bandeja, crear, asignar, estado, mensajeros, historial) con auditoría y transiciones.
+- Cálculo al vuelo de antigüedad, duración y años trabajados.
+- QA: `docs/qa/epic-9.md`; OpenAPI actualizado.
 
 ---
 
