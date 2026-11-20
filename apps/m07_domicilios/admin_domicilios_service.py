@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
@@ -30,6 +31,10 @@ from contratos.excepciones import ReglaNegocioError
 
 TELEFONO_RE = re.compile(r"^[+0-9A-Za-z\- ()]{0,20}$")
 ESTADOS_BANDEJA = ("PENDIENTE", "ASIGNADO", "EN_CAMINO")
+
+
+def _fecha_inicio_desde_iso(fecha_s: str) -> date:
+    return datetime.fromisoformat(fecha_s).date()
 
 
 def _usuario_id(ctx: AuthContext) -> int | None:
@@ -431,7 +436,7 @@ class AdminDomiciliosService:
         if not all([nombre, apellido, documento, telefono, fecha_s]):
             raise ReglaNegocioError(msg.MSG_CAMPOS_OBLIGATORIOS, codigo="VALIDACION")
         try:
-            fecha_inicio = timezone.datetime.fromisoformat(fecha_s).date()
+            fecha_inicio = _fecha_inicio_desde_iso(fecha_s)
         except ValueError as exc:
             raise ReglaNegocioError(msg.MSG_CAMPOS_OBLIGATORIOS, codigo="VALIDACION") from exc
         if fecha_inicio > timezone.localdate():
@@ -476,7 +481,7 @@ class AdminDomiciliosService:
         if not all([nombre, apellido, documento, telefono, fecha_s]):
             raise ReglaNegocioError(msg.MSG_CAMPOS_OBLIGATORIOS, codigo="VALIDACION")
         try:
-            fecha_inicio = timezone.datetime.fromisoformat(fecha_s).date()
+            fecha_inicio = _fecha_inicio_desde_iso(fecha_s)
         except ValueError as exc:
             raise ReglaNegocioError(msg.MSG_CAMPOS_OBLIGATORIOS, codigo="VALIDACION") from exc
         if fecha_inicio > timezone.localdate():

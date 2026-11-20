@@ -23,7 +23,7 @@ def _ctx(request: Request) -> AuthContext:
 
 
 def _err(exc: ReglaNegocioError, request: Request) -> Response:
-    code = status.HTTP_400_BAD_REQUEST
+    code: int = status.HTTP_400_BAD_REQUEST
     if exc.codigo == "NO_AUTORIZADO":
         code = status.HTTP_403_FORBIDDEN
     elif exc.codigo == "CONCURRENCIA":
