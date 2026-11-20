@@ -24,7 +24,7 @@ from apps.m06_ventas.models import (
     Tipos_venta,
 )
 from apps.m06_ventas.ventas_calculo import calcular_lineas
-from apps.m08_caja.models import Reportes_diarios
+from apps.m08_caja.models import Cuentas_bancarias, Reportes_diarios
 from apps.m10_auditoria.services import AuditService
 from contratos.dtos import AuthContext
 from contratos.excepciones import ReglaNegocioError
@@ -57,7 +57,14 @@ class AdminVentasService:
             .order_by("nombre")
             .values("id_metodo_pago", "nombre")
         )
-        return {"sedes": sedes, "tipos_venta": tipos, "metodos_pago": metodos}
+        cuentas = [
+            {
+                "id_cuenta_bancaria": c.id_cuenta_bancaria,
+                "label": f"{c.nombre} · {c.tipo_cuenta}",
+            }
+            for c in Cuentas_bancarias.objects.filter(estado=True).order_by("nombre")
+        ]
+        return {"sedes": sedes, "tipos_venta": tipos, "metodos_pago": metodos, "cuentas_bancarias": cuentas}
 
     def buscar_productos(self, q: str, id_sede: int) -> dict[str, Any]:
         qs = Productos.objects.filter(estado=True)
@@ -170,8 +177,12 @@ class AdminVentasService:
                 raise ReglaNegocioError("El valor del pago debe ser mayor a 0.")
             referencia = (p.get("referencia") or "").strip()
             if metodo.nombre.lower() == "transferencia":
-                if not referencia:
+                if not referencia or not referencia.isdigit():
                     raise ReglaNegocioError(msg.MSG_REF_TRANSFERENCIA)
+                cuenta = Cuentas_bancarias.objects.filter(pk=int(referencia), estado=True).first()
+                if not cuenta:
+                    raise ReglaNegocioError(msg.MSG_REF_TRANSFERENCIA)
+                referencia = f"{cuenta.nombre} · {cuenta.numero}"
                 if valor > saldo:
                     raise ReglaNegocioError(
                         msg.MSG_TRANSFERENCIA_EXCESO.format(
@@ -287,6 +298,7 @@ class AdminVentasService:
             "margen_negativo": f.margen_negativo,
             "requiere_revision_gerencial": f.requiere_revision_gerencial,
             "requiere_factura_electronica": f.requiere_factura_electronica,
+            "requiere_domicilio": f.requiere_domicilio,
             "factura_electronica_estado": fe.estado if fe else None,
             "observaciones": f.observaciones,
             "version_fila": f.version_fila,

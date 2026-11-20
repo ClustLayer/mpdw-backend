@@ -41,8 +41,22 @@ def emitir_factura(
     if not lineas_in:
         raise ReglaNegocioError("Agregue al menos un producto.")
     id_sede = int(body["id_sede"])
+    es_domicilio = bool(body.get("es_domicilio"))
     id_tipo = int(body["id_tipo_venta"])
     sede = Sedes.objects.get(pk=id_sede, estado=True)
+    if es_domicilio:
+        tipo_dom = Tipos_venta.objects.filter(nombre__iexact="Domicilio", estado=True).first()
+        if not tipo_dom:
+            raise ReglaNegocioError("No está configurado el tipo de venta Domicilio.")
+        id_tipo = tipo_dom.id_tipo_venta
+        dom = body.get("domicilio") or {}
+        for campo, etiqueta in (
+            (dom.get("direccion"), "dirección"),
+            (dom.get("telefono"), "teléfono"),
+            (dom.get("nombre"), "nombre"),
+        ):
+            if not (campo or "").strip():
+                raise ReglaNegocioError(f"Complete el {etiqueta} del domicilio.")
     Tipos_venta.objects.get(pk=id_tipo, estado=True)
     svc._asegurar_jornada(ctx, id_sede)
 
@@ -110,6 +124,7 @@ def emitir_factura(
                 total=tot["total"],
                 estado="EMITIDA",
                 requiere_factura_electronica=bool(body.get("requiere_factura_electronica")),
+                requiere_domicilio=es_domicilio,
                 requiere_revision_gerencial=necesita_auth,
                 margen_negativo=tot["margen"] < 0,
                 comprador_nombre=(body.get("comprador_nombre") or "")[:255],
@@ -157,6 +172,22 @@ def emitir_factura(
 
             if factura.requiere_factura_electronica:
                 Facturas_electronicas.objects.create(id_factura=factura, estado="PENDIENTE")
+
+            if es_domicilio:
+                from apps.m07_domicilios.admin_domicilios_service import AdminDomiciliosService
+
+                dom = body.get("domicilio") or {}
+                AdminDomiciliosService(svc._audit).crear(
+                    ctx,
+                    {
+                        "id_factura": factura.id_factura,
+                        "direccion": (dom.get("direccion") or "").strip(),
+                        "telefono_contacto": (dom.get("telefono") or "").strip(),
+                        "valor_cobrado_cliente": dom.get("valor_cobrado_cliente", 0),
+                        "valor_pagado_mensajero": dom.get("valor_pagado_mensajero", 0),
+                        "observaciones": (dom.get("observaciones") or "").strip(),
+                    },
+                )
 
             if necesita_auth:
                 svc._audit.registrar(
