@@ -1918,6 +1918,64 @@ paths:
               schema:
                 $ref: '#/components/schemas/RolesCatalogoResponse'
           description: ''
+  /api/v1/ventas/facturacion-externa/:
+    get:
+      operationId: facturacion_externa_bandeja
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/facturacion-externa/{id}/:
+    get:
+      operationId: facturacion_externa_detalle
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/facturacion-externa/{id}/estado/:
+    post:
+      operationId: facturacion_externa_estado
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/facturacion-externa/{id}/soporte/:
+    get:
+      operationId: facturacion_externa_soporte
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/ventas/facturas/:
     get:
       operationId: facturas_listar
