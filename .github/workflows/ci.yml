@@ -6,9 +6,9 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main, staging, develop, epica-1-autenticacion, epica-2-administracion-usuarios, epica-3-roles-permisos, epica-9-mensajeria-domicilios]
+    branches: [main, staging, develop, epica-1-autenticacion, epica-2-administracion-usuarios, epica-3-roles-permisos, epica-9-mensajeria-domicilios, epica-10-facturacion-electronica]
   pull_request:
-    branches: [main, staging, develop, epica-1-autenticacion, epica-2-administracion-usuarios, epica-3-roles-permisos, epica-9-mensajeria-domicilios]
+    branches: [main, staging, develop, epica-1-autenticacion, epica-2-administracion-usuarios, epica-3-roles-permisos, epica-9-mensajeria-domicilios, epica-10-facturacion-electronica]
 
 permissions:
   contents: read

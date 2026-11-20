@@ -17,8 +17,15 @@ Versionado del producto: **MAJOR.SPRINT.EPIC_IN_SPRINT** (`1` = major del sistem
 | **1.2.5** | Sprint 2 · Épica 14 (proveedores e integración inventario) |
 | **1.3.1** | Sprint 3 · Épica 8 (punto de venta y facturación) |
 | **1.3.2** | Sprint 3 · Épica 9 (domicilios y mensajería) |
+| **1.3.3** | Sprint 3 · Épica 10 (facturación electrónica externa — HU 59) |
 
 ---
+
+## 2026-11-20 — v1.3.3 Épica 10 (control facturación externa)
+
+- Modelo `Facturas_electronicas`: `url_pdf`, `version_fila` (gestión externa B-7).
+- API `/api/v1/ventas/facturacion-externa/` con RBAC `facturacion_electronica`, auditoría `Facturas_gestion_externa`.
+- QA: `docs/qa/epic-10.md`; OpenAPI actualizado.
 
 ## 2026-11-19 — Iteración 14 (cierre CI épica 9)
 
