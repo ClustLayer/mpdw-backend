@@ -579,6 +579,7 @@ def test_estadisticas_mes_y_catalogo_mensajeros(ctx: AuthContext) -> None:
     mes = timezone.localdate().strftime("%Y-%m")
     stats = svc.estadisticas_mes(ctx_sede, mes, sede.id_sede)
     assert stats["ventas"] >= 20000
+    assert stats["ventas_dia"] >= 20000
     assert stats["devoluciones"] >= 0
     cat = svc.catalogos_pos()
     assert "mensajeros" in cat
