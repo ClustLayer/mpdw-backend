@@ -513,6 +513,57 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/catalogo/escaparates/:
+    get:
+      operationId: catalogo_escaparates_retrieve
+      tags:
+      - catalogo-escaparates
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: catalogo_escaparates_create
+      tags:
+      - catalogo-escaparates
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/escaparates/{id}/:
+    patch:
+      operationId: catalogo_escaparates_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - catalogo-escaparates
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/escaparates/{id}/productos/:
+    post:
+      operationId: catalogo_escaparates_productos_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - catalogo-escaparates
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/catalogo/media/{ruta}/:
     get:
       operationId: catalogo_media_retrieve
@@ -698,6 +749,21 @@ paths:
       - jwtAuth: []
       responses:
         '200':
+          description: No response body
+    delete:
+      operationId: catalogo_productos_imagen_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
           description: No response body
   /api/v1/catalogo/productos/exportar/:
     get:
@@ -1769,6 +1835,16 @@ paths:
   /api/v1/tienda/catalogo/:
     get:
       operationId: tienda_catalogo
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tienda/escaparates/:
+    get:
+      operationId: tienda_escaparates
       tags:
       - tienda-publica
       security:

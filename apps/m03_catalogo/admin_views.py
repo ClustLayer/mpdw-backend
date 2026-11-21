@@ -168,6 +168,13 @@ class CatalogoImagenView(APIView):
         except (ReglaNegocioError, DominioError) as exc:
             return _err(exc, request)
 
+    def delete(self, request: Request, pk: int) -> Response:
+        try:
+            _svc().quitar_imagen(pk)
+            return Response({"imagen_url": "", "mensaje": "Imagen eliminada."})
+        except (ReglaNegocioError, DominioError) as exc:
+            return _err(exc, request)
+
 
 class CatalogoParametrosView(APIView):
     permission_classes = [IsAuthenticated, HasDynamicPermission]

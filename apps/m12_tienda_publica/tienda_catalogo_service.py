@@ -8,7 +8,13 @@ from typing import Any
 from django.db.models import Q, Sum
 from django.db.models.functions import Coalesce
 
-from apps.m03_catalogo.models import Categorias_producto, Marcas, Productos, Tipos_producto
+from apps.m03_catalogo.models import (
+    Categorias_producto,
+    Marcas,
+    Productos,
+    Productos_colores,
+    Tipos_producto,
+)
 from apps.m04_inventario.models import Inventarios
 from apps.m12_tienda_publica import mensajes as msg
 from apps.m12_tienda_publica.slug_util import parse_id_producto, ruta_producto, slugify_nombre
@@ -51,6 +57,15 @@ def _disponible(prod: Productos, id_sede: int | None) -> bool:
     return _stock_disponible(prod.id_producto, id_sede) > 0
 
 
+def _colores_producto(pid: int) -> list[dict[str, str]]:
+    return [
+        {"name": row.id_color.nombre, "hex": row.id_color.hex}
+        for row in Productos_colores.objects.filter(id_producto_id=pid, id_color__estado=True)
+        .select_related("id_color")
+        .order_by("id_color__nombre")
+    ]
+
+
 def _imagen_url(prod: Productos) -> str:
     url = (prod.imagen_url or "").strip()
     if not url:
@@ -76,6 +91,7 @@ def _serializar_corto(prod: Productos, id_sede: int | None) -> dict[str, Any]:
         "agotado": not disp,
         "imagen_url": _imagen_url(prod),
         "imagen_alt": prod.nombre,
+        "colores": _colores_producto(prod.id_producto),
     }
 
 

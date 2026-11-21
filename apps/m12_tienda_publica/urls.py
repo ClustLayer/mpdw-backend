@@ -3,6 +3,7 @@ from django.urls import path
 from apps.m12_tienda_publica.views import (
     TiendaCatalogoView,
     TiendaContactoWhatsappView,
+    TiendaEscaparatesView,
     TiendaFiltrosView,
     TiendaPrepararPedidoView,
     TiendaProductoDetalleView,
@@ -11,6 +12,7 @@ from apps.m12_tienda_publica.views import (
 )
 
 urlpatterns = [
+    path("escaparates/", TiendaEscaparatesView.as_view(), name="tienda-escaparates"),
     path("filtros/", TiendaFiltrosView.as_view(), name="tienda-filtros"),
     path("catalogo/", TiendaCatalogoView.as_view(), name="tienda-catalogo"),
     path("productos/<slug:slug>/", TiendaProductoDetalleView.as_view(), name="tienda-producto"),

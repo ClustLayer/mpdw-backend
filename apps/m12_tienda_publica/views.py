@@ -9,6 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.m12_tienda_publica.escaparate_service import EscaparateService
 from apps.m12_tienda_publica.tienda_catalogo_service import TiendaCatalogoService
 from apps.m12_tienda_publica.tienda_pedido_service import TiendaPedidoService
 from contratos.excepciones import ReglaNegocioError
@@ -145,6 +146,16 @@ class TiendaContactoWhatsappView(APIView):
             from apps.m12_tienda_publica import mensajes as msg
 
             return Response({"mensaje": msg.MSG_WHATSAPP_FALLA}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+class TiendaEscaparatesView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    @extend_schema(operation_id="tienda_escaparates", tags=["tienda-publica"])
+    def get(self, request: Request) -> Response:
+        id_sede = _int_q(request, "id_sede", 0) or None
+        return Response(EscaparateService().listar_publico(id_sede))
 
 
 class TiendaPrepararPedidoView(APIView):

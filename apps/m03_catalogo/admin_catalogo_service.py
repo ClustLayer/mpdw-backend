@@ -505,6 +505,9 @@ class AdminCatalogoService:
         Productos.objects.filter(pk=id_producto).update(imagen_url=rel)
         return rel
 
+    def quitar_imagen(self, id_producto: int) -> None:
+        Productos.objects.filter(pk=id_producto).update(imagen_url="")
+
     def catalogos_activos(self) -> dict[str, Any]:
         clave = "catalogos:activos"
         if not getattr(settings, "TESTING", False):

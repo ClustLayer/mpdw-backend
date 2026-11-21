@@ -31,21 +31,36 @@ def _inventario_resumen() -> dict[str, Any]:
         .values("id_producto")
         .annotate(total=Coalesce(Sum("cantidad_actual"), Decimal("0")))
     }
+    filas: list[tuple[Decimal, Productos]] = []
     bajo = 0
-    alertas: list[str] = []
-    for p in qs.order_by("nombre")[:500]:
+    for p in qs:
         total = existencias.get(p.id_producto, Decimal("0"))
         if total == 0 or total <= p.stock_minimo:
             bajo += 1
-            if len(alertas) < 10:
-                nivel = "agotado" if total == 0 else "bajo mínimo"
-                alertas.append(f"{p.codigo_producto} — {p.nombre}: stock {nivel}")
-    return {"bajo_stock_minimo": bajo, "alertas": alertas}
+            filas.append((total, p))
+    filas.sort(key=lambda x: (x[0], x[1].nombre.lower()))
+    productos_bajo: list[dict[str, Any]] = []
+    alertas: list[str] = []
+    for total, p in filas[:5]:
+        nivel = "agotado" if total == 0 else "bajo mínimo"
+        etiqueta = f"{p.codigo_producto} — {p.nombre}: stock {nivel}"
+        alertas.append(etiqueta)
+        productos_bajo.append(
+            {
+                "id_producto": p.id_producto,
+                "codigo": p.codigo_producto,
+                "nombre": p.nombre,
+                "stock_total": float(total),
+                "stock_minimo": int(p.stock_minimo),
+                "nivel": nivel,
+            }
+        )
+    return {"bajo_stock_minimo": bajo, "alertas": alertas, "productos_bajo_stock": productos_bajo}
 
 
 def _actividad_reciente() -> list[dict[str, Any]]:
     pagina = BitacoraAuditoriaService().listar({"page": "1", "page_size": "5"})
-    return pagina.items[:5]
+    return list(pagina.items[:5])
 
 
 def _ventas_hoy(ctx: AuthContext, perm: PermissionService) -> dict[str, Any]:

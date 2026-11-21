@@ -1,5 +1,6 @@
 """Sprint 2 — diez mejoras (catálogo, clientes, panel, eventos)."""
 
+from decimal import Decimal
 from io import BytesIO
 from unittest.mock import MagicMock
 
@@ -11,11 +12,9 @@ from rest_framework.test import APIClient
 from apps.m01_identidad.models import Roles, Usuarios
 from apps.m01_identidad.panel_resumen_service import construir_panel_resumen
 from apps.m01_identidad.services import AuthService
+from apps.m02_sedes.models import Sedes
 from apps.m03_catalogo.admin_catalogo_service import AdminCatalogoService
 from apps.m03_catalogo.mensajes import MSG_TIPO_BASE
-from decimal import Decimal
-
-from apps.m02_sedes.models import Sedes
 from apps.m03_catalogo.models import Categorias_producto, Marcas, Productos, Tipos_producto
 from apps.m04_inventario.models import Inventarios
 from apps.m05_clientes.admin_clientes_service import AdminClientesService
@@ -162,6 +161,7 @@ def test_panel_resumen_alertas_inventario(ctx, params):
     out = construir_panel_resumen(ctx)
     assert out["inventario"]["bajo_stock_minimo"] >= 1
     assert any("ALERT-S2" in a for a in out["inventario"]["alertas"])
+    assert out["inventario"]["productos_bajo_stock"][0]["codigo"] == "ALERT-S2"
 
 
 @pytest.mark.unit

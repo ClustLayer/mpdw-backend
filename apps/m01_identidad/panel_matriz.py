@@ -14,6 +14,7 @@ PANEL_MATRIZ_ORDEN: list[tuple[str, str, str]] = [
     ("categorias", "catalogo_productos", "Categorías de producto"),
     ("marcas", "catalogo_productos", "Marcas"),
     ("tipos_producto", "catalogo_productos", "Tipos de producto"),
+    ("vitrinas", "catalogo_productos", "Vitrinas del inicio"),
     ("inventario", "inventario_kardex", "Inventario"),
     ("clientes", "clientes", "Clientes"),
     ("proveedores", "proveedores", "Proveedores"),

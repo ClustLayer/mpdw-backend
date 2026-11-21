@@ -23,3 +23,36 @@ class Pedidos_web(models.Model):
 
     class Meta:
         db_table = "Pedidos_web"
+
+
+class Escaparate_seccion(models.Model):
+    """Secciones visuales del inicio (carruseles del sitio público)."""
+
+    id_escaparate = models.BigAutoField(primary_key=True, db_column="id_escaparate")
+    clave = models.SlugField(max_length=80, unique=True, db_column="clave")
+    frase = models.CharField(max_length=160, db_column="frase")
+    titulo = models.CharField(max_length=160, db_column="titulo")
+    enlace_catalogo = models.CharField(max_length=255, default="/catalogo", db_column="enlace_catalogo")
+    color_acento = models.CharField(max_length=16, default="#E11D74", db_column="color_acento")
+    orden = models.PositiveIntegerField(default=0, db_column="orden")
+    estado = models.BooleanField(default=True, db_column="estado")
+    version_fila = models.PositiveIntegerField(default=1, db_column="version_fila")
+
+    class Meta:
+        db_table = "Escaparate_seccion"
+        ordering = ["orden", "titulo"]
+
+
+class Escaparate_producto(models.Model):
+    id_escaparate_producto = models.BigAutoField(primary_key=True, db_column="id_escaparate_producto")
+    id_escaparate = models.ForeignKey(
+        Escaparate_seccion, on_delete=models.CASCADE, db_column="id_escaparate", related_name="productos"
+    )
+    id_producto = models.ForeignKey("m03_catalogo.Productos", on_delete=models.CASCADE, db_column="id_producto")
+    orden = models.PositiveIntegerField(default=0, db_column="orden")
+
+    class Meta:
+        db_table = "Escaparate_producto"
+        constraints = [
+            models.UniqueConstraint(fields=["id_escaparate", "id_producto"], name="uq_escaparate_producto")
+        ]

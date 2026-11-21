@@ -24,6 +24,59 @@ E164_RE = re.compile(r"^\+[1-9]\d{7,14}$")
 MAX_CANTIDAD = 99
 
 
+def _cop_whatsapp(val: Decimal) -> str:
+    entero = int(val.quantize(Decimal("1")))
+    return f"${entero:,}".replace(",", ".")
+
+
+def _telefono_legible(e164: str) -> str:
+    digits = re.sub(r"\D", "", e164)
+    if digits.startswith("57") and len(digits) >= 12:
+        resto = digits[2:]
+        if len(resto) >= 10:
+            return f"+57 {resto[:3]} {resto[3:6]} {resto[6:10]}"
+    return e164
+
+
+def formatear_texto_pedido_whatsapp(
+    sede_nombre: str,
+    nombre: str,
+    telefono: str,
+    direccion: str,
+    observaciones: str,
+    lineas: list[dict[str, Any]],
+    total: Decimal,
+) -> str:
+    unidades = sum(int(ln["cantidad"]) for ln in lineas)
+    obs = observaciones.strip() or "Ninguna"
+    partes = [
+        f"PEDIDO WEB — {sede_nombre.upper()}",
+        "",
+        "*DATOS DEL CLIENTE*",
+        f"Cliente: {nombre}",
+        f"Teléfono: {_telefono_legible(telefono)}",
+    ]
+    if direccion.strip():
+        partes.append(f"Dirección: {direccion.strip()}")
+    partes.extend(["Observaciones: " + obs, "----------------------------", "", "*DETALLE DEL PEDIDO*", ""])
+    for ln in lineas:
+        sub = Decimal(str(ln["subtotal"]))
+        partes.append(
+            f"{ln['cantidad']} × {ln['nombre']} ({ln['codigo_producto']}) — {_cop_whatsapp(sub)}"
+        )
+    partes.extend(
+        [
+            "",
+            "----------------------------",
+            "",
+            "*RESUMEN DEL PEDIDO*",
+            f"Unidades: {unidades}",
+            f"*TOTAL: {_cop_whatsapp(total)}*",
+        ]
+    )
+    return "\n".join(partes)
+
+
 def _stock(id_producto: int, id_sede: int | None) -> Decimal:
     qs = Inventarios.objects.filter(id_producto_id=id_producto)
     if id_sede:
@@ -170,22 +223,9 @@ class TiendaPedidoService:
         lineas = validado["items"]
         total = Decimal(validado["total"])
 
-        cuerpo = [
-            f"Pedido web — {sede.nombre}",
-            f"Cliente: {nombre}",
-            f"Tel: {telefono}",
-        ]
         dir_ent = (datos.get("direccion_entrega") or "").strip()
         obs = (datos.get("observaciones") or "").strip()
-        if dir_ent:
-            cuerpo.append(f"Dirección: {dir_ent}")
-        if obs:
-            cuerpo.append(f"Notas: {obs}")
-        cuerpo.append("—")
-        for ln in lineas:
-            cuerpo.append(f"{ln['cantidad']}× {ln['nombre']} ({ln['codigo_producto']}) = ${ln['subtotal']}")
-        cuerpo.append(f"Total: ${total}")
-        texto = "\n".join(cuerpo)
+        texto = formatear_texto_pedido_whatsapp(sede.nombre, nombre, telefono, dir_ent, obs, lineas, total)
 
         digits = re.sub(r"\D", "", wa)
         url = f"https://wa.me/{digits}?text={quote(texto)}"

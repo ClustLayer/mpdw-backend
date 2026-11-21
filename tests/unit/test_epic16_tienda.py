@@ -10,7 +10,10 @@ from apps.m04_inventario.models import Inventarios
 from apps.m12_tienda_publica import mensajes as msg
 from apps.m12_tienda_publica.slug_util import parse_id_producto, ruta_producto, slugify_nombre
 from apps.m12_tienda_publica.tienda_catalogo_service import TiendaCatalogoService
-from apps.m12_tienda_publica.tienda_pedido_service import TiendaPedidoService
+from apps.m12_tienda_publica.tienda_pedido_service import (
+    TiendaPedidoService,
+    formatear_texto_pedido_whatsapp,
+)
 from contratos.excepciones import ReglaNegocioError
 
 
@@ -295,3 +298,176 @@ def test_validar_tope_99_unidades(db):
     out = TiendaPedidoService().validar_carrito(None, [{"id_producto": p.id_producto, "cantidad": 120}])
     assert out["hubo_cambios"] is True
     assert out["items"][0]["cantidad"] == 99
+
+
+@pytest.mark.unit
+def test_telefono_legible_corto():
+    from apps.m12_tienda_publica.tienda_pedido_service import _telefono_legible
+
+    assert _telefono_legible("+12345678") == "+12345678"
+
+
+def test_formato_pedido_sin_direccion():
+    texto = formatear_texto_pedido_whatsapp(
+        "Cali",
+        "Cliente",
+        "+573001112233",
+        "",
+        "",
+        [{"cantidad": 1, "nombre": "P", "codigo_producto": "C1", "subtotal": "1000"}],
+        Decimal("1000"),
+    )
+    assert "Dirección:" not in texto
+    assert "Observaciones: Ninguna" in texto
+
+
+def test_formato_pedido_whatsapp():
+    from decimal import Decimal
+
+    texto = formatear_texto_pedido_whatsapp(
+        "Cali Centro",
+        "Adolfo Quiceno",
+        "+573186111159",
+        "Calle 15",
+        "LLeguen",
+        [{"cantidad": 2, "nombre": "Vinilo", "codigo_producto": "VIN1", "subtotal": "160000"}],
+        Decimal("160000"),
+    )
+    assert "PEDIDO WEB — CALI CENTRO" in texto
+    assert "*TOTAL:" in texto
+    assert "Teléfono:" in texto
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_escaparate_crud_minimo(db):
+    from apps.m12_tienda_publica.escaparate_service import EscaparateService
+    from apps.m12_tienda_publica.models import Escaparate_seccion
+
+    svc = EscaparateService()
+    out = svc.crear({"clave": "demo", "frase": "Kicker", "titulo": "Título", "color_acento": "#111"})
+    pk = out["escaparate"]["id_escaparate"]
+    assert Escaparate_seccion.objects.filter(pk=pk).exists()
+    assert svc.listar_admin()["items"][0]["clave"] == "demo"
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_asignar_productos_escaparate_y_publico(db):
+    from apps.m12_tienda_publica.escaparate_service import EscaparateService
+
+    tipo, _ = Tipos_producto.objects.get_or_create(nombre="Insumo", defaults={"es_base": True, "estado": True})
+    p = Productos.objects.create(
+        codigo_producto="ESC-1",
+        nombre="En vitrina",
+        precio_venta=Decimal("1000"),
+        inventario_habilitado=False,
+        estado=True,
+        id_tipo_producto=tipo,
+    )
+    svc = EscaparateService()
+    pk = svc.crear({"clave": "pub", "frase": "F", "titulo": "T"})["escaparate"]["id_escaparate"]
+    svc.asignar_productos(pk, [p.id_producto])
+    pub = svc.listar_publico()["items"]
+    assert pub and pub[0]["productos"][0]["id_producto"] == p.id_producto
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_catalogo_incluye_colores(db):
+    from apps.m03_catalogo.models import Colores_catalogo, Productos_colores
+
+    tipo, _ = Tipos_producto.objects.get_or_create(nombre="Insumo", defaults={"es_base": True, "estado": True})
+    color = Colores_catalogo.objects.create(nombre="TestR", hex="#112233", es_predefinido=True, estado=True)
+    p = Productos.objects.create(
+        codigo_producto="COL-1",
+        nombre="Vinilo demo",
+        precio_venta=Decimal("5000"),
+        inventario_habilitado=False,
+        estado=True,
+        id_tipo_producto=tipo,
+    )
+    Productos_colores.objects.create(id_producto=p, id_color=color)
+    item = TiendaCatalogoService().listar(None, None, None, None, None, None, None, 1, 12, None)["items"][0]
+    assert item["colores"] == [{"name": "TestR", "hex": "#112233"}]
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_api_escaparates(db):
+    from rest_framework.test import APIClient
+
+    from tests.unit.test_epic3_roles_views import _cliente_admin
+
+    assert APIClient().get("/api/v1/tienda/escaparates/").status_code == 200
+    admin = _cliente_admin(db)
+    assert admin.get("/api/v1/catalogo/escaparates/").status_code == 200
+    c = admin.post(
+        "/api/v1/catalogo/escaparates/",
+        {"clave": "api-test", "frase": "K", "titulo": "API", "color_acento": "#000"},
+        format="json",
+    )
+    assert c.status_code == 201
+    pk = c.json()["escaparate"]["id_escaparate"]
+    tipo, _ = Tipos_producto.objects.get_or_create(nombre="Insumo", defaults={"es_base": True, "estado": True})
+    prod = Productos.objects.create(
+        codigo_producto="ESC-API",
+        nombre="API",
+        precio_venta=Decimal("1"),
+        inventario_habilitado=False,
+        estado=True,
+        id_tipo_producto=tipo,
+    )
+    p = admin.patch(f"/api/v1/catalogo/escaparates/{pk}/", {"titulo": "Nuevo", "version_fila": 1}, format="json")
+    assert p.status_code == 200
+    a = admin.post(f"/api/v1/catalogo/escaparates/{pk}/productos/", {"ids_producto": [prod.id_producto]}, format="json")
+    assert a.status_code == 200
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_delete_imagen_producto_api(db):
+    from rest_framework.test import APIClient
+
+    from tests.unit.test_epic3_roles_views import _cliente_admin
+
+    tipo, _ = Tipos_producto.objects.get_or_create(nombre="Insumo", defaults={"es_base": True, "estado": True})
+    p = Productos.objects.create(
+        codigo_producto="IMG-DEL",
+        nombre="Con foto",
+        precio_venta=Decimal("1"),
+        inventario_habilitado=False,
+        estado=True,
+        id_tipo_producto=tipo,
+        imagen_url="productos/t.webp",
+    )
+    admin = _cliente_admin(db)
+    r = admin.delete(f"/api/v1/catalogo/productos/{p.id_producto}/imagen/")
+    assert r.status_code == 200
+    p.refresh_from_db()
+    assert p.imagen_url == ""
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_escaparate_actualizar_conflict(db):
+    from apps.m12_tienda_publica.escaparate_service import EscaparateService
+
+    svc = EscaparateService()
+    pk = svc.crear({"clave": "conf", "frase": "F", "titulo": "T"})["escaparate"]["id_escaparate"]
+    svc.actualizar(pk, {"titulo": "T2", "version_fila": 1})
+    with pytest.raises(ReglaNegocioError) as exc:
+        svc.actualizar(pk, {"titulo": "T3", "version_fila": 1})
+    assert exc.value.codigo == "CONFLICTO"
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_escaparate_dup_clave(db):
+    from apps.m12_tienda_publica.escaparate_service import EscaparateService
+
+    svc = EscaparateService()
+    svc.crear({"clave": "dup", "frase": "A", "titulo": "A"})
+    with pytest.raises(ReglaNegocioError) as exc:
+        svc.crear({"clave": "dup", "frase": "B", "titulo": "B"})
+    assert exc.value.codigo == "DUPLICADO"
