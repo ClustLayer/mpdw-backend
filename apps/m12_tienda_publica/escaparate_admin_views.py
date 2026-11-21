@@ -43,7 +43,8 @@ class EscaparateAdminListView(APIView):
     @extend_schema(tags=["catalogo-escaparates"])
     def post(self, request: Request) -> Response:
         try:
-            return Response(EscaparateService().crear(request.data), status=201)
+            cuerpo = request.data if isinstance(request.data, dict) else {}
+            return Response(EscaparateService().crear(cuerpo), status=201)
         except ReglaNegocioError as exc:
             return _err(exc)
 
@@ -55,7 +56,8 @@ class EscaparateAdminDetailView(APIView):
     @extend_schema(tags=["catalogo-escaparates"])
     def patch(self, request: Request, pk: int) -> Response:
         try:
-            return Response(EscaparateService().actualizar(pk, request.data))
+            cuerpo = request.data if isinstance(request.data, dict) else {}
+            return Response(EscaparateService().actualizar(pk, cuerpo))
         except ReglaNegocioError as exc:
             return _err(exc)
 

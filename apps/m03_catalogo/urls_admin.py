@@ -3,6 +3,7 @@ from django.urls import path
 from apps.m03_catalogo.admin_views import (
     CatalogoImagenView,
     CatalogoParametrosView,
+    ColoresCatalogoView,
     ExportarProductosView,
     HistorialPreciosView,
     ImportarProductosView,
@@ -20,6 +21,7 @@ from apps.m12_tienda_publica.escaparate_admin_views import (
 )
 
 urlpatterns = [
+    path("colores/", ColoresCatalogoView.as_view(), name="catalogo-colores"),
     path("productos/", ProductoAdminListCreateView.as_view(), name="catalogo-productos"),
     path("productos/exportar/", ExportarProductosView.as_view(), name="catalogo-exportar"),
     path("productos/importar/", ImportarProductosView.as_view(), name="catalogo-importar"),

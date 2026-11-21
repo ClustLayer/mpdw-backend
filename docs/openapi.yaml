@@ -513,6 +513,25 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/catalogo/colores/:
+    get:
+      operationId: catalogo_colores_list
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: catalogo_colores_create
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/catalogo/escaparates/:
     get:
       operationId: catalogo_escaparates_retrieve

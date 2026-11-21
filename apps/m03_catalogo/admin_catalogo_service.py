@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import io
 import logging
+import re
 import uuid
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -63,9 +64,11 @@ from apps.m03_catalogo.mensajes import (
 )
 from apps.m03_catalogo.models import (
     Categorias_producto,
+    Colores_catalogo,
     Historial_precios,
     Marcas,
     Productos,
+    Productos_colores,
     Tipos_producto,
 )
 from apps.m04_inventario.models import Inventarios
@@ -259,6 +262,11 @@ class AdminCatalogoService:
     def detalle(self, id_producto: int) -> dict[str, Any]:
         p = Productos.objects.select_related("id_categoria", "id_marca", "id_tipo_producto").get(pk=id_producto)
         data = _snap(p)
+        filas = (
+            Productos_colores.objects.filter(id_producto_id=id_producto, id_color__estado=True)
+            .select_related("id_color")
+            .order_by("id_color__nombre")
+        )
         data.update(
             {
                 "descripcion": p.descripcion,
@@ -269,9 +277,59 @@ class AdminCatalogoService:
                 "stock_minimo": p.stock_minimo,
                 "inventario_habilitado": p.inventario_habilitado,
                 "imagen_url": p.imagen_url,
+                "colores": [{"id_color": f.id_color_id, "nombre": f.id_color.nombre, "hex": f.id_color.hex} for f in filas],
+                "ids_colores": [f.id_color_id for f in filas],
             }
         )
         return data
+
+    def listar_colores(self) -> list[dict[str, Any]]:
+        return [
+            {"id_color": row["id_color"], "nombre": row["nombre"], "hex": row["hex"]}
+            for row in Colores_catalogo.objects.filter(estado=True).order_by("nombre").values("id_color", "nombre", "hex")
+        ]
+
+    def crear_color(self, ctx: AuthContext, datos: dict[str, Any]) -> dict[str, Any]:
+        nombre = str(datos.get("nombre") or "").strip()
+        hex_val = str(datos.get("hex") or "").strip().upper()
+        if not nombre or len(nombre) > 80:
+            raise ReglaNegocioError(MSG_NOMBRE_OBL, codigo="COLOR_NOMBRE")
+        if not re.fullmatch(r"#[0-9A-F]{6}", hex_val):
+            raise ReglaNegocioError(MSG_RANGO_INVALIDO, codigo="COLOR_HEX")
+        dup = Colores_catalogo.objects.filter(nombre__iexact=nombre).first()
+        if dup:
+            if dup.hex.upper() != hex_val:
+                raise ReglaNegocioError(MSG_NOMBRE_DUP, codigo="COLOR_DUP")
+            return {"id_color": dup.id_color, "nombre": dup.nombre, "hex": dup.hex}
+        color = Colores_catalogo.objects.create(nombre=nombre, hex=hex_val, es_predefinido=False, estado=True)
+        _audit(ctx, "CREAR_COLOR", "Colores_catalogo", color.id_color, None, {"nombre": nombre, "hex": hex_val})
+        return {"id_color": color.id_color, "nombre": color.nombre, "hex": color.hex}
+
+    def _ids_colores_de(self, datos: dict[str, Any]) -> list[int] | None:
+        if "ids_colores" not in datos:
+            return None
+        raw = datos.get("ids_colores")
+        if not isinstance(raw, list):
+            raise ReglaNegocioError(MSG_RANGO_INVALIDO, codigo="COLORES_INVALIDO")
+        out: list[int] = []
+        for item in raw:
+            try:
+                out.append(int(item))
+            except (TypeError, ValueError):
+                raise ReglaNegocioError(MSG_RANGO_INVALIDO, codigo="COLORES_INVALIDO") from None
+        return out
+
+    def _sync_colores(self, id_producto: int, ids: list[int]) -> None:
+        unicos = list(dict.fromkeys(ids))
+        if not unicos:
+            Productos_colores.objects.filter(id_producto_id=id_producto).delete()
+            return
+        validos = set(Colores_catalogo.objects.filter(pk__in=unicos, estado=True).values_list("pk", flat=True))
+        if len(validos) != len(unicos):
+            raise ReglaNegocioError(MSG_PARAMETRO_INACTIVO, codigo="COLOR_INACTIVO")
+        Productos_colores.objects.filter(id_producto_id=id_producto).exclude(id_color_id__in=validos).delete()
+        for cid in unicos:
+            Productos_colores.objects.get_or_create(id_producto_id=id_producto, id_color_id=cid)
 
     def _validar_comun(self, datos: dict[str, Any], propio: int | None = None) -> dict[str, Any]:
         codigo = str(datos.get("codigo_producto") or "").strip()
@@ -368,6 +426,9 @@ class AdminCatalogoService:
                         ignore_conflicts=True,
                     )
                 _audit(ctx, "CREAR_PRODUCTO", "Productos", producto.id_producto, None, _snap(producto))
+                ids_col = self._ids_colores_de(datos)
+                if ids_col is not None:
+                    self._sync_colores(producto.id_producto, ids_col)
             body = self.detalle(producto.id_producto)
             body["advertencia_precio"] = aviso
             return body, MSG_CREADO
@@ -419,6 +480,9 @@ class AdminCatalogoService:
                         id_usuario_id=_usuario_id(ctx),
                     )
                     mensaje = MSG_ACTUALIZADO_PRECIO
+                ids_col = self._ids_colores_de(datos)
+                if ids_col is not None:
+                    self._sync_colores(producto.id_producto, ids_col)
                 _audit(ctx, "EDITAR_PRODUCTO", "Productos", producto.id_producto, antes, _snap(producto))
             return self.detalle(producto.id_producto), mensaje
         except (ReglaNegocioError, Productos.DoesNotExist):

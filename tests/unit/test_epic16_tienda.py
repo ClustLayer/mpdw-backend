@@ -5,7 +5,13 @@ from decimal import Decimal
 import pytest
 
 from apps.m02_sedes.models import Sedes
-from apps.m03_catalogo.models import Categorias_producto, Marcas, Productos, Tipos_producto
+from apps.m03_catalogo.models import (
+    Categorias_producto,
+    Colores_catalogo,
+    Marcas,
+    Productos,
+    Tipos_producto,
+)
 from apps.m04_inventario.models import Inventarios
 from apps.m12_tienda_publica import mensajes as msg
 from apps.m12_tienda_publica.slug_util import parse_id_producto, ruta_producto, slugify_nombre
@@ -348,7 +354,8 @@ def test_escaparate_crud_minimo(db):
     out = svc.crear({"clave": "demo", "frase": "Kicker", "titulo": "Título", "color_acento": "#111"})
     pk = out["escaparate"]["id_escaparate"]
     assert Escaparate_seccion.objects.filter(pk=pk).exists()
-    assert svc.listar_admin()["items"][0]["clave"] == "demo"
+    por_clave = {row["clave"]: row for row in svc.listar_admin()["items"]}
+    assert por_clave["demo"]["titulo"] == "Título"
 
 
 @pytest.mark.unit
@@ -427,8 +434,6 @@ def test_api_escaparates(db):
 @pytest.mark.unit
 @pytest.mark.django_db
 def test_delete_imagen_producto_api(db):
-    from rest_framework.test import APIClient
-
     from tests.unit.test_epic3_roles_views import _cliente_admin
 
     tipo, _ = Tipos_producto.objects.get_or_create(nombre="Insumo", defaults={"es_base": True, "estado": True})
@@ -471,3 +476,67 @@ def test_escaparate_dup_clave(db):
     with pytest.raises(ReglaNegocioError) as exc:
         svc.crear({"clave": "dup", "frase": "B", "titulo": "B"})
     assert exc.value.codigo == "DUPLICADO"
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_api_colores_producto(db):
+    from tests.unit.test_epic3_roles_views import _cliente_admin
+
+    admin = _cliente_admin(db)
+    assert admin.get("/api/v1/catalogo/colores/").status_code == 200
+    c = admin.post("/api/v1/catalogo/colores/", {"nombre": "Azul cielo", "hex": "#AABBCC"}, format="json")
+    assert c.status_code == 201
+    id_color = c.json()["color"]["id_color"]
+    tipo, _ = Tipos_producto.objects.get_or_create(nombre="Insumo", defaults={"es_base": True, "estado": True})
+    cat = Categorias_producto.objects.filter(estado=True).first()
+    marca = Marcas.objects.filter(estado=True).first()
+    if not cat:
+        cat = Categorias_producto.objects.create(nombre="Cat", estado=True)
+    if not marca:
+        marca = Marcas.objects.create(nombre="Mar", estado=True)
+    body = {
+        "codigo_producto": "CLR-1",
+        "nombre": "Vinilo color",
+        "id_categoria": cat.id_categoria,
+        "id_marca": marca.id_marca,
+        "id_tipo_producto": tipo.id_tipo_producto,
+        "unidad_medida": "UND",
+        "precio_compra": "1000",
+        "precio_venta": "2000",
+        "iva_porcentaje": "19",
+        "stock_minimo": 0,
+        "ids_colores": [id_color],
+    }
+    r = admin.post("/api/v1/catalogo/productos/", body, format="json")
+    assert r.status_code == 201
+    pid = r.json()["producto"]["id_producto"]
+    d = admin.get(f"/api/v1/catalogo/productos/{pid}/")
+    assert d.status_code == 200
+    assert d.json()["ids_colores"] == [id_color]
+    pre = Colores_catalogo.objects.filter(es_predefinido=True).first()
+    if pre:
+        p2 = admin.patch(f"/api/v1/catalogo/productos/{pid}/", {"version_fila": 1, **body, "ids_colores": [id_color, pre.id_color]}, format="json")
+        assert p2.status_code == 200
+        assert len(p2.json()["producto"]["ids_colores"]) == 2
+        p3 = admin.patch(f"/api/v1/catalogo/productos/{pid}/", {"version_fila": 2, **body, "ids_colores": []}, format="json")
+        assert p3.status_code == 200
+        assert p3.json()["producto"]["ids_colores"] == []
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_api_colores_hex_invalido(db):
+    from tests.unit.test_epic3_roles_views import _cliente_admin
+
+    admin = _cliente_admin(db)
+    r = admin.post("/api/v1/catalogo/colores/", {"nombre": "Mal", "hex": "rojo"}, format="json")
+    assert r.status_code == 400
+    ok = admin.post("/api/v1/catalogo/colores/", {"nombre": "Índigo", "hex": "#334455"}, format="json")
+    assert ok.status_code == 201
+    id1 = ok.json()["color"]["id_color"]
+    dup = admin.post("/api/v1/catalogo/colores/", {"nombre": "Índigo", "hex": "#334455"}, format="json")
+    assert dup.status_code == 201
+    assert dup.json()["color"]["id_color"] == id1
+    clash = admin.post("/api/v1/catalogo/colores/", {"nombre": "Índigo", "hex": "#111111"}, format="json")
+    assert clash.status_code == 400

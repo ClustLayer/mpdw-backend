@@ -11,4 +11,4 @@
 | S3-07 | Media | Como **administrador**, quiero **activar/desactivar cuentas bancarias** en el panel de caja, para controlar qué cuentas aparecen en el POS. |
 | S3-08 | Baja | Como **usuario del panel**, quiero **notificaciones unificadas** arriba a la derecha con cierre en ×, para no confundir avisos con el estilo antiguo. |
 
-**Backend:** tablas `Escaparate_seccion`, `Escaparate_producto`, `Colores_catalogo`, `Productos_colores`, `Cuentas_bancarias` (caja), endpoints `/api/v1/auth/panel-resumen`, `/api/v1/tienda/escaparates/`, `/api/v1/catalogo/escaparates/`.
+**Backend:** tablas `Escaparate_seccion`, `Escaparate_producto`, `Colores_catalogo`, `Productos_colores`, `Cuentas_bancarias` (caja), endpoints `/api/v1/auth/panel-resumen`, `/api/v1/tienda/escaparates/`, `/api/v1/catalogo/escaparates/`, `/api/v1/catalogo/colores/` y `ids_colores` en alta/edición de producto. Migración `0004_escaparate_demo_inicio` siembra cuatro vitrinas de referencia.
