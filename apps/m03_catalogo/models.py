@@ -110,6 +110,34 @@ class Productos(models.Model):
         return f"{self.codigo_producto} - {self.nombre} (v{self.version})"
 
 
+class Colores_catalogo(models.Model):
+    """Paleta de colores ofrecidos en productos (p. ej. vinilos)."""
+
+    id_color = models.BigAutoField(primary_key=True, db_column="id_color")
+    nombre = models.CharField(max_length=80, db_column="nombre")
+    hex = models.CharField(max_length=7, db_column="hex")
+    es_predefinido = models.BooleanField(default=False, db_column="es_predefinido")
+    estado = models.BooleanField(default=True, db_column="estado")
+    version_fila = models.PositiveIntegerField(default=1, db_column="version_fila")
+
+    class Meta:
+        db_table = "Colores_catalogo"
+        constraints = [models.UniqueConstraint(fields=["nombre"], name="uq_color_nombre")]
+
+    def __str__(self) -> str:
+        return self.nombre
+
+
+class Productos_colores(models.Model):
+    id_producto_color = models.BigAutoField(primary_key=True, db_column="id_producto_color")
+    id_producto = models.ForeignKey(Productos, on_delete=models.CASCADE, db_column="id_producto", related_name="colores_asignados")
+    id_color = models.ForeignKey(Colores_catalogo, on_delete=models.CASCADE, db_column="id_color", related_name="productos")
+
+    class Meta:
+        db_table = "Productos_colores"
+        constraints = [models.UniqueConstraint(fields=["id_producto", "id_color"], name="uq_producto_color")]
+
+
 class Historial_precios(models.Model):
     """Vigencia histórica e inmutable de precios de venta (SAD §8.1, RI-26)."""
 

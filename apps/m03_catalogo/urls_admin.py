@@ -3,6 +3,7 @@ from django.urls import path
 from apps.m03_catalogo.admin_views import (
     CatalogoImagenView,
     CatalogoParametrosView,
+    ColoresCatalogoView,
     ExportarProductosView,
     HistorialPreciosView,
     ImportarProductosView,
@@ -13,8 +14,14 @@ from apps.m03_catalogo.admin_views import (
     ProductoEstadoView,
     ProductoMediaView,
 )
+from apps.m12_tienda_publica.escaparate_admin_views import (
+    EscaparateAdminDetailView,
+    EscaparateAdminListView,
+    EscaparateProductosView,
+)
 
 urlpatterns = [
+    path("colores/", ColoresCatalogoView.as_view(), name="catalogo-colores"),
     path("productos/", ProductoAdminListCreateView.as_view(), name="catalogo-productos"),
     path("productos/exportar/", ExportarProductosView.as_view(), name="catalogo-exportar"),
     path("productos/importar/", ImportarProductosView.as_view(), name="catalogo-importar"),
@@ -26,4 +33,7 @@ urlpatterns = [
     path("parametros/<str:tipo>/", CatalogoParametrosView.as_view(), name="catalogo-parametros"),
     path("parametros/<str:tipo>/<int:pk>/", ParametroDetalleView.as_view(), name="catalogo-parametro"),
     path("media/<path:ruta>/", ProductoMediaView.as_view(), name="catalogo-media"),
+    path("escaparates/", EscaparateAdminListView.as_view(), name="catalogo-escaparates"),
+    path("escaparates/<int:pk>/", EscaparateAdminDetailView.as_view(), name="catalogo-escaparate"),
+    path("escaparates/<int:pk>/productos/", EscaparateProductosView.as_view(), name="catalogo-escaparate-productos"),
 ]

@@ -513,6 +513,76 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/catalogo/colores/:
+    get:
+      operationId: catalogo_colores_list
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: catalogo_colores_create
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/escaparates/:
+    get:
+      operationId: catalogo_escaparates_retrieve
+      tags:
+      - catalogo-escaparates
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: catalogo_escaparates_create
+      tags:
+      - catalogo-escaparates
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/escaparates/{id}/:
+    patch:
+      operationId: catalogo_escaparates_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - catalogo-escaparates
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/escaparates/{id}/productos/:
+    post:
+      operationId: catalogo_escaparates_productos_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - catalogo-escaparates
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/catalogo/media/{ruta}/:
     get:
       operationId: catalogo_media_retrieve
@@ -698,6 +768,21 @@ paths:
       - jwtAuth: []
       responses:
         '200':
+          description: No response body
+    delete:
+      operationId: catalogo_productos_imagen_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
           description: No response body
   /api/v1/catalogo/productos/exportar/:
     get:
@@ -1756,6 +1841,92 @@ paths:
               schema:
                 $ref: '#/components/schemas/MensajeResponse'
           description: ''
+  /api/v1/tienda/carrito/validar/:
+    post:
+      operationId: tienda_validar_carrito
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tienda/catalogo/:
+    get:
+      operationId: tienda_catalogo
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tienda/escaparates/:
+    get:
+      operationId: tienda_escaparates
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tienda/filtros/:
+    get:
+      operationId: tienda_filtros
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tienda/pedidos/preparar/:
+    post:
+      operationId: tienda_preparar_pedido
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tienda/productos/{slug}/:
+    get:
+      operationId: tienda_producto_detalle
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tienda/sedes/:
+    get:
+      operationId: tienda_sedes
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tienda/whatsapp/contacto/:
+    post:
+      operationId: tienda_contacto_whatsapp
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
   /api/v1/usuarios/:
     get:
       operationId: usuarios_admin_list

@@ -125,6 +125,8 @@ def _origen_confiable(request: Request) -> bool:
     candidato = origen or referer
     if not candidato:
         return True
+    if settings.DEBUG and ("localhost" in candidato or "127.0.0.1" in candidato):
+        return True
     permitidos = {settings.FRONTEND_URL.rstrip("/")}
     permitidos.update(o.rstrip("/") for o in getattr(settings, "CORS_ALLOWED_ORIGINS", []) if o)
     return any(candidato.startswith(base) for base in permitidos)

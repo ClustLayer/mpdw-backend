@@ -168,6 +168,13 @@ class CatalogoImagenView(APIView):
         except (ReglaNegocioError, DominioError) as exc:
             return _err(exc, request)
 
+    def delete(self, request: Request, pk: int) -> Response:
+        try:
+            _svc().quitar_imagen(pk)
+            return Response({"imagen_url": "", "mensaje": "Imagen eliminada."})
+        except (ReglaNegocioError, DominioError) as exc:
+            return _err(exc, request)
+
 
 class CatalogoParametrosView(APIView):
     permission_classes = [IsAuthenticated, HasDynamicPermission]
@@ -283,6 +290,25 @@ class ExportarProductosView(APIView):
             resp["Content-Disposition"] = f'attachment; filename="{nombre}"'
             resp["X-Mensaje"] = "Exportación generada correctamente."
             return resp
+        except (ReglaNegocioError, DominioError) as exc:
+            return _err(exc, request)
+
+
+class ColoresCatalogoView(APIView):
+    def get_permissions(self):
+        self.required_permission = PERM_CREAR if self.request.method == "POST" else PERM_VER
+        return [IsAuthenticated(), HasDynamicPermission()]
+
+    @extend_schema(operation_id="catalogo_colores_list")
+    def get(self, request: Request) -> Response:
+        return Response({"items": _svc().listar_colores()})
+
+    @extend_schema(operation_id="catalogo_colores_create")
+    def post(self, request: Request) -> Response:
+        try:
+            cuerpo = request.data if isinstance(request.data, dict) else {}
+            color = _svc().crear_color(_ctx(request), cuerpo)
+            return Response({"mensaje": "Color registrado.", "color": color}, status=201)
         except (ReglaNegocioError, DominioError) as exc:
             return _err(exc, request)
 

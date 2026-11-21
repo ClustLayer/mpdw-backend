@@ -553,13 +553,13 @@ def estadisticas_mes(
     if not svc._permisos.tiene_permiso(ctx, "facturas", "Total"):
         qs = qs.filter(id_usuario_id=ctx.id_usuario)
 
-    ventas = Decimal("0")
+    ventas_mes = Decimal("0")
+    ventas_dia = Decimal("0")
+    hoy_loc = timezone.localdate()
     for f in qs:
-        for d in f.detalles.all():
-            tipo = d.id_producto.id_tipo_producto
-            if tipo and not tipo.afecta_venta_diaria:
-                continue
-            ventas += Decimal(str(d.subtotal))
+        ventas_mes += Decimal(str(f.total))
+        if timezone.localtime(f.fecha_hora).date() == hoy_loc:
+            ventas_dia += Decimal(str(f.total))
 
     dev_qs = Devoluciones.objects.filter(fecha_hora__gte=inicio, fecha_hora__lte=fin)
     if id_sede:
@@ -571,6 +571,7 @@ def estadisticas_mes(
     return {
         "mes": mes_norm,
         "label": etiqueta,
-        "ventas": float(ventas.quantize(Decimal("0.01"))),
+        "ventas": float(ventas_mes.quantize(Decimal("0.01"))),
+        "ventas_dia": float(ventas_dia.quantize(Decimal("0.01"))),
         "devoluciones": float(Decimal(str(devoluciones)).quantize(Decimal("0.01"))),
     }
