@@ -43,8 +43,6 @@ class InventarioService(InventoryPort):
                     id_inventario=inv.id_inventario,
                     tipo_movimiento=TipoMovimientoInventario.ENTRADA,
                     cantidad=stock_dto.cantidad_inicial,
-                    cantidad_anterior=Decimal("0.00"),
-                    cantidad_nueva=stock_dto.cantidad_inicial,
                     motivo=motivo,
                 )
 

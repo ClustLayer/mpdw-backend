@@ -50,21 +50,10 @@ def _parse_dt(param: str | None, end_of_day: bool = False) -> datetime | None:
     return dt
 
 
-def _resumen_cambio(antes: dict[str, Any] | None, despues: dict[str, Any] | None) -> str:
-    """Texto breve para la tabla (CA 2.2)."""
-    if not antes and not despues:
-        return "—"
-    claves: set[str] = set()
-    if isinstance(antes, dict):
-        claves |= set(antes.keys())
-    if isinstance(despues, dict):
-        claves |= set(despues.keys())
-    if not claves:
-        return "Cambio registrado"
-    muestra = sorted(claves)[:4]
-    extra = len(claves) - len(muestra)
-    suf = f" (+{extra} más)" if extra > 0 else ""
-    return "Campos: " + ", ".join(muestra) + suf
+def _resumen_motivo(motivo: str) -> str:
+    """Texto breve para la tabla a partir del motivo."""
+    texto = (motivo or "").strip()
+    return texto[:120] if texto else "—"
 
 
 class BitacoraAuditoriaService:
@@ -190,9 +179,7 @@ def _fila(r: Auditoria) -> dict[str, Any]:
         "entidad": r.entidad,
         "id_entidad": r.id_entidad,
         "ip_origen": ip_val,
-        "resumen": _resumen_cambio(r.datos_antes, r.datos_despues),
-        "datos_anteriores": r.datos_antes,
-        "datos_nuevos": r.datos_despues,
+        "resumen": _resumen_motivo(r.motivo),
         "motivo": r.motivo,
         "resultado": r.resultado,
     }

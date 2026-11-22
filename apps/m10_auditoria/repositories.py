@@ -3,7 +3,6 @@
 # SAD Ref: M10, ADR-008
 # ==============================================================================
 from apps.m10_auditoria.models import Auditoria
-from apps.m10_auditoria.sanitize import sanitize_auditoria_payload
 from contratos.dtos import AuditoriaDTO
 
 
@@ -16,8 +15,6 @@ class AuditRepository:
             accion=str(dto.accion)[:50],
             entidad=str(dto.entidad)[:100],
             id_entidad=dto.id_entidad,
-            datos_antes=sanitize_auditoria_payload(dto.datos_antes),
-            datos_despues=sanitize_auditoria_payload(dto.datos_despues),
             motivo=(dto.motivo or "").strip() or "—",
             resultado=dto.resultado,
             id_correlacion=dto.id_correlacion,

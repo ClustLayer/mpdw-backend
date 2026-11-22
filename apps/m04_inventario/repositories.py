@@ -38,8 +38,6 @@ class MovimientoInventarioRepository:
         id_inventario: int,
         tipo_movimiento: str,
         cantidad: Decimal,
-        cantidad_anterior: Decimal,
-        cantidad_nueva: Decimal,
         motivo: str,
         id_usuario: int | None = None,
     ) -> Movimientos_inventario:
@@ -47,8 +45,6 @@ class MovimientoInventarioRepository:
             id_inventario_id=id_inventario,
             tipo_movimiento=tipo_movimiento,
             cantidad=cantidad,
-            cantidad_anterior=cantidad_anterior,
-            cantidad_nueva=cantidad_nueva,
             motivo=motivo,
             id_usuario_id=id_usuario,
         )

@@ -20,8 +20,6 @@ class Auditoria(models.Model):
     accion = models.CharField(max_length=50, db_column="accion")
     entidad = models.CharField(max_length=100, db_column="entidad")
     id_entidad = models.BigIntegerField(db_column="id_entidad")
-    datos_antes = models.JSONField(null=True, blank=True, db_column="datos_antes")
-    datos_despues = models.JSONField(null=True, blank=True, db_column="datos_despues")
     motivo = models.TextField(db_column="motivo")
     resultado = models.CharField(max_length=20, default="EXITO", db_column="resultado")
     id_correlacion = models.CharField(max_length=64, blank=True, default="", db_column="id_correlacion")

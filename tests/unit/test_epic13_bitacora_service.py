@@ -39,8 +39,6 @@ def test_una_fila_resumen():
         accion="LOGIN",
         entidad="Auth",
         id_entidad=1,
-        datos_antes=None,
-        datos_despues={"a": 1},
         motivo="LOGIN",
         ip="192.168.1.1",
     )
@@ -86,8 +84,6 @@ def test_resumen_sin_json():
         accion="X",
         entidad="Y",
         id_entidad=2,
-        datos_antes=None,
-        datos_despues=None,
         motivo="—",
         ip="::1",
     )
@@ -103,8 +99,6 @@ def test_parse_fecha_iso_con_z():
         accion="Z",
         entidad="E",
         id_entidad=1,
-        datos_antes=None,
-        datos_despues={"a": 1},
         motivo="—",
         ip="127.0.0.1",
     )
@@ -124,36 +118,17 @@ def test_fecha_invalida():
 
 @pytest.mark.unit
 @pytest.mark.django_db
-def test_resumen_cambio_no_dict():
-    Auditoria.objects.create(
-        id_usuario_id=None,
-        accion="ND",
-        entidad="E",
-        id_entidad=3,
-        datos_antes="not-a-dict",
-        datos_despues=None,
-        motivo="—",
-        ip="::1",
-    )
-    pag = BitacoraAuditoriaService().listar({})
-    assert pag.items[0]["resumen"] == "Cambio registrado"
-
-
-@pytest.mark.unit
-@pytest.mark.django_db
-def test_resumen_varias_claves():
+def test_resumen_desde_motivo():
     Auditoria.objects.create(
         id_usuario_id=None,
         accion="M",
         entidad="Ent",
         id_entidad=4,
-        datos_antes={"a": 1, "b": 2, "c": 3, "d": 4, "e": 5},
-        datos_despues={"a": 2},
-        motivo="—",
+        motivo="Ajuste manual de sede Norte",
         ip="10.0.0.1",
     )
     pag = BitacoraAuditoriaService().listar({})
-    assert "(+1 más)" in pag.items[0]["resumen"]
+    assert "Ajuste manual" in pag.items[0]["resumen"]
 
 
 @pytest.mark.unit
@@ -177,8 +152,6 @@ def test_filtros_accion_entidad_id_usuario_id_entidad():
         accion="EDITAR_USUARIO",
         entidad="Usuarios",
         id_entidad=99,
-        datos_antes={"x": 1},
-        datos_despues={"x": 2},
         motivo="—",
         ip="192.168.0.1",
     )
@@ -225,8 +198,6 @@ def test_busqueda_libre_y_acciones():
         accion="INACTIVAR_SEDE",
         entidad="Sedes",
         id_entidad=42,
-        datos_antes={"a": 1},
-        datos_despues={"a": 2},
         motivo="—",
         ip="10.0.0.2",
     )
