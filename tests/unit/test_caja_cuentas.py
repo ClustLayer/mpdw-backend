@@ -51,6 +51,8 @@ def test_listar_y_actualizar_cuenta(ctx: AuthContext) -> None:
     lista = svc.listar("Listar", "activo", 1, 10)
     assert lista["total"] >= 1
     assert svc.listar_activas()["items"]
+    masc = svc.listar("", None, 1, 10)["items"][0]["numero"]
+    assert "*" in masc or masc == "****"
     act = svc.actualizar(
         ctx,
         pk,
