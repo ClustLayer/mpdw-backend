@@ -20,9 +20,9 @@ from apps.m05_clientes.mensajes import (
     MSG_CREADO,
     MSG_CREAR_ERROR,
     MSG_DUPLICADO_TEL,
+    MSG_EXPORT_VACIO,
     MSG_HISTORIAL,
     MSG_HISTORIAL_ERROR,
-    MSG_EXPORT_VACIO,
     MSG_HISTORIAL_VACIO,
     MSG_IMPORT_FORMATO,
     MSG_IMPORT_LIMITE,
@@ -603,8 +603,8 @@ class AdminClientesService:
                 buff.getvalue(),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
-        buff = io.StringIO()
-        writer = csv.writer(buff)
+        texto = io.StringIO()
+        writer = csv.writer(texto)
         writer.writerow(headers)
         writer.writerows(rows)
-        return f"clientes-{fecha}.csv", buff.getvalue().encode("utf-8-sig"), "text/csv"
+        return f"clientes-{fecha}.csv", texto.getvalue().encode("utf-8-sig"), "text/csv"

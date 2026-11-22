@@ -1,5 +1,4 @@
 from django.http import HttpResponse
-from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -8,8 +7,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.m01_identidad.permissions import HasDynamicPermission
-from apps.m08_caja.caja_epic11_service import CajaEpic11Service
 from apps.m08_caja.admin_views import _ctx, _err
+from apps.m08_caja.caja_epic11_service import CajaEpic11Service
 from contratos.excepciones import ReglaNegocioError
 
 PERM_CAT_VER = ("categorias_movimientos", "Consultar")

@@ -2,8 +2,8 @@ from django.urls import path
 
 from apps.m08_caja.admin_views import CuentaDetailView, CuentasActivasView, CuentasListCreateView
 from apps.m08_caja.epic11_admin_views import (
-    AdjuntosMovimientoView,
     AdicionesView,
+    AdjuntosMovimientoView,
     CategoriaDetailView,
     CategoriasListCreateView,
     ConceptoDetailView,

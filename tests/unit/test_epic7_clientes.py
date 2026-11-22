@@ -1,7 +1,9 @@
+import io
 from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -367,3 +369,80 @@ def test_filtro_tipo_y_metricas_gerente():
     with pytest.raises(ReglaNegocioError):
         svc.crear_tipo(ctx_g, {"nombre": "Pintor QA"})
     assert svc.tipos_listado(solo_activos=True)["items"]
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_clientes_import_export_plantilla(ctx: AuthContext):
+    com, _ = Tipos_cliente.objects.get_or_create(nombre="Común", defaults={"es_tipo_predeterminado": True})
+    svc = AdminClientesService(audit=MagicMock())
+    assert len(svc.plantilla_xlsx()) > 100
+    csv_body = (
+        "nombre,apellido,numero_telefono,tipo_cliente,documento,correo,ciudad,direccion\n"
+        "Importado,Uno,+573088881111,Comun,,,,,\n"
+    ).encode("utf-8-sig")
+    out = svc.importar(ctx, "lote.csv", csv_body)
+    assert out["cargados"] == 1 and out["errores"] == []
+    nombre_csv, datos_csv, mime_csv = svc.exportar("", None, "activo", "csv")
+    assert nombre_csv.endswith(".csv") and mime_csv == "text/csv" and b"Importado" in datos_csv
+    nombre_xlsx, datos_xlsx, mime_xlsx = svc.exportar("", None, "activo", "xlsx")
+    assert nombre_xlsx.endswith(".xlsx") and datos_xlsx and "spreadsheet" in mime_xlsx
+    with pytest.raises(ReglaNegocioError):
+        svc.exportar("no-existe-xyz-999", None, "activo", "csv")
+    with pytest.raises(ReglaNegocioError):
+        svc._filas_archivo("datos.pdf", b"nota")
+    plantilla = svc.plantilla_xlsx()
+    from openpyxl import load_workbook
+
+    wb = load_workbook(io.BytesIO(plantilla))
+    ws = wb.active
+    ws.append(["Nuevo", "Xlsx", "+573066665555", "Común", "", "", "", ""])
+    out = io.BytesIO()
+    wb.save(out)
+    res = svc.importar(ctx, "lote.xlsx", out.getvalue())
+    assert res["cargados"] == 1
+    err = svc.importar(
+        ctx,
+        "errores.csv",
+        b"nombre,numero_telefono,tipo_cliente\nBad,Row,+573055559999,TipoInventado\n",
+    )
+    assert err["cargados"] == 0 and err["errores"]
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_api_clientes_import_export():
+    Tipos_cliente.objects.get_or_create(nombre="Común", defaults={"es_tipo_predeterminado": True})
+    rol, _ = Roles.objects.get_or_create(nombre="Administrador", defaults={"es_rol_base": True, "estado": True})
+    user = Usuarios.objects.create_user(
+        email="cli.ie@test.local",
+        password="Admin#2026demo",
+        nombre="IE",
+        apellido="Cli",
+        documento="100009990301",
+        id_rol=rol,
+    )
+    login = AuthService(audit_port=MagicMock(), email_port=FakeEmailAdapter()).autenticar(
+        user.email, "Admin#2026demo", "127.0.0.1", "pytest", "corr-cli-ie"
+    )
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.access_token}")
+    plantilla = client.get("/api/v1/clientes/plantilla/")
+    assert plantilla.status_code == 200 and plantilla.content
+    csv = (
+        "nombre,apellido,numero_telefono,tipo_cliente,consentimiento_datos\n"
+        "ApiImport,Dos,+573077772222,Común,SI\n"
+    ).encode("utf-8-sig")
+    imp = client.post(
+        "/api/v1/clientes/importar/",
+        {"archivo": SimpleUploadedFile("lote.csv", csv, content_type="text/csv")},
+        format="multipart",
+    )
+    body = imp.json()
+    assert imp.status_code == 200 and body["cargados"] >= 1, body
+    exp = client.get("/api/v1/clientes/exportar/?formato=csv&estado=activo")
+    assert exp.status_code == 200 and b"ApiImport" in exp.content
+    assert client.get("/api/v1/clientes/exportar/?formato=xlsx&estado=activo").status_code == 200
+    assert client.get("/api/v1/clientes/exportar/?formato=pdf").status_code == 400
+    assert client.post("/api/v1/clientes/importar/", {}, format="multipart").status_code == 400
+    assert client.get("/api/v1/clientes/exportar/?formato=csv&q=sin-match-unico-xyz&estado=activo").status_code == 400

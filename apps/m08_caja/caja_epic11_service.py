@@ -6,10 +6,10 @@ import csv
 import io
 from datetime import date
 from decimal import Decimal, InvalidOperation
-from typing import Any
+from typing import Any, TypeVar
 
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import Model, Q, Sum
 from django.utils import timezone
 
 from apps.m02_sedes.models import Sedes
@@ -34,6 +34,7 @@ from contratos.dtos import AuditoriaDTO, AuthContext
 from contratos.excepciones import ReglaNegocioError
 
 TIPOS_VALIDOS_CAT = frozenset(TIPOS_CATEGORIA_MOV)
+_Model = TypeVar("_Model", bound=Model)
 
 
 def enmascarar_numero(numero: str) -> str:
@@ -302,8 +303,8 @@ class CajaEpic11Service:
         self._recalcular_totales(r)
         return {"reporte": _serializar_reporte(r), "mensaje": msg.MSG_JORNADA_ACTUAL}
 
-    def _sum(self, model: type, reporte_id: int, campo: str = "valor") -> Decimal:
-        agg = model.objects.filter(id_reporte_diario_id=reporte_id, anulado=False).aggregate(s=Sum(campo))
+    def _sum(self, model: type[_Model], reporte_id: int, campo: str = "valor") -> Decimal:
+        agg = model.objects.filter(id_reporte_diario_id=reporte_id, anulado=False).aggregate(s=Sum(campo))  # type: ignore[attr-defined]
         return agg["s"] or Decimal("0")
 
     @transaction.atomic
@@ -389,7 +390,7 @@ class CajaEpic11Service:
         if not r:
             return {"gastos": [], "ahorros": [], "mensaje": msg.MSG_JORNADA_AUSENTE}
 
-        def _rows(model: type, tipo: str) -> list[dict[str, Any]]:
+        def _rows(model: type[_Model], tipo: str) -> list[dict[str, Any]]:
             return [
                 {
                     "id": row.pk,
@@ -399,7 +400,7 @@ class CajaEpic11Service:
                     "anulado": row.anulado,
                     "fecha_hora": row.fecha_hora.isoformat(),
                 }
-                for row in model.objects.filter(id_reporte_diario=r).order_by("-fecha_hora")
+                for row in model.objects.filter(id_reporte_diario=r).order_by("-fecha_hora")  # type: ignore[attr-defined]
             ]
 
         return {
@@ -487,6 +488,7 @@ class CajaEpic11Service:
     @transaction.atomic
     def corregir_movimiento(self, ctx: AuthContext, tipo: str, pk: int, datos: dict[str, Any]) -> dict[str, Any]:
         tipo = tipo.strip().lower()
+        row: Gastos_caja | Ahorros | Transferencias_caja | None
         if tipo == "gasto":
             row = Gastos_caja.objects.select_for_update().filter(pk=pk).first()
         elif tipo == "ahorro":

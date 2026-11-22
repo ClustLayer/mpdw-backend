@@ -468,6 +468,96 @@ paths:
               schema:
                 $ref: '#/components/schemas/MensajeResponse'
           description: ''
+  /api/v1/caja/adiciones/:
+    post:
+      operationId: caja_adiciones_create
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/adjuntos/:
+    post:
+      operationId: caja_adjuntos_create
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/categorias/:
+    get:
+      operationId: caja_categorias_retrieve
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: caja_categorias_create
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/categorias/{id}/:
+    patch:
+      operationId: caja_categorias_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/conceptos/:
+    get:
+      operationId: caja_conceptos_retrieve
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: caja_conceptos_create
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/conceptos/{id}/:
+    patch:
+      operationId: caja_conceptos_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/caja/cuentas/:
     get:
       operationId: cuentas_listar
@@ -506,6 +596,165 @@ paths:
   /api/v1/caja/cuentas/activas/:
     get:
       operationId: cuentas_activas
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/entregas/:
+    post:
+      operationId: caja_entregas_create
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/historial/:
+    get:
+      operationId: caja_historial_retrieve
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/historial/export/:
+    get:
+      operationId: caja_historial_export_retrieve
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/jornada/actual/:
+    get:
+      operationId: caja_jornada_actual_retrieve
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/jornada/apertura/:
+    post:
+      operationId: caja_jornada_apertura_create
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/jornada/base-inicial/:
+    post:
+      operationId: caja_jornada_base_inicial_create
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/movimientos/{tipo}/{id}/corregir/:
+    post:
+      operationId: caja_movimientos_corregir_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: tipo
+        schema:
+          type: string
+        required: true
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/movimientos/gastos-ahorros/:
+    get:
+      operationId: caja_movimientos_gastos_ahorros_retrieve
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: caja_movimientos_gastos_ahorros_create
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/movimientos/transferencias/:
+    get:
+      operationId: caja_movimientos_transferencias_retrieve
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: caja_movimientos_transferencias_create
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/reporte/cierre/:
+    post:
+      operationId: caja_reporte_cierre_create
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/reporte/cuadre/:
+    get:
+      operationId: caja_reporte_cuadre_retrieve
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/reporte/reapertura/:
+    post:
+      operationId: caja_reporte_reapertura_create
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/reporte/venta-registrada/:
+    patch:
+      operationId: caja_reporte_venta_registrada_partial_update
       tags:
       - caja
       security:
@@ -873,6 +1122,36 @@ paths:
         schema:
           type: integer
         required: true
+      tags:
+      - clientes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/clientes/exportar/:
+    get:
+      operationId: clientes_exportar_retrieve
+      tags:
+      - clientes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/clientes/importar/:
+    post:
+      operationId: clientes_importar_create
+      tags:
+      - clientes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/clientes/plantilla/:
+    get:
+      operationId: clientes_plantilla_retrieve
       tags:
       - clientes
       security:
@@ -2317,18 +2596,12 @@ components:
           type: string
         resumen:
           type: string
-        datos_anteriores:
-          nullable: true
-        datos_nuevos:
-          nullable: true
         motivo:
           type: string
         resultado:
           type: string
       required:
       - accion
-      - datos_anteriores
-      - datos_nuevos
       - entidad
       - fecha_hora
       - id_auditoria

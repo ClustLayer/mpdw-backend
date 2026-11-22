@@ -23,6 +23,7 @@ PANEL_MATRIZ_ORDEN: list[tuple[str, str, str]] = [
     ("domicilios", "domicilios", "Domicilios"),
     ("facturacion", "facturacion_electronica", "Factura electrónica"),
     ("caja", "cuentas_bancarias", "Caja"),
+    ("categorias_caja", "categorias_movimientos", "Categorías de caja"),
     ("conceptos", "gastos_frecuentes", "Conceptos de caja"),
     ("cierre", "cierre_jornada", "Cierre de jornada"),
     ("eventos", "eventos", "Eventos"),
