@@ -35,8 +35,8 @@ class AuditoriaDTO:
     accion: str
     entidad: str
     id_entidad: int
-    datos_antes: dict[str, Any] | None
-    datos_despues: dict[str, Any] | None
+    datos_antes: dict[str, Any] | None = None
+    datos_despues: dict[str, Any] | None = None
     motivo: str
     resultado: str = "EXITO"
     id_correlacion: str = ""

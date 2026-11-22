@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import csv
+import io
 import re
 from typing import Any
 
@@ -20,7 +22,11 @@ from apps.m05_clientes.mensajes import (
     MSG_DUPLICADO_TEL,
     MSG_HISTORIAL,
     MSG_HISTORIAL_ERROR,
+    MSG_EXPORT_VACIO,
     MSG_HISTORIAL_VACIO,
+    MSG_IMPORT_FORMATO,
+    MSG_IMPORT_LIMITE,
+    MSG_IMPORT_OK,
     MSG_LISTADO,
     MSG_OBLIGATORIOS,
     MSG_SIN_COINCIDENCIAS,
@@ -42,6 +48,19 @@ E164_RE = re.compile(r"^\+?[1-9]\d{6,14}$")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 ESTADOS_ANULADOS = frozenset({"ANULADA", "anulada", "Anulada"})
 COLOR_DEFAULT = "#64748B"
+MAX_IMPORT_BYTES = 2_000_000
+COLUMNAS_IMPORT = (
+    "nombre",
+    "apellido",
+    "numero_telefono",
+    "tipo_cliente",
+    "documento",
+    "correo",
+    "ciudad",
+    "direccion",
+    "tiene_whatsapp",
+    "consentimiento_datos",
+)
 
 
 def _validar_color(valor: str | None) -> str:
@@ -468,3 +487,124 @@ class AdminClientesService:
             "page": page,
             "page_size": page_size,
         }
+
+    def plantilla_xlsx(self) -> bytes:
+        from openpyxl import Workbook  # type: ignore[import-untyped]
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "clientes"
+        ws.append(COLUMNAS_IMPORT)
+        buff = io.BytesIO()
+        wb.save(buff)
+        return buff.getvalue()
+
+    def _filas_archivo(self, nombre: str, contenido: bytes) -> list[dict[str, str]]:
+        lower = nombre.lower()
+        if lower.endswith(".csv"):
+            texto = contenido.decode("utf-8-sig")
+            return [dict(r) for r in csv.DictReader(io.StringIO(texto))]
+        if lower.endswith(".xlsx"):
+            from openpyxl import load_workbook
+
+            wb = load_workbook(io.BytesIO(contenido), read_only=True, data_only=True)
+            ws = wb.active
+            rows = list(ws.iter_rows(values_only=True))
+            if not rows:
+                return []
+            headers = [str(c or "").strip() for c in rows[0]]
+            out: list[dict[str, str]] = []
+            for raw in rows[1:]:
+                if raw is None or all(c is None or str(c).strip() == "" for c in raw):
+                    continue
+                out.append({headers[i]: "" if raw[i] is None else str(raw[i]).strip() for i in range(min(len(headers), len(raw)))})
+            return out
+        raise ReglaNegocioError(MSG_IMPORT_FORMATO, codigo="FORMATO_ARCHIVO")
+
+    def importar(self, ctx: AuthContext, nombre: str, contenido: bytes) -> dict[str, Any]:
+        if len(contenido) > MAX_IMPORT_BYTES:
+            raise ReglaNegocioError(MSG_IMPORT_LIMITE, codigo="ARCHIVO_LIMITE")
+        filas = self._filas_archivo(nombre, contenido)
+        if filas and any(c not in filas[0] for c in ("nombre", "numero_telefono", "tipo_cliente")):
+            raise ReglaNegocioError(MSG_IMPORT_FORMATO, codigo="FORMATO_ARCHIVO")
+        tipos = {t.nombre.lower(): t.id_tipo_cliente for t in Tipos_cliente.objects.filter(estado=True)}
+        ok = 0
+        errores: list[dict[str, Any]] = []
+        for i, fila in enumerate(filas, start=2):
+            try:
+                tipo_nombre = (fila.get("tipo_cliente") or "común").strip().lower()
+                if tipo_nombre == "comun":
+                    tipo_nombre = "común"
+                if tipo_nombre not in tipos:
+                    raise KeyError
+                datos = {
+                    "nombre": fila.get("nombre", ""),
+                    "apellido": fila.get("apellido", ""),
+                    "numero_telefono": fila.get("numero_telefono", ""),
+                    "id_tipo_cliente": tipos[tipo_nombre],
+                    "documento": fila.get("documento", ""),
+                    "correo": fila.get("correo", ""),
+                    "ciudad": fila.get("ciudad", ""),
+                    "direccion": fila.get("direccion", ""),
+                    "tiene_whatsapp": str(fila.get("tiene_whatsapp", "")).strip().upper() in {"SI", "1", "TRUE", "YES"},
+                    "consentimiento_datos": str(fila.get("consentimiento_datos", "")).strip().upper() in {"SI", "1", "TRUE", "YES"},
+                    "confirmar_duplicado": True,
+                }
+                self.crear(ctx, datos)
+                ok += 1
+            except KeyError:
+                errores.append({"fila": i, "columna": "tipo_cliente", "motivo": "Tipo inexistente"})
+            except ReglaNegocioError as exc:
+                errores.append({"fila": i, "columna": "numero_telefono", "motivo": exc.mensaje})
+        return {"mensaje": MSG_IMPORT_OK.format(n=ok, m=len(errores)), "cargados": ok, "errores": errores}
+
+    def exportar(self, q: str, id_tipo: int | None, estado: str, formato: str) -> tuple[str, bytes, str]:
+        data = self.listar(q, id_tipo, estado or "todos", 1, 5000)
+        if data["total"] == 0:
+            raise ReglaNegocioError(MSG_EXPORT_VACIO, codigo="EXPORT_VACIO")
+        headers = [
+            "nombre",
+            "apellido",
+            "numero_telefono",
+            "tipo",
+            "documento",
+            "correo",
+            "ciudad",
+            "direccion",
+            "estado",
+        ]
+        rows = [
+            [
+                c["nombre"],
+                c["apellido"],
+                c["numero_telefono"],
+                c["tipo_nombre"],
+                c["documento"],
+                c["correo"],
+                c["ciudad"],
+                c["direccion"],
+                "activo" if c["estado"] else "inactivo",
+            ]
+            for c in data["items"]
+        ]
+        fecha = timezone.localdate().isoformat()
+        if formato == "xlsx":
+            from openpyxl import Workbook
+
+            wb = Workbook()
+            ws = wb.active
+            ws.append(headers)
+            for row in rows:
+                ws.append(row)
+            buff = io.BytesIO()
+            wb.save(buff)
+            return (
+                f"clientes-{fecha}.xlsx",
+                buff.getvalue(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        buff = io.StringIO()
+        writer = csv.writer(buff)
+        writer.writerow(headers)
+        writer.writerows(rows)
+        return f"clientes-{fecha}.csv", buff.getvalue().encode("utf-8-sig"), "text/csv"

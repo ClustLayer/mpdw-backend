@@ -1,101 +1,18 @@
-"""Épica 11 — tablas de movimientos, catálogos y columnas de reporte diario."""
+"""Épica 11 — tablas de movimientos de caja y extensión de Reportes_diarios."""
 
 import django.db.models.deletion
+from django.conf import settings
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("m01_identidad", "0009_demo_permisos_matriz"),
-        ("m06_ventas", "0004_epic8_seed_catalogos"),
         ("m08_caja", "0003_seed_cuentas_demo"),
+        ("m06_ventas", "0006_epic10_facturacion_externa"),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
-        migrations.AddField(
-            model_name="reportes_diarios",
-            name="base_adicional",
-            field=models.DecimalField(db_column="base_adicional", decimal_places=2, default=0, max_digits=14),
-        ),
-        migrations.AddField(
-            model_name="reportes_diarios",
-            name="fecha_auditoria",
-            field=models.DateTimeField(blank=True, db_column="fecha_auditoria", null=True),
-        ),
-        migrations.AddField(
-            model_name="reportes_diarios",
-            name="id_usuario_auditoria",
-            field=models.ForeignKey(
-                blank=True,
-                db_column="id_usuario_auditoria",
-                null=True,
-                on_delete=django.db.models.deletion.PROTECT,
-                related_name="reportes_auditados",
-                to="m01_identidad.usuarios",
-            ),
-        ),
-        migrations.AddField(
-            model_name="reportes_diarios",
-            name="id_usuario_cierre",
-            field=models.ForeignKey(
-                blank=True,
-                db_column="id_usuario_cierre",
-                null=True,
-                on_delete=django.db.models.deletion.PROTECT,
-                related_name="reportes_cerrados",
-                to="m01_identidad.usuarios",
-            ),
-        ),
-        migrations.AddField(
-            model_name="reportes_diarios",
-            name="observaciones",
-            field=models.TextField(blank=True, db_column="observaciones", default=""),
-        ),
-        migrations.AddField(
-            model_name="reportes_diarios",
-            name="observaciones_cierre",
-            field=models.TextField(blank=True, db_column="observaciones_cierre", default=""),
-        ),
-        migrations.AddField(
-            model_name="reportes_diarios",
-            name="saldo_caja_efectivo",
-            field=models.DecimalField(blank=True, db_column="saldo_caja_efectivo", decimal_places=2, max_digits=14, null=True),
-        ),
-        migrations.AddField(
-            model_name="reportes_diarios",
-            name="total_ahorros",
-            field=models.DecimalField(db_column="total_ahorros", decimal_places=2, default=0, max_digits=14),
-        ),
-        migrations.AddField(
-            model_name="reportes_diarios",
-            name="total_entregas",
-            field=models.DecimalField(db_column="total_entregas", decimal_places=2, default=0, max_digits=14),
-        ),
-        migrations.AddField(
-            model_name="reportes_diarios",
-            name="total_gastos",
-            field=models.DecimalField(db_column="total_gastos", decimal_places=2, default=0, max_digits=14),
-        ),
-        migrations.AddField(
-            model_name="reportes_diarios",
-            name="total_transferencias",
-            field=models.DecimalField(db_column="total_transferencias", decimal_places=2, default=0, max_digits=14),
-        ),
-        migrations.AddField(
-            model_name="reportes_diarios",
-            name="total_ventas",
-            field=models.DecimalField(db_column="total_ventas", decimal_places=2, default=0, max_digits=14),
-        ),
-        migrations.AddField(
-            model_name="reportes_diarios",
-            name="venta_registrada",
-            field=models.DecimalField(blank=True, db_column="venta_registrada", decimal_places=2, max_digits=14, null=True),
-        ),
-        migrations.AddField(
-            model_name="reportes_diarios",
-            name="version_fila",
-            field=models.PositiveIntegerField(db_column="version_fila", default=1),
-        ),
         migrations.CreateModel(
             name="Categorias_movimiento",
             fields=[
@@ -128,6 +45,42 @@ class Migration(migrations.Migration):
             ],
             options={"db_table": "Conceptos_movimiento"},
         ),
+        migrations.AddField(model_name="reportes_diarios", name="base_adicional", field=models.DecimalField(db_column="base_adicional", decimal_places=2, default=0, max_digits=14)),
+        migrations.AddField(model_name="reportes_diarios", name="venta_registrada", field=models.DecimalField(blank=True, db_column="venta_registrada", decimal_places=2, max_digits=14, null=True)),
+        migrations.AddField(model_name="reportes_diarios", name="total_ventas", field=models.DecimalField(db_column="total_ventas", decimal_places=2, default=0, max_digits=14)),
+        migrations.AddField(model_name="reportes_diarios", name="total_transferencias", field=models.DecimalField(db_column="total_transferencias", decimal_places=2, default=0, max_digits=14)),
+        migrations.AddField(model_name="reportes_diarios", name="total_gastos", field=models.DecimalField(db_column="total_gastos", decimal_places=2, default=0, max_digits=14)),
+        migrations.AddField(model_name="reportes_diarios", name="total_ahorros", field=models.DecimalField(db_column="total_ahorros", decimal_places=2, default=0, max_digits=14)),
+        migrations.AddField(model_name="reportes_diarios", name="total_entregas", field=models.DecimalField(db_column="total_entregas", decimal_places=2, default=0, max_digits=14)),
+        migrations.AddField(model_name="reportes_diarios", name="saldo_caja_efectivo", field=models.DecimalField(blank=True, db_column="saldo_caja_efectivo", decimal_places=2, max_digits=14, null=True)),
+        migrations.AddField(model_name="reportes_diarios", name="observaciones", field=models.TextField(blank=True, db_column="observaciones", default="")),
+        migrations.AddField(model_name="reportes_diarios", name="observaciones_cierre", field=models.TextField(blank=True, db_column="observaciones_cierre", default="")),
+        migrations.AddField(
+            model_name="reportes_diarios",
+            name="id_usuario_cierre",
+            field=models.ForeignKey(
+                blank=True,
+                db_column="id_usuario_cierre",
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="reportes_cerrados",
+                to=settings.AUTH_USER_MODEL,
+            ),
+        ),
+        migrations.AddField(
+            model_name="reportes_diarios",
+            name="id_usuario_auditoria",
+            field=models.ForeignKey(
+                blank=True,
+                db_column="id_usuario_auditoria",
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="reportes_auditados",
+                to=settings.AUTH_USER_MODEL,
+            ),
+        ),
+        migrations.AddField(model_name="reportes_diarios", name="fecha_auditoria", field=models.DateTimeField(blank=True, db_column="fecha_auditoria", null=True)),
+        migrations.AddField(model_name="reportes_diarios", name="version_fila", field=models.PositiveIntegerField(db_column="version_fila", default=1)),
         migrations.CreateModel(
             name="Gastos_caja",
             fields=[
@@ -138,28 +91,10 @@ class Migration(migrations.Migration):
                 ("motivo_anulacion", models.CharField(blank=True, db_column="motivo_anulacion", default="", max_length=255)),
                 ("version_fila", models.PositiveIntegerField(db_column="version_fila", default=1)),
                 ("fecha_hora", models.DateTimeField(auto_now_add=True, db_column="fecha_hora")),
-                (
-                    "id_categoria",
-                    models.ForeignKey(db_column="id_categoria", on_delete=django.db.models.deletion.PROTECT, to="m08_caja.categorias_movimiento"),
-                ),
-                (
-                    "id_concepto",
-                    models.ForeignKey(
-                        blank=True,
-                        db_column="id_concepto",
-                        null=True,
-                        on_delete=django.db.models.deletion.SET_NULL,
-                        to="m08_caja.conceptos_movimiento",
-                    ),
-                ),
-                (
-                    "id_reporte_diario",
-                    models.ForeignKey(db_column="id_reporte_diario", on_delete=django.db.models.deletion.CASCADE, to="m08_caja.reportes_diarios"),
-                ),
-                (
-                    "id_usuario",
-                    models.ForeignKey(db_column="id_usuario", on_delete=django.db.models.deletion.PROTECT, to="m01_identidad.usuarios"),
-                ),
+                ("id_categoria", models.ForeignKey(db_column="id_categoria", on_delete=django.db.models.deletion.PROTECT, to="m08_caja.categorias_movimiento")),
+                ("id_concepto", models.ForeignKey(blank=True, db_column="id_concepto", null=True, on_delete=django.db.models.deletion.SET_NULL, to="m08_caja.conceptos_movimiento")),
+                ("id_reporte_diario", models.ForeignKey(db_column="id_reporte_diario", on_delete=django.db.models.deletion.CASCADE, to="m08_caja.reportes_diarios")),
+                ("id_usuario", models.ForeignKey(db_column="id_usuario", on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
             ],
             options={"db_table": "Gastos"},
         ),
@@ -173,28 +108,10 @@ class Migration(migrations.Migration):
                 ("motivo_anulacion", models.CharField(blank=True, db_column="motivo_anulacion", default="", max_length=255)),
                 ("version_fila", models.PositiveIntegerField(db_column="version_fila", default=1)),
                 ("fecha_hora", models.DateTimeField(auto_now_add=True, db_column="fecha_hora")),
-                (
-                    "id_categoria",
-                    models.ForeignKey(db_column="id_categoria", on_delete=django.db.models.deletion.PROTECT, to="m08_caja.categorias_movimiento"),
-                ),
-                (
-                    "id_concepto",
-                    models.ForeignKey(
-                        blank=True,
-                        db_column="id_concepto",
-                        null=True,
-                        on_delete=django.db.models.deletion.SET_NULL,
-                        to="m08_caja.conceptos_movimiento",
-                    ),
-                ),
-                (
-                    "id_reporte_diario",
-                    models.ForeignKey(db_column="id_reporte_diario", on_delete=django.db.models.deletion.CASCADE, to="m08_caja.reportes_diarios"),
-                ),
-                (
-                    "id_usuario",
-                    models.ForeignKey(db_column="id_usuario", on_delete=django.db.models.deletion.PROTECT, to="m01_identidad.usuarios"),
-                ),
+                ("id_categoria", models.ForeignKey(db_column="id_categoria", on_delete=django.db.models.deletion.PROTECT, to="m08_caja.categorias_movimiento")),
+                ("id_concepto", models.ForeignKey(blank=True, db_column="id_concepto", null=True, on_delete=django.db.models.deletion.SET_NULL, to="m08_caja.conceptos_movimiento")),
+                ("id_reporte_diario", models.ForeignKey(db_column="id_reporte_diario", on_delete=django.db.models.deletion.CASCADE, to="m08_caja.reportes_diarios")),
+                ("id_usuario", models.ForeignKey(db_column="id_usuario", on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
             ],
             options={"db_table": "Ahorros"},
         ),
@@ -211,32 +128,14 @@ class Migration(migrations.Migration):
                 ("motivo_anulacion", models.CharField(blank=True, db_column="motivo_anulacion", default="", max_length=255)),
                 ("version_fila", models.PositiveIntegerField(db_column="version_fila", default=1)),
                 ("fecha_hora", models.DateTimeField(auto_now_add=True, db_column="fecha_hora")),
-                (
-                    "id_categoria",
-                    models.ForeignKey(db_column="id_categoria", on_delete=django.db.models.deletion.PROTECT, to="m08_caja.categorias_movimiento"),
-                ),
-                (
-                    "id_cuenta_bancaria",
-                    models.ForeignKey(db_column="id_cuenta_bancaria", on_delete=django.db.models.deletion.PROTECT, to="m08_caja.cuentas_bancarias"),
-                ),
+                ("id_categoria", models.ForeignKey(db_column="id_categoria", on_delete=django.db.models.deletion.PROTECT, to="m08_caja.categorias_movimiento")),
+                ("id_cuenta_bancaria", models.ForeignKey(db_column="id_cuenta_bancaria", on_delete=django.db.models.deletion.PROTECT, to="m08_caja.cuentas_bancarias")),
                 (
                     "id_pago",
-                    models.ForeignKey(
-                        blank=True,
-                        db_column="id_pago",
-                        null=True,
-                        on_delete=django.db.models.deletion.SET_NULL,
-                        to="m06_ventas.pagos",
-                    ),
+                    models.ForeignKey(blank=True, db_column="id_pago", null=True, on_delete=django.db.models.deletion.SET_NULL, to="m06_ventas.pagos"),
                 ),
-                (
-                    "id_reporte_diario",
-                    models.ForeignKey(db_column="id_reporte_diario", on_delete=django.db.models.deletion.CASCADE, to="m08_caja.reportes_diarios"),
-                ),
-                (
-                    "id_usuario",
-                    models.ForeignKey(db_column="id_usuario", on_delete=django.db.models.deletion.PROTECT, to="m01_identidad.usuarios"),
-                ),
+                ("id_reporte_diario", models.ForeignKey(db_column="id_reporte_diario", on_delete=django.db.models.deletion.CASCADE, to="m08_caja.reportes_diarios")),
+                ("id_usuario", models.ForeignKey(db_column="id_usuario", on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
             ],
             options={"db_table": "Transferencias"},
         ),
@@ -248,14 +147,8 @@ class Migration(migrations.Migration):
                 ("motivo", models.CharField(db_column="motivo", max_length=255)),
                 ("anulado", models.BooleanField(db_column="anulado", default=False)),
                 ("fecha_hora", models.DateTimeField(auto_now_add=True, db_column="fecha_hora")),
-                (
-                    "id_reporte_diario",
-                    models.ForeignKey(db_column="id_reporte_diario", on_delete=django.db.models.deletion.CASCADE, to="m08_caja.reportes_diarios"),
-                ),
-                (
-                    "id_usuario",
-                    models.ForeignKey(db_column="id_usuario", on_delete=django.db.models.deletion.PROTECT, to="m01_identidad.usuarios"),
-                ),
+                ("id_reporte_diario", models.ForeignKey(db_column="id_reporte_diario", on_delete=django.db.models.deletion.CASCADE, to="m08_caja.reportes_diarios")),
+                ("id_usuario", models.ForeignKey(db_column="id_usuario", on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
             ],
             options={"db_table": "Adiciones_base"},
         ),
@@ -267,14 +160,8 @@ class Migration(migrations.Migration):
                 ("descripcion", models.CharField(db_column="descripcion", max_length=255)),
                 ("anulado", models.BooleanField(db_column="anulado", default=False)),
                 ("fecha_hora", models.DateTimeField(auto_now_add=True, db_column="fecha_hora")),
-                (
-                    "id_reporte_diario",
-                    models.ForeignKey(db_column="id_reporte_diario", on_delete=django.db.models.deletion.CASCADE, to="m08_caja.reportes_diarios"),
-                ),
-                (
-                    "id_usuario",
-                    models.ForeignKey(db_column="id_usuario", on_delete=django.db.models.deletion.PROTECT, to="m01_identidad.usuarios"),
-                ),
+                ("id_reporte_diario", models.ForeignKey(db_column="id_reporte_diario", on_delete=django.db.models.deletion.CASCADE, to="m08_caja.reportes_diarios")),
+                ("id_usuario", models.ForeignKey(db_column="id_usuario", on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
             ],
             options={"db_table": "Entregas_dinero"},
         ),
@@ -288,30 +175,9 @@ class Migration(migrations.Migration):
                 ("tamano_bytes", models.BigIntegerField(db_column="tamano_bytes")),
                 ("hash_integridad", models.CharField(db_column="hash_integridad", max_length=128)),
                 ("fecha_hora", models.DateTimeField(auto_now_add=True, db_column="fecha_hora")),
-                (
-                    "id_gasto",
-                    models.ForeignKey(
-                        blank=True,
-                        db_column="id_gasto",
-                        null=True,
-                        on_delete=django.db.models.deletion.CASCADE,
-                        to="m08_caja.gastos_caja",
-                    ),
-                ),
-                (
-                    "id_transferencia",
-                    models.ForeignKey(
-                        blank=True,
-                        db_column="id_transferencia",
-                        null=True,
-                        on_delete=django.db.models.deletion.CASCADE,
-                        to="m08_caja.transferencias_caja",
-                    ),
-                ),
-                (
-                    "id_usuario",
-                    models.ForeignKey(db_column="id_usuario", on_delete=django.db.models.deletion.PROTECT, to="m01_identidad.usuarios"),
-                ),
+                ("id_gasto", models.ForeignKey(blank=True, db_column="id_gasto", null=True, on_delete=django.db.models.deletion.CASCADE, to="m08_caja.gastos_caja")),
+                ("id_transferencia", models.ForeignKey(blank=True, db_column="id_transferencia", null=True, on_delete=django.db.models.deletion.CASCADE, to="m08_caja.transferencias_caja")),
+                ("id_usuario", models.ForeignKey(db_column="id_usuario", on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
             ],
             options={"db_table": "Adjuntos_movimiento"},
         ),

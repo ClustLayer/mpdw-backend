@@ -1,5 +1,7 @@
+from django.http import HttpResponse
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -14,6 +16,7 @@ from contratos.excepciones import ReglaNegocioError
 PERM_VER = ("clientes", "Consultar")
 PERM_CREAR = ("clientes", "Crear")
 PERM_EDITAR = ("clientes", "Editar")
+PERM_EXPORT = ("clientes", "Exportar")
 
 
 def _ctx(request: Request) -> AuthContext:
@@ -156,3 +159,54 @@ class ClienteHistorialView(APIView):
         except ReglaNegocioError as exc:
             return _err(exc, request)
         return Response(data)
+
+
+class ImportarClientesView(APIView):
+    permission_classes = [IsAuthenticated, HasDynamicPermission]
+    required_permission = PERM_CREAR
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request: Request) -> Response:
+        archivo = request.FILES.get("archivo")
+        if not archivo:
+            from apps.m05_clientes.mensajes import MSG_IMPORT_FORMATO
+
+            return Response({"codigo": "FORMATO_ARCHIVO", "mensaje": MSG_IMPORT_FORMATO}, status=400)
+        try:
+            return Response(AdminClientesService().importar(_ctx(request), archivo.name, archivo.read()))
+        except ReglaNegocioError as exc:
+            return _err(exc, request)
+
+
+class PlantillaClientesView(APIView):
+    permission_classes = [IsAuthenticated, HasDynamicPermission]
+    required_permission = PERM_CREAR
+
+    def get(self, request: Request) -> HttpResponse:
+        contenido = AdminClientesService().plantilla_xlsx()
+        resp = HttpResponse(contenido, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        resp["Content-Disposition"] = 'attachment; filename="plantilla-clientes.xlsx"'
+        return resp
+
+
+class ExportarClientesView(APIView):
+    permission_classes = [IsAuthenticated, HasDynamicPermission]
+    required_permission = PERM_EXPORT
+
+    def get(self, request: Request) -> HttpResponse | Response:
+        formato = (request.query_params.get("formato") or "csv").lower()
+        if formato not in {"csv", "xlsx"}:
+            return Response({"codigo": "FORMATO", "mensaje": "Seleccione Excel o CSV."}, status=400)
+        id_tipo = request.query_params.get("id_tipo_cliente")
+        try:
+            nombre, contenido, mime = AdminClientesService().exportar(
+                str(request.query_params.get("q") or ""),
+                int(id_tipo) if id_tipo else None,
+                str(request.query_params.get("estado") or "todos"),
+                formato,
+            )
+        except ReglaNegocioError as exc:
+            return _err(exc, request)
+        resp = HttpResponse(contenido, content_type=mime)
+        resp["Content-Disposition"] = f'attachment; filename="{nombre}"'
+        return resp

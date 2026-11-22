@@ -45,6 +45,7 @@ class TipoMovimientoCaja(StrEnum):
     GASTO = "GASTO"
     TRANSFERENCIA = "TRANSFERENCIA"
     AHORRO = "AHORRO"
+    ADICION = "ADICION"
 
 
 class EstadoMovimientoCaja(StrEnum):

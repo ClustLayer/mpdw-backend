@@ -23,6 +23,10 @@ MSG_TIPO_COLOR_INVALIDO = "El color debe ser un código hexadecimal válido (#RR
 MSG_HISTORIAL = "Mostrando {n} facturas del cliente."
 MSG_HISTORIAL_VACIO = "Este cliente aún no registra compras."
 MSG_HISTORIAL_ERROR = "No fue posible cargar el historial del cliente. Intente nuevamente."
+MSG_IMPORT_OK = "{n} clientes cargados; {m} filas con error."
+MSG_IMPORT_FORMATO = "El archivo debe ser CSV o Excel con las columnas de la plantilla."
+MSG_IMPORT_LIMITE = "El archivo supera el límite permitido."
+MSG_EXPORT_VACIO = "No hay clientes para exportar con los filtros indicados."
 MSG_CONSENTIMIENTO_LEGAL = (
     "Autorizo el tratamiento de mis datos personales para la gestión de ventas, "
     "facturación y comunicaciones comerciales según la Política de Privacidad de la empresa."

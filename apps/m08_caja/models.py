@@ -19,6 +19,7 @@ ORIGEN_TRANSFERENCIA = ("VENTA", "MANUAL")
 
 
 class Cuentas_bancarias(models.Model):
+    """Cuenta bancaria; el campo `nombre` identifica al titular."""
     id_cuenta_bancaria = models.BigAutoField(primary_key=True, db_column="id_cuenta_bancaria")
     nombre = models.CharField(max_length=150, db_column="nombre", default="")
     banco = models.CharField(max_length=100, db_column="banco")
