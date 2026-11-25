@@ -5,11 +5,9 @@ from __future__ import annotations
 import io
 import uuid
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -150,7 +148,11 @@ class AdminPromocionesService:
 
     def publicas(self) -> dict[str, Any]:
         ahora = timezone.now().astimezone(BOGOTA)
-        qs = Promociones.objects.filter(estado=ESTADO_ACTIVA).exclude(imagen="").order_by("-fecha_inicio")
+        qs = (
+            Promociones.objects.filter(estado=ESTADO_ACTIVA)
+            .exclude(imagen="")
+            .order_by("-fecha_inicio")
+        )
         items = []
         for p in qs[:100]:
             if not _vigente_ahora(p, ahora):
@@ -221,6 +223,8 @@ class AdminPromocionesService:
         return {"mensaje": MSG_ACTUALIZADO, "promocion": _serializar(p)}
 
     def guardar_imagen(self, id_promocion: int, nombre: str, contenido: bytes, mime: str) -> str:
+        from apps.m13_plataforma.media_storage import guardar_bytes_publicos
+
         if mime not in MIME_OK or len(contenido) > MAX_IMAGEN or len(contenido) == 0:
             raise ReglaNegocioError(MSG_ARCHIVO, codigo="ARCHIVO_INVALIDO")
         if not Promociones.objects.filter(pk=id_promocion).exists():
@@ -228,22 +232,21 @@ class AdminPromocionesService:
         try:
             imagen = Image.open(io.BytesIO(contenido))
             imagen.verify()
-            rgb = Image.open(io.BytesIO(contenido))
-            if mime == "image/png":
-                rgb = rgb.convert("RGBA")
-            else:
-                rgb = rgb.convert("RGB")
+            opened = Image.open(io.BytesIO(contenido))
+            rgb = opened.convert("RGBA") if mime == "image/png" else opened.convert("RGB")
         except Exception:  # pragma: no cover
             raise ReglaNegocioError(MSG_ARCHIVO, codigo="ARCHIVO_INVALIDO") from None
         ext = MIME_OK[mime]
-        base = Path(settings.BASE_DIR) / "media" / "promociones"
-        base.mkdir(parents=True, exist_ok=True)
         stem = f"{id_promocion}-{uuid.uuid4().hex[:8]}"
-        principal = base / f"{stem}.{ext}"
+        buf = io.BytesIO()
         if ext == "png":
-            rgb.save(principal, format="PNG", optimize=True)
+            rgb.save(buf, format="PNG", optimize=True)
+            out_mime = "image/png"
         else:
-            rgb.save(principal, format="JPEG", quality=85)
-        rel = f"promociones/{principal.name}"
-        Promociones.objects.filter(pk=id_promocion).update(imagen=rel)
-        return rel
+            rgb.save(buf, format="JPEG", quality=85)
+            out_mime = "image/jpeg"
+            ext = "jpg"
+        rel = f"promociones/{stem}.{ext}"
+        url = guardar_bytes_publicos(rel, buf.getvalue(), out_mime)
+        Promociones.objects.filter(pk=id_promocion).update(imagen=url)
+        return url

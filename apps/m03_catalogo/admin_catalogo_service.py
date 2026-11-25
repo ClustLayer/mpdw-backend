@@ -8,7 +8,6 @@ import logging
 import re
 import uuid
 from decimal import Decimal, InvalidOperation
-from pathlib import Path
 from typing import Any
 
 from django.conf import settings
@@ -191,7 +190,9 @@ def _filtrar_nivel(qs: Any, stock: str) -> Any:
     if stock == "con_stock":
         return qs.filter(inventario_habilitado=True, stock_total__gt=F("stock_minimo"))
     if stock == "bajo":
-        return qs.filter(inventario_habilitado=True, stock_total__gt=0, stock_total__lte=F("stock_minimo"))
+        return qs.filter(
+            inventario_habilitado=True, stock_total__gt=0, stock_total__lte=F("stock_minimo")
+        )
     if stock == "agotado":
         return qs.filter(inventario_habilitado=True, stock_total=0)
     return qs
@@ -256,11 +257,21 @@ class AdminCatalogoService:
                     "version_fila": p.version,
                 }
             )
-        mensaje = MSG_SIN_COINCIDENCIAS if total == 0 else MSG_LISTADO.format(n=len(items), total=total)
-        return {"items": items, "total": total, "page": page, "page_size": page_size, "mensaje": mensaje}
+        mensaje = (
+            MSG_SIN_COINCIDENCIAS if total == 0 else MSG_LISTADO.format(n=len(items), total=total)
+        )
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "mensaje": mensaje,
+        }
 
     def detalle(self, id_producto: int) -> dict[str, Any]:
-        p = Productos.objects.select_related("id_categoria", "id_marca", "id_tipo_producto").get(pk=id_producto)
+        p = Productos.objects.select_related("id_categoria", "id_marca", "id_tipo_producto").get(
+            pk=id_producto
+        )
         data = _snap(p)
         filas = (
             Productos_colores.objects.filter(id_producto_id=id_producto, id_color__estado=True)
@@ -277,7 +288,10 @@ class AdminCatalogoService:
                 "stock_minimo": p.stock_minimo,
                 "inventario_habilitado": p.inventario_habilitado,
                 "imagen_url": p.imagen_url,
-                "colores": [{"id_color": f.id_color_id, "nombre": f.id_color.nombre, "hex": f.id_color.hex} for f in filas],
+                "colores": [
+                    {"id_color": f.id_color_id, "nombre": f.id_color.nombre, "hex": f.id_color.hex}
+                    for f in filas
+                ],
                 "ids_colores": [f.id_color_id for f in filas],
             }
         )
@@ -286,7 +300,9 @@ class AdminCatalogoService:
     def listar_colores(self) -> list[dict[str, Any]]:
         return [
             {"id_color": row["id_color"], "nombre": row["nombre"], "hex": row["hex"]}
-            for row in Colores_catalogo.objects.filter(estado=True).order_by("nombre").values("id_color", "nombre", "hex")
+            for row in Colores_catalogo.objects.filter(estado=True)
+            .order_by("nombre")
+            .values("id_color", "nombre", "hex")
         ]
 
     def crear_color(self, ctx: AuthContext, datos: dict[str, Any]) -> dict[str, Any]:
@@ -301,8 +317,17 @@ class AdminCatalogoService:
             if dup.hex.upper() != hex_val:
                 raise ReglaNegocioError(MSG_NOMBRE_DUP, codigo="COLOR_DUP")
             return {"id_color": dup.id_color, "nombre": dup.nombre, "hex": dup.hex}
-        color = Colores_catalogo.objects.create(nombre=nombre, hex=hex_val, es_predefinido=False, estado=True)
-        _audit(ctx, "CREAR_COLOR", "Colores_catalogo", color.id_color, None, {"nombre": nombre, "hex": hex_val})
+        color = Colores_catalogo.objects.create(
+            nombre=nombre, hex=hex_val, es_predefinido=False, estado=True
+        )
+        _audit(
+            ctx,
+            "CREAR_COLOR",
+            "Colores_catalogo",
+            color.id_color,
+            None,
+            {"nombre": nombre, "hex": hex_val},
+        )
         return {"id_color": color.id_color, "nombre": color.nombre, "hex": color.hex}
 
     def _ids_colores_de(self, datos: dict[str, Any]) -> list[int] | None:
@@ -324,10 +349,14 @@ class AdminCatalogoService:
         if not unicos:
             Productos_colores.objects.filter(id_producto_id=id_producto).delete()
             return
-        validos = set(Colores_catalogo.objects.filter(pk__in=unicos, estado=True).values_list("pk", flat=True))
+        validos = set(
+            Colores_catalogo.objects.filter(pk__in=unicos, estado=True).values_list("pk", flat=True)
+        )
         if len(validos) != len(unicos):
             raise ReglaNegocioError(MSG_PARAMETRO_INACTIVO, codigo="COLOR_INACTIVO")
-        Productos_colores.objects.filter(id_producto_id=id_producto).exclude(id_color_id__in=validos).delete()
+        Productos_colores.objects.filter(id_producto_id=id_producto).exclude(
+            id_color_id__in=validos
+        ).delete()
         for cid in unicos:
             Productos_colores.objects.get_or_create(id_producto_id=id_producto, id_color_id=cid)
 
@@ -336,8 +365,21 @@ class AdminCatalogoService:
         nombre = str(datos.get("nombre") or "").strip()
         unidad = str(datos.get("unidad_medida") or "").strip().upper()
         barras = str(datos.get("codigo_barras") or "").strip()
-        oblig = [codigo, nombre, datos.get("id_categoria"), datos.get("id_marca"), datos.get("id_tipo_producto"), unidad]
-        if any(v in (None, "") for v in oblig) or datos.get("precio_compra") in (None, "") or datos.get("precio_venta") in (None, "") or datos.get("iva_porcentaje") in (None, "") or datos.get("stock_minimo") in (None, ""):
+        oblig = [
+            codigo,
+            nombre,
+            datos.get("id_categoria"),
+            datos.get("id_marca"),
+            datos.get("id_tipo_producto"),
+            unidad,
+        ]
+        if (
+            any(v in (None, "") for v in oblig)
+            or datos.get("precio_compra") in (None, "")
+            or datos.get("precio_venta") in (None, "")
+            or datos.get("iva_porcentaje") in (None, "")
+            or datos.get("stock_minimo") in (None, "")
+        ):
             raise ReglaNegocioError(MSG_OBLIGATORIOS, codigo="CAMPOS_OBLIGATORIOS")
         if len(codigo) > 30 or not codigo.replace("-", "").replace("_", "").isalnum():
             raise ReglaNegocioError(MSG_CODIGO_INVALIDO, codigo="CODIGO_INVALIDO")
@@ -425,7 +467,9 @@ class AdminCatalogoService:
                         ],
                         ignore_conflicts=True,
                     )
-                _audit(ctx, "CREAR_PRODUCTO", "Productos", producto.id_producto, None, _snap(producto))
+                _audit(
+                    ctx, "CREAR_PRODUCTO", "Productos", producto.id_producto, None, _snap(producto)
+                )
                 ids_col = self._ids_colores_de(datos)
                 if ids_col is not None:
                     self._sync_colores(producto.id_producto, ids_col)
@@ -438,7 +482,9 @@ class AdminCatalogoService:
             logger.exception("crear_producto")
             raise DominioError(MSG_CREAR_ERROR, codigo="PRODUCTO_CREAR_ERROR") from None
 
-    def editar(self, ctx: AuthContext, id_producto: int, datos: dict[str, Any]) -> tuple[dict[str, Any], str]:
+    def editar(
+        self, ctx: AuthContext, id_producto: int, datos: dict[str, Any]
+    ) -> tuple[dict[str, Any], str]:
         limpio = self._validar_comun(datos, propio=id_producto)
         limpio.pop("advertencia_precio")
         motivo = str(datos.get("motivo") or "").strip()
@@ -468,7 +514,9 @@ class AdminCatalogoService:
                 mensaje = MSG_ACTUALIZADO
                 if precio_cambio:
                     ahora = timezone.now()
-                    Historial_precios.objects.filter(id_producto=producto, fecha_fin__isnull=True).update(fecha_fin=ahora)
+                    Historial_precios.objects.filter(
+                        id_producto=producto, fecha_fin__isnull=True
+                    ).update(fecha_fin=ahora)
                     Historial_precios.objects.create(
                         id_producto=producto,
                         precio_anterior=Decimal(antes["precio_venta"]),
@@ -483,7 +531,14 @@ class AdminCatalogoService:
                 ids_col = self._ids_colores_de(datos)
                 if ids_col is not None:
                     self._sync_colores(producto.id_producto, ids_col)
-                _audit(ctx, "EDITAR_PRODUCTO", "Productos", producto.id_producto, antes, _snap(producto))
+                _audit(
+                    ctx,
+                    "EDITAR_PRODUCTO",
+                    "Productos",
+                    producto.id_producto,
+                    antes,
+                    _snap(producto),
+                )
             return self.detalle(producto.id_producto), mensaje
         except (ReglaNegocioError, Productos.DoesNotExist):
             raise
@@ -499,7 +554,14 @@ class AdminCatalogoService:
                 producto.estado = activo
                 producto.version = int(producto.version) + 1
                 producto.save(update_fields=["estado", "version"])
-                _audit(ctx, "CAMBIAR_ESTADO_PRODUCTO", "Productos", producto.id_producto, antes, _snap(producto))
+                _audit(
+                    ctx,
+                    "CAMBIAR_ESTADO_PRODUCTO",
+                    "Productos",
+                    producto.id_producto,
+                    antes,
+                    _snap(producto),
+                )
             return MSG_ESTADO_OK
         except Productos.DoesNotExist:
             raise
@@ -510,7 +572,11 @@ class AdminCatalogoService:
     def historial(self, id_producto: int, desde: str, hasta: str) -> dict[str, Any]:
         if not Productos.objects.filter(pk=id_producto).exists():
             raise Productos.DoesNotExist
-        qs = Historial_precios.objects.filter(id_producto_id=id_producto).select_related("id_usuario").order_by("-fecha_cambio")
+        qs = (
+            Historial_precios.objects.filter(id_producto_id=id_producto)
+            .select_related("id_usuario")
+            .order_by("-fecha_cambio")
+        )
         if desde and hasta and desde > hasta:
             raise ReglaNegocioError(MSG_FECHAS, codigo="RANGO_FECHAS")
         if desde:
@@ -549,6 +615,8 @@ class AdminCatalogoService:
         }
 
     def guardar_imagen(self, id_producto: int, nombre: str, contenido: bytes, mime: str) -> str:
+        from apps.m13_plataforma.media_storage import guardar_bytes_publicos
+
         if mime not in MIME_OK or len(contenido) > MAX_IMAGEN or len(contenido) == 0:
             raise ReglaNegocioError(MSG_ARCHIVO, codigo="ARCHIVO_INVALIDO")
         try:
@@ -557,17 +625,13 @@ class AdminCatalogoService:
             rgb = Image.open(io.BytesIO(contenido)).convert("RGB")
         except Exception:  # pragma: no cover
             raise ReglaNegocioError(MSG_ARCHIVO, codigo="ARCHIVO_INVALIDO") from None
-        base = Path(settings.BASE_DIR) / "media" / "productos"
-        base.mkdir(parents=True, exist_ok=True)
         stem = f"{id_producto}-{uuid.uuid4().hex[:8]}"
-        principal = base / f"{stem}.webp"
-        thumb = base / f"{stem}_thumb.webp"
-        rgb.save(principal, format="WEBP", quality=82)
-        rgb.thumbnail((160, 160))
-        rgb.save(thumb, format="WEBP", quality=75)
-        rel = f"productos/{principal.name}"
-        Productos.objects.filter(pk=id_producto).update(imagen_url=rel)
-        return rel
+        buf = io.BytesIO()
+        rgb.save(buf, format="WEBP", quality=82)
+        rel = f"productos/{stem}.webp"
+        url = guardar_bytes_publicos(rel, buf.getvalue(), "image/webp")
+        Productos.objects.filter(pk=id_producto).update(imagen_url=url)
+        return url
 
     def quitar_imagen(self, id_producto: int) -> None:
         Productos.objects.filter(pk=id_producto).update(imagen_url="")
@@ -579,9 +643,19 @@ class AdminCatalogoService:
             if hit is not None:
                 return hit
         data = {
-            "categorias": list(Categorias_producto.objects.filter(estado=True).order_by("nombre").values("id_categoria", "nombre")),
-            "marcas": list(Marcas.objects.filter(estado=True).order_by("nombre").values("id_marca", "nombre")),
-            "tipos": list(Tipos_producto.objects.filter(estado=True).order_by("nombre").values("id_tipo_producto", "nombre", "es_base")),
+            "categorias": list(
+                Categorias_producto.objects.filter(estado=True)
+                .order_by("nombre")
+                .values("id_categoria", "nombre")
+            ),
+            "marcas": list(
+                Marcas.objects.filter(estado=True).order_by("nombre").values("id_marca", "nombre")
+            ),
+            "tipos": list(
+                Tipos_producto.objects.filter(estado=True)
+                .order_by("nombre")
+                .values("id_tipo_producto", "nombre", "es_base")
+            ),
             "unidades": list(UNIDADES),
         }
         if not getattr(settings, "TESTING", False):
@@ -589,11 +663,21 @@ class AdminCatalogoService:
         return data
 
     def listar_param(self, tipo: str) -> list[dict[str, Any]]:
-        modelo: Any = {"categorias": Categorias_producto, "marcas": Marcas, "tipos": Tipos_producto}[tipo]
+        modelo: Any = {
+            "categorias": Categorias_producto,
+            "marcas": Marcas,
+            "tipos": Tipos_producto,
+        }[tipo]
         pk = {"categorias": "id_categoria", "marcas": "id_marca", "tipos": "id_tipo_producto"}[tipo]
         items = []
         for row in modelo.objects.all().order_by("nombre"):
-            item = {"id": getattr(row, pk), "nombre": row.nombre, "descripcion": row.descripcion, "estado": row.estado, "version_fila": row.version_fila}
+            item = {
+                "id": getattr(row, pk),
+                "nombre": row.nombre,
+                "descripcion": row.descripcion,
+                "estado": row.estado,
+                "version_fila": row.version_fila,
+            }
             if tipo == "tipos":
                 item["afecta_venta_diaria"] = row.afecta_venta_diaria
                 item["es_base"] = row.es_base
@@ -606,13 +690,21 @@ class AdminCatalogoService:
             raise ReglaNegocioError(MSG_NOMBRE_OBL, codigo="NOMBRE_OBLIGATORIO")
         if len(nombre) > 255:
             raise ReglaNegocioError(MSG_NOMBRE_OBL, codigo="NOMBRE_LARGO")
-        modelo: Any = {"categorias": Categorias_producto, "marcas": Marcas, "tipos": Tipos_producto}[tipo]
+        modelo: Any = {
+            "categorias": Categorias_producto,
+            "marcas": Marcas,
+            "tipos": Tipos_producto,
+        }[tipo]
         if modelo.objects.filter(nombre__iexact=nombre).exists():
             raise ReglaNegocioError(MSG_NOMBRE_DUP, codigo="NOMBRE_DUPLICADO")
         etiqueta = {"categorias": "Categoría", "marcas": "Marca", "tipos": "Tipo"}[tipo]
         try:
             with transaction.atomic():
-                kwargs: dict[str, Any] = {"nombre": nombre, "descripcion": str(datos.get("descripcion") or "").strip(), "estado": True}
+                kwargs: dict[str, Any] = {
+                    "nombre": nombre,
+                    "descripcion": str(datos.get("descripcion") or "").strip(),
+                    "estado": True,
+                }
                 if tipo == "tipos":
                     kwargs["afecta_venta_diaria"] = bool(datos.get("afecta_venta_diaria", True))
                     kwargs["es_base"] = False
@@ -626,7 +718,11 @@ class AdminCatalogoService:
             raise DominioError(MSG_PARAM_GUARDAR_ERROR, codigo="PARAM_GUARDAR_ERROR") from None
 
     def editar_param(self, ctx: AuthContext, tipo: str, id_row: int, datos: dict[str, Any]) -> str:
-        modelo: Any = {"categorias": Categorias_producto, "marcas": Marcas, "tipos": Tipos_producto}[tipo]
+        modelo: Any = {
+            "categorias": Categorias_producto,
+            "marcas": Marcas,
+            "tipos": Tipos_producto,
+        }[tipo]
         nombre = str(datos.get("nombre") or "").strip()
         if not nombre:
             raise ReglaNegocioError(MSG_NOMBRE_OBL, codigo="NOMBRE_OBLIGATORIO")
@@ -645,10 +741,19 @@ class AdminCatalogoService:
                 row.descripcion = str(datos.get("descripcion") or "").strip()
                 row.estado = nuevo_estado
                 if tipo == "tipos" and not row.es_base:
-                    row.afecta_venta_diaria = bool(datos.get("afecta_venta_diaria", row.afecta_venta_diaria))
+                    row.afecta_venta_diaria = bool(
+                        datos.get("afecta_venta_diaria", row.afecta_venta_diaria)
+                    )
                 row.version_fila = int(row.version_fila) + 1
                 row.save()
-                _audit(ctx, "EDITAR_PARAMETRO", modelo.__name__, row.pk, antes, {"nombre": row.nombre, "estado": row.estado})
+                _audit(
+                    ctx,
+                    "EDITAR_PARAMETRO",
+                    modelo.__name__,
+                    row.pk,
+                    antes,
+                    {"nombre": row.nombre, "estado": row.estado},
+                )
             return MSG_PARAM_OK
         except (ReglaNegocioError, modelo.DoesNotExist):
             raise
@@ -657,7 +762,11 @@ class AdminCatalogoService:
             raise DominioError(MSG_PARAM_EDITAR_ERROR, codigo="PARAM_EDITAR_ERROR") from None
 
     def eliminar_param(self, ctx: AuthContext, tipo: str, id_row: int) -> str:
-        modelo: Any = {"categorias": Categorias_producto, "marcas": Marcas, "tipos": Tipos_producto}[tipo]
+        modelo: Any = {
+            "categorias": Categorias_producto,
+            "marcas": Marcas,
+            "tipos": Tipos_producto,
+        }[tipo]
         etiqueta = {"categorias": "Categoría", "marcas": "Marca", "tipos": "Tipo"}[tipo]
         try:
             with transaction.atomic():
@@ -703,7 +812,12 @@ class AdminCatalogoService:
             for raw in rows[1:]:
                 if raw is None or all(c is None or str(c).strip() == "" for c in raw):
                     continue
-                out.append({headers[i]: "" if raw[i] is None else str(raw[i]).strip() for i in range(min(len(headers), len(raw)))})
+                out.append(
+                    {
+                        headers[i]: "" if raw[i] is None else str(raw[i]).strip()
+                        for i in range(min(len(headers), len(raw)))
+                    }
+                )
             return out
         raise ReglaNegocioError(MSG_IMPORT_FORMATO, codigo="FORMATO_ARCHIVO")
 
@@ -734,25 +848,44 @@ class AdminCatalogoService:
                     "descripcion": fila.get("descripcion", ""),
                     "id_categoria": cats[fila.get("categoria", "").strip().lower()].id_categoria,
                     "id_marca": marcas[fila.get("marca", "").strip().lower()].id_marca,
-                    "id_tipo_producto": tipos[fila.get("tipo_producto", "").strip().lower()].id_tipo_producto,
+                    "id_tipo_producto": tipos[
+                        fila.get("tipo_producto", "").strip().lower()
+                    ].id_tipo_producto,
                     "unidad_medida": fila.get("unidad_medida", ""),
                     "precio_compra": fila.get("precio_compra", ""),
                     "precio_venta": fila.get("precio_venta", ""),
                     "iva_porcentaje": fila.get("iva_porcentaje", ""),
                     "stock_minimo": fila.get("stock_minimo", ""),
-                    "inventario_habilitado": str(fila.get("inventario_habilitado", "")).strip().upper() in {"SI", "1", "TRUE", "YES"},
+                    "inventario_habilitado": str(fila.get("inventario_habilitado", ""))
+                    .strip()
+                    .upper()
+                    in {"SI", "1", "TRUE", "YES"},
                     "origen": (fila.get("origen") or Productos.ORIGEN_COMPRADO).strip().lower(),
                 }
                 self.crear(ctx, datos)
                 ok += 1
             except KeyError:
-                errores.append({"fila": i, "columna": "categoria", "motivo": "Parámetro inexistente o inactivo"})
+                errores.append(
+                    {
+                        "fila": i,
+                        "columna": "categoria",
+                        "motivo": "Parámetro inexistente o inactivo",
+                    }
+                )
             except ReglaNegocioError as exc:
-                motivo = MSG_IMPORT_EXISTE if exc.codigo in {"CODIGO_DUPLICADO", "BARRAS_DUPLICADO"} else exc.mensaje
+                motivo = (
+                    MSG_IMPORT_EXISTE
+                    if exc.codigo in {"CODIGO_DUPLICADO", "BARRAS_DUPLICADO"}
+                    else exc.mensaje
+                )
                 errores.append({"fila": i, "columna": "codigo_producto", "motivo": motivo})
             except Exception:  # pragma: no cover
                 errores.append({"fila": i, "columna": "", "motivo": MSG_IMPORT_ERROR})
-        return {"mensaje": MSG_IMPORT_OK.format(n=ok, m=len(errores)), "cargados": ok, "errores": errores}
+        return {
+            "mensaje": MSG_IMPORT_OK.format(n=ok, m=len(errores)),
+            "cargados": ok,
+            "errores": errores,
+        }
 
     def exportar(
         self,
@@ -790,26 +923,32 @@ class AdminCatalogoService:
         rows = []
         for item in data["items"]:
             origen = item.get("origen", Productos.ORIGEN_COMPRADO)
-            rows.append([
-                item["codigo_producto"],
-                item["nombre"],
-                item["precio_compra"],
-                item["precio_venta"],
-                item["iva_porcentaje"],
-                item["categoria"],
-                item["marca"],
-                item["tipo"],
-                item["unidad_medida"],
-                ORIGEN_ETIQUETA.get(origen, origen),
-                "N/A" if item["existencia"] is None else item["existencia"],
-                "Activo" if item["estado"] else "Inactivo",
-            ])
+            rows.append(
+                [
+                    item["codigo_producto"],
+                    item["nombre"],
+                    item["precio_compra"],
+                    item["precio_venta"],
+                    item["iva_porcentaje"],
+                    item["categoria"],
+                    item["marca"],
+                    item["tipo"],
+                    item["unidad_medida"],
+                    ORIGEN_ETIQUETA.get(origen, origen),
+                    "N/A" if item["existencia"] is None else item["existencia"],
+                    "Activo" if item["estado"] else "Inactivo",
+                ]
+            )
         if formato == "csv":
             buff = io.StringIO()
             writer = csv.writer(buff)
             writer.writerow(headers)
             writer.writerows(rows)
-            return f"{fecha}-catalogo-productos.csv", buff.getvalue().encode("utf-8-sig"), "text/csv"
+            return (
+                f"{fecha}-catalogo-productos.csv",
+                buff.getvalue().encode("utf-8-sig"),
+                "text/csv",
+            )
         if formato == "xlsx":
             from openpyxl import Workbook
 
@@ -820,5 +959,9 @@ class AdminCatalogoService:
                 ws.append(row)
             raw = io.BytesIO()
             wb.save(raw)
-            return f"{fecha}-catalogo-productos.xlsx", raw.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            return (
+                f"{fecha}-catalogo-productos.xlsx",
+                raw.getvalue(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
         raise DominioError(MSG_EXPORT_ERROR, codigo="EXPORT_ERROR")
