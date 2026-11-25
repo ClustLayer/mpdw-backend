@@ -70,12 +70,14 @@ INSTALLED_APPS = [
     "apps.m12_tienda_publica.apps.M12TiendaPublicaConfig",
     "apps.m14_proveedores.apps.M14ProveedoresConfig",
     "apps.m13_plataforma.apps.M13PlataformaConfig",
+    "apps.m21_promociones.apps.M21PromocionesConfig",
     # Proceso ETL
     "etl.apps.EtlConfig",
 ]
 
 MIDDLEWARE = [
     "apps.m13_plataforma.middleware.CorrelationIdMiddleware",
+    "apps.m13_plataforma.request_logging_middleware.RequestLoggingMiddleware",
     "apps.m13_plataforma.middleware.CorsAndSecurityHeadersMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -290,6 +292,15 @@ SMTP_PASS = os.environ.get("SMTP_PASS", "")
 SMTP_FROM_EMAIL = os.environ.get("SMTP_FROM_EMAIL", DEFAULT_FROM_EMAIL)
 SMTP_FROM_NAME = os.environ.get("SMTP_FROM_NAME", "Mundo Pinturas Diana")
 SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "true").lower() in {"1", "true", "yes"}
+
+MONGODB_GENERAL_URI = os.environ.get("MONGODB_GENERAL_URI", "")
+MONGODB_INTERACTIONS_URI = os.environ.get("MONGODB_INTERACTIONS_URI", "")
+MPDW_OBSERVABILITY_FAKE_MONGO = os.environ.get("MPDW_OBSERVABILITY_FAKE_MONGO", "").lower() in {
+    "1",
+    "true",
+    "yes",
+}
+REQUEST_LOGGING_ENABLED = os.environ.get("REQUEST_LOGGING_ENABLED", "").lower() in {"1", "true", "yes"}
 
 # Orígenes CORS permitidos (SAD TB-2, T-12, AD-11)
 CORS_ALLOWED_ORIGINS = [
