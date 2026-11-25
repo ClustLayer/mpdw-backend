@@ -34,6 +34,21 @@ from contratos.dtos import AuditoriaDTO, AuthContext
 from contratos.excepciones import ReglaNegocioError
 
 TIPOS_VALIDOS_CAT = frozenset(TIPOS_CATEGORIA_MOV)
+_TIPO_ALIAS = {
+    "gasto": "Gasto",
+    "transferencia": "Transferencia",
+    "ahorro": "Ahorro",
+    "Gasto": "Gasto",
+    "Transferencia": "Transferencia",
+    "Ahorro": "Ahorro",
+}
+
+
+def _norm_tipo_categoria(tipo: str) -> str:
+    bruto = (tipo or "").strip()
+    return _TIPO_ALIAS.get(bruto) or _TIPO_ALIAS.get(bruto.lower()) or ""
+
+
 _Model = TypeVar("_Model", bound=Model)
 
 
@@ -60,7 +75,9 @@ def _assert_sede(ctx: AuthContext, id_sede: int) -> Sedes:
     return sede
 
 
-def _auditar(ctx: AuthContext, accion: str, entidad: str, entidad_id: int, motivo: str, audit: AuditService) -> None:
+def _auditar(
+    ctx: AuthContext, accion: str, entidad: str, entidad_id: int, motivo: str, audit: AuditService
+) -> None:
     audit.registrar(
         AuditoriaDTO(
             id_usuario=ctx.id_usuario,
@@ -90,7 +107,9 @@ def _serializar_reporte(r: Reportes_diarios) -> dict[str, Any]:
         "total_transferencias": str(r.total_transferencias),
         "total_entregas": str(r.total_entregas),
         "efectivo_esperado": str(r.efectivo_esperado) if r.efectivo_esperado is not None else None,
-        "efectivo_declarado": str(r.efectivo_declarado) if r.efectivo_declarado is not None else None,
+        "efectivo_declarado": str(r.efectivo_declarado)
+        if r.efectivo_declarado is not None
+        else None,
         "diferencia": str(r.diferencia) if r.diferencia is not None else None,
         "observaciones": r.observaciones,
         "version_fila": r.version_fila,
@@ -106,7 +125,9 @@ class CajaEpic11Service:
     def listar_categorias(self, tipo: str | None, q: str) -> dict[str, Any]:
         qs = Categorias_movimiento.objects.all().order_by("nombre")
         if tipo:
-            qs = qs.filter(tipo_movimiento=tipo)
+            tip = _norm_tipo_categoria(tipo)
+            if tip:
+                qs = qs.filter(tipo_movimiento=tip)
         texto = (q or "").strip()
         if texto:
             qs = qs.filter(Q(nombre__icontains=texto) | Q(descripcion__icontains=texto))
@@ -121,12 +142,16 @@ class CajaEpic11Service:
             }
             for c in qs
         ]
-        return {"items": items, "mensaje": msg.MSG_CAT_LISTADO.format(n=len(items))}
+        return {
+            "items": items,
+            "total": len(items),
+            "mensaje": msg.MSG_CAT_LISTADO.format(n=len(items)),
+        }
 
     @transaction.atomic
     def crear_categoria(self, ctx: AuthContext, datos: dict[str, Any]) -> dict[str, Any]:
         nombre = (datos.get("nombre") or "").strip()
-        tipo = (datos.get("tipo_movimiento") or "").strip()
+        tipo = _norm_tipo_categoria(str(datos.get("tipo_movimiento") or ""))
         if not nombre or tipo not in TIPOS_VALIDOS_CAT:
             raise ReglaNegocioError(msg.MSG_VALIDACION, codigo="VALIDACION")
         c = Categorias_movimiento.objects.create(
@@ -135,7 +160,14 @@ class CajaEpic11Service:
             descripcion=str(datos.get("descripcion") or "")[:2000],
             estado=bool(datos.get("estado", True)),
         )
-        _auditar(ctx, "CREAR_CATEGORIA_CAJA", "Categorias_movimiento", c.id_categoria_movimiento, nombre, self._audit)
+        _auditar(
+            ctx,
+            "CREAR_CATEGORIA_CAJA",
+            "Categorias_movimiento",
+            c.id_categoria_movimiento,
+            nombre,
+            self._audit,
+        )
         item = {
             "id_categoria_movimiento": c.id_categoria_movimiento,
             "nombre": c.nombre,
@@ -147,14 +179,16 @@ class CajaEpic11Service:
         return {"mensaje": msg.MSG_CAT_CREADA, "item": item}
 
     @transaction.atomic
-    def actualizar_categoria(self, ctx: AuthContext, pk: int, datos: dict[str, Any]) -> dict[str, Any]:
+    def actualizar_categoria(
+        self, ctx: AuthContext, pk: int, datos: dict[str, Any]
+    ) -> dict[str, Any]:
         c = Categorias_movimiento.objects.select_for_update().filter(pk=pk).first()
         if not c:
             raise ReglaNegocioError(msg.MSG_NO_ENCONTRADO, codigo="NO_ENCONTRADO")
         if int(datos.get("version_fila") or 0) != c.version_fila:
             raise ReglaNegocioError(MSG_CONCURRENCIA, codigo="CONCURRENCIA")
         nombre = (datos.get("nombre") or c.nombre).strip()
-        tipo = (datos.get("tipo_movimiento") or c.tipo_movimiento).strip()
+        tipo = _norm_tipo_categoria(str(datos.get("tipo_movimiento") or c.tipo_movimiento))
         if not nombre or tipo not in TIPOS_VALIDOS_CAT:
             raise ReglaNegocioError(msg.MSG_VALIDACION, codigo="VALIDACION")
         c.nombre = nombre[:100]
@@ -164,8 +198,19 @@ class CajaEpic11Service:
             c.estado = bool(datos.get("estado"))
         c.version_fila += 1
         c.save()
-        _auditar(ctx, "EDITAR_CATEGORIA_CAJA", "Categorias_movimiento", c.id_categoria_movimiento, nombre, self._audit)
-        item = next(x for x in self.listar_categorias(None, nombre)["items"] if x["id_categoria_movimiento"] == pk)
+        _auditar(
+            ctx,
+            "EDITAR_CATEGORIA_CAJA",
+            "Categorias_movimiento",
+            c.id_categoria_movimiento,
+            nombre,
+            self._audit,
+        )
+        item = next(
+            x
+            for x in self.listar_categorias(None, nombre)["items"]
+            if x["id_categoria_movimiento"] == pk
+        )
         return {"mensaje": msg.MSG_CAT_ACTUALIZADA, "item": item}
 
     def listar_conceptos(self, tipo: str | None, q: str) -> dict[str, Any]:
@@ -180,9 +225,12 @@ class CajaEpic11Service:
                 "id_concepto_movimiento": c.id_concepto_movimiento,
                 "nombre": c.nombre,
                 "id_categoria": c.id_categoria_id,
+                "id_categoria_movimiento": c.id_categoria_id,
+                "categoria_nombre": c.id_categoria.nombre,
                 "tipo_movimiento": c.id_categoria.tipo_movimiento,
                 "valor_sugerido": str(c.valor_sugerido) if c.valor_sugerido is not None else None,
                 "descripcion": c.descripcion,
+                "detalle_sugerido": c.descripcion,
                 "estado": c.estado,
                 "version_fila": c.version_fila,
             }
@@ -193,20 +241,28 @@ class CajaEpic11Service:
     @transaction.atomic
     def crear_concepto(self, ctx: AuthContext, datos: dict[str, Any]) -> dict[str, Any]:
         nombre = (datos.get("nombre") or "").strip()
-        id_cat = int(datos.get("id_categoria") or 0)
+        id_cat = int(datos.get("id_categoria") or datos.get("id_categoria_movimiento") or 0)
         cat = Categorias_movimiento.objects.filter(pk=id_cat, estado=True).first()
         if not nombre or not cat:
             raise ReglaNegocioError(msg.MSG_VALIDACION, codigo="VALIDACION")
         sugerido = datos.get("valor_sugerido")
         vs = _dec(sugerido, positivo=False) if sugerido not in (None, "") else None
+        detalle = str(datos.get("descripcion") or datos.get("detalle_sugerido") or "")[:2000]
         c = Conceptos_movimiento.objects.create(
             nombre=nombre[:255],
             id_categoria=cat,
             valor_sugerido=vs,
-            descripcion=str(datos.get("descripcion") or "")[:2000],
+            descripcion=detalle,
             estado=bool(datos.get("estado", True)),
         )
-        _auditar(ctx, "CREAR_CONCEPTO_CAJA", "Conceptos_movimiento", c.id_concepto_movimiento, nombre, self._audit)
+        _auditar(
+            ctx,
+            "CREAR_CONCEPTO_CAJA",
+            "Conceptos_movimiento",
+            c.id_concepto_movimiento,
+            nombre,
+            self._audit,
+        )
         item = {
             "id_concepto_movimiento": c.id_concepto_movimiento,
             "nombre": c.nombre,
@@ -220,8 +276,15 @@ class CajaEpic11Service:
         return {"mensaje": msg.MSG_CON_CREADO, "item": item}
 
     @transaction.atomic
-    def actualizar_concepto(self, ctx: AuthContext, pk: int, datos: dict[str, Any]) -> dict[str, Any]:
-        c = Conceptos_movimiento.objects.select_for_update().select_related("id_categoria").filter(pk=pk).first()
+    def actualizar_concepto(
+        self, ctx: AuthContext, pk: int, datos: dict[str, Any]
+    ) -> dict[str, Any]:
+        c = (
+            Conceptos_movimiento.objects.select_for_update()
+            .select_related("id_categoria")
+            .filter(pk=pk)
+            .first()
+        )
         if not c:
             raise ReglaNegocioError(msg.MSG_NO_ENCONTRADO, codigo="NO_ENCONTRADO")
         if int(datos.get("version_fila") or 0) != c.version_fila:
@@ -229,8 +292,9 @@ class CajaEpic11Service:
         nombre = (datos.get("nombre") or c.nombre).strip()
         if not nombre:
             raise ReglaNegocioError(msg.MSG_VALIDACION, codigo="VALIDACION")
-        if datos.get("id_categoria"):
-            cat = Categorias_movimiento.objects.filter(pk=int(datos["id_categoria"]), estado=True).first()
+        id_cat_in = datos.get("id_categoria") or datos.get("id_categoria_movimiento")
+        if id_cat_in:
+            cat = Categorias_movimiento.objects.filter(pk=int(id_cat_in), estado=True).first()
             if not cat:
                 raise ReglaNegocioError(msg.MSG_VALIDACION, codigo="VALIDACION")
             c.id_categoria = cat
@@ -238,13 +302,25 @@ class CajaEpic11Service:
             raw = datos.get("valor_sugerido")
             c.valor_sugerido = _dec(raw, positivo=False) if raw not in (None, "") else None
         c.nombre = nombre[:255]
-        c.descripcion = str(datos.get("descripcion") or c.descripcion)[:2000]
+        if "descripcion" in datos or "detalle_sugerido" in datos:
+            c.descripcion = str(datos.get("descripcion") or datos.get("detalle_sugerido") or "")[
+                :2000
+            ]
         if "estado" in datos:
             c.estado = bool(datos.get("estado"))
         c.version_fila += 1
         c.save()
-        _auditar(ctx, "EDITAR_CONCEPTO_CAJA", "Conceptos_movimiento", c.id_concepto_movimiento, nombre, self._audit)
-        item = next(x for x in self.listar_conceptos(None, "")["items"] if x["id_concepto_movimiento"] == pk)
+        _auditar(
+            ctx,
+            "EDITAR_CONCEPTO_CAJA",
+            "Conceptos_movimiento",
+            c.id_concepto_movimiento,
+            nombre,
+            self._audit,
+        )
+        item = next(
+            x for x in self.listar_conceptos(None, "")["items"] if x["id_concepto_movimiento"] == pk
+        )
         return {"mensaje": msg.MSG_CON_ACTUALIZADO, "item": item}
 
     def listar_cuentas_enmascaradas(self, **kwargs: Any) -> dict[str, Any]:
@@ -261,15 +337,23 @@ class CajaEpic11Service:
         return r
 
     @transaction.atomic
-    def apertura_jornada(self, ctx: AuthContext, id_sede: int, fecha: date | None = None) -> dict[str, Any]:
+    def apertura_jornada(
+        self, ctx: AuthContext, id_sede: int, fecha: date | None = None
+    ) -> dict[str, Any]:
         _assert_sede(ctx, id_sede)
         dia = fecha or timezone.localdate()
         if Reportes_diarios.objects.filter(id_sede_id=id_sede, estado="ABIERTO").exists():
             raise ReglaNegocioError(msg.MSG_JORNADA_YA_ABIERTA, codigo="VALIDACION")
         if Reportes_diarios.objects.filter(id_sede_id=id_sede, fecha=dia).exists():
             raise ReglaNegocioError(msg.MSG_JORNADA_FECHA, codigo="VALIDACION")
-        ultimo = Reportes_diarios.objects.filter(id_sede_id=id_sede, estado="CERRADO").order_by("-fecha").first()
-        base = ultimo.base_siguiente if ultimo and ultimo.base_siguiente is not None else Decimal("0")
+        ultimo = (
+            Reportes_diarios.objects.filter(id_sede_id=id_sede, estado="CERRADO")
+            .order_by("-fecha")
+            .first()
+        )
+        base = (
+            ultimo.base_siguiente if ultimo and ultimo.base_siguiente is not None else Decimal("0")
+        )
         r = Reportes_diarios.objects.create(
             id_sede_id=id_sede,
             fecha=dia,
@@ -277,7 +361,14 @@ class CajaEpic11Service:
             estado="ABIERTO",
             id_usuario_apertura_id=ctx.id_usuario,
         )
-        _auditar(ctx, "APERTURA_JORNADA", "Reportes_diarios", r.id_reporte_diario, f"Sede {id_sede}", self._audit)
+        _auditar(
+            ctx,
+            "APERTURA_JORNADA",
+            "Reportes_diarios",
+            r.id_reporte_diario,
+            f"Sede {id_sede}",
+            self._audit,
+        )
         return {"mensaje": msg.MSG_JORNADA_ABIERTA, "reporte": _serializar_reporte(r)}
 
     @transaction.atomic
@@ -304,7 +395,9 @@ class CajaEpic11Service:
         return {"reporte": _serializar_reporte(r), "mensaje": msg.MSG_JORNADA_ACTUAL}
 
     def _sum(self, model: type[_Model], reporte_id: int, campo: str = "valor") -> Decimal:
-        agg = model.objects.filter(id_reporte_diario_id=reporte_id, anulado=False).aggregate(s=Sum(campo))  # type: ignore[attr-defined]
+        agg = model.objects.filter(id_reporte_diario_id=reporte_id, anulado=False).aggregate(  # type: ignore[attr-defined]
+            s=Sum(campo)
+        )
         return agg["s"] or Decimal("0")
 
     @transaction.atomic
@@ -314,9 +407,9 @@ class CajaEpic11Service:
         r.total_ahorros = self._sum(Ahorros, r.id_reporte_diario)
         r.total_transferencias = self._sum(Transferencias_caja, r.id_reporte_diario)
         r.total_entregas = self._sum(Entregas_dinero, r.id_reporte_diario)
-        r.base_adicional = Adiciones_base.objects.filter(id_reporte_diario_id=r.id_reporte_diario, anulado=False).aggregate(
-            s=Sum("valor")
-        )["s"] or Decimal("0")
+        r.base_adicional = Adiciones_base.objects.filter(
+            id_reporte_diario_id=r.id_reporte_diario, anulado=False
+        ).aggregate(s=Sum("valor"))["s"] or Decimal("0")
         ventas_pos = self._ventas.total_ventas_efectivo_jornada(r.id_sede_id, r.fecha)
         r.total_ventas = ventas_pos
         ventas_cuadre = r.venta_registrada if r.venta_registrada is not None else ventas_pos
@@ -353,7 +446,9 @@ class CajaEpic11Service:
         return {"mensaje": msg.MSG_CUADRE, "reporte": _serializar_reporte(r)}
 
     def _categoria_tipo(self, id_categoria: int, tipo: str) -> Categorias_movimiento:
-        c = Categorias_movimiento.objects.filter(pk=id_categoria, estado=True, tipo_movimiento=tipo).first()
+        c = Categorias_movimiento.objects.filter(
+            pk=id_categoria, estado=True, tipo_movimiento=tipo
+        ).first()
         if not c:
             raise ReglaNegocioError(msg.MSG_CATEGORIA_TIPO, codigo="VALIDACION")
         return c
@@ -432,7 +527,14 @@ class CajaEpic11Service:
             id_usuario_id=ctx.id_usuario,
         )
         self._recalcular_totales(r)
-        _auditar(ctx, "REGISTRAR_TRANSFERENCIA", "Transferencias_caja", t.id_transferencia, ref, self._audit)
+        _auditar(
+            ctx,
+            "REGISTRAR_TRANSFERENCIA",
+            "Transferencias_caja",
+            t.id_transferencia,
+            ref,
+            self._audit,
+        )
         return {"mensaje": msg.MSG_TRANSFERENCIA, "id_transferencia": t.id_transferencia}
 
     def listar_transferencias(self, ctx: AuthContext, id_sede: int) -> dict[str, Any]:
@@ -486,7 +588,9 @@ class CajaEpic11Service:
         return {"mensaje": msg.MSG_ENTREGA, "id_entrega": e.id_entrega}
 
     @transaction.atomic
-    def corregir_movimiento(self, ctx: AuthContext, tipo: str, pk: int, datos: dict[str, Any]) -> dict[str, Any]:
+    def corregir_movimiento(
+        self, ctx: AuthContext, tipo: str, pk: int, datos: dict[str, Any]
+    ) -> dict[str, Any]:
         tipo = tipo.strip().lower()
         row: Gastos_caja | Ahorros | Transferencias_caja | None
         if tipo == "gasto":
@@ -496,7 +600,9 @@ class CajaEpic11Service:
         elif tipo == "transferencia":
             row = Transferencias_caja.objects.select_for_update().filter(pk=pk).first()
             if row and not row.editable and row.origen == "VENTA":
-                raise ReglaNegocioError(msg.MSG_TRANSFERENCIA_FACTURADA, codigo="TRANSFERENCIA_FACTURADA")
+                raise ReglaNegocioError(
+                    msg.MSG_TRANSFERENCIA_FACTURADA, codigo="TRANSFERENCIA_FACTURADA"
+                )
         else:
             raise ReglaNegocioError(msg.MSG_VALIDACION, codigo="VALIDACION")
         if not row:
@@ -524,7 +630,9 @@ class CajaEpic11Service:
         return {"mensaje": msg.MSG_ADJUNTO_STUB, "nombre_original": nombre, "pendiente": True}
 
     @transaction.atomic
-    def actualizar_venta_registrada(self, ctx: AuthContext, id_sede: int, datos: dict[str, Any]) -> dict[str, Any]:
+    def actualizar_venta_registrada(
+        self, ctx: AuthContext, id_sede: int, datos: dict[str, Any]
+    ) -> dict[str, Any]:
         _assert_sede(ctx, id_sede)
         r = self._reporte_abierto(id_sede)
         if int(datos.get("version_fila") or 0) != r.version_fila:
@@ -536,7 +644,9 @@ class CajaEpic11Service:
         return {"mensaje": msg.MSG_VENTA_REGISTRADA, "reporte": _serializar_reporte(r)}
 
     @transaction.atomic
-    def cierre_jornada(self, ctx: AuthContext, id_sede: int, datos: dict[str, Any]) -> dict[str, Any]:
+    def cierre_jornada(
+        self, ctx: AuthContext, id_sede: int, datos: dict[str, Any]
+    ) -> dict[str, Any]:
         _assert_sede(ctx, id_sede)
         r = self._reporte_abierto(id_sede)
         if int(datos.get("version_fila") or 0) != r.version_fila:
@@ -548,22 +658,32 @@ class CajaEpic11Service:
         r.base_siguiente = datos.get("base_siguiente")
         if r.base_siguiente not in (None, ""):
             r.base_siguiente = _dec(r.base_siguiente, positivo=False)
-        r.observaciones_cierre = str(datos.get("observaciones") or datos.get("observaciones_cierre") or "")[:5000]
+        r.observaciones_cierre = str(
+            datos.get("observaciones") or datos.get("observaciones_cierre") or ""
+        )[:5000]
         r.estado = "CERRADO"
         r.fecha_cierre = timezone.now()
         r.id_usuario_cierre_id = ctx.id_usuario
         r.version_fila += 1
         r.save()
-        _auditar(ctx, "CIERRE_JORNADA", "Reportes_diarios", r.id_reporte_diario, "Cierre", self._audit)
+        _auditar(
+            ctx, "CIERRE_JORNADA", "Reportes_diarios", r.id_reporte_diario, "Cierre", self._audit
+        )
         return {"mensaje": msg.MSG_CIERRE, "reporte": _serializar_reporte(r)}
 
     @transaction.atomic
-    def reapertura_jornada(self, ctx: AuthContext, id_sede: int, datos: dict[str, Any]) -> dict[str, Any]:
+    def reapertura_jornada(
+        self, ctx: AuthContext, id_sede: int, datos: dict[str, Any]
+    ) -> dict[str, Any]:
         _assert_sede(ctx, id_sede)
         if Reportes_diarios.objects.filter(id_sede_id=id_sede, estado="ABIERTO").exists():
             raise ReglaNegocioError(msg.MSG_JORNADA_YA_ABIERTA, codigo="VALIDACION")
         id_reporte = int(datos.get("id_reporte_diario") or 0)
-        r = Reportes_diarios.objects.select_for_update().filter(pk=id_reporte, id_sede_id=id_sede).first()
+        r = (
+            Reportes_diarios.objects.select_for_update()
+            .filter(pk=id_reporte, id_sede_id=id_sede)
+            .first()
+        )
         if not r or r.estado != "CERRADO":
             raise ReglaNegocioError(msg.MSG_NO_ENCONTRADO, codigo="NO_ENCONTRADO")
         if int(datos.get("version_fila") or 0) != r.version_fila:
@@ -575,10 +695,19 @@ class CajaEpic11Service:
         r.diferencia = None
         r.version_fila += 1
         r.save()
-        _auditar(ctx, "REAPERTURA_JORNADA", "Reportes_diarios", r.id_reporte_diario, "Reapertura", self._audit)
+        _auditar(
+            ctx,
+            "REAPERTURA_JORNADA",
+            "Reportes_diarios",
+            r.id_reporte_diario,
+            "Reapertura",
+            self._audit,
+        )
         return {"mensaje": msg.MSG_REAPERTURA, "reporte": _serializar_reporte(r)}
 
-    def historial(self, ctx: AuthContext, id_sede: int, desde: str | None, hasta: str | None) -> dict[str, Any]:
+    def historial(
+        self, ctx: AuthContext, id_sede: int, desde: str | None, hasta: str | None
+    ) -> dict[str, Any]:
         _assert_sede(ctx, id_sede)
         qs = Reportes_diarios.objects.filter(id_sede_id=id_sede).order_by("-fecha")
         if desde:
@@ -588,7 +717,9 @@ class CajaEpic11Service:
         items = [_serializar_reporte(r) for r in qs[:60]]
         return {"items": items, "mensaje": msg.MSG_HISTORIAL.format(n=len(items))}
 
-    def exportar_historial(self, ctx: AuthContext, id_sede: int, formato: str) -> tuple[str, bytes, str]:
+    def exportar_historial(
+        self, ctx: AuthContext, id_sede: int, formato: str
+    ) -> tuple[str, bytes, str]:
         data = self.historial(ctx, id_sede, None, None)
         if not data["items"]:
             raise ReglaNegocioError(msg.MSG_HISTORIAL_VACIO, codigo="EXPORT_VACIO")

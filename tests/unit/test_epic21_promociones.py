@@ -5,9 +5,9 @@ import pytest
 from django.utils import timezone
 from PIL import Image
 
+from apps.m13_plataforma.observability import interactions_service as ix
 from apps.m13_plataforma.observability.fake_mongo_store import FakeMongoStore
 from apps.m13_plataforma.observability.interactions_service import registrar_lote
-from apps.m13_plataforma.observability import interactions_service as ix
 from apps.m21_promociones.admin_promociones_service import AdminPromocionesService
 from apps.m21_promociones.models import ESTADO_ACTIVA, ESTADO_PAUSADA, Promociones
 from contratos.dtos import AuthContext
@@ -87,7 +87,10 @@ def test_crear_listar_actualizar_y_fechas():
     assert svc.listar("Sorteo", "activa", 1, 10)["total"] == 1
     assert svc.obtener(pk)["titulo"] == "Sorteo"
     with pytest.raises(ReglaNegocioError):
-        svc.crear(_ctx(), {"titulo": "X", "tipo": "otro", "descripcion": "d", "fecha_inicio": inicio.isoformat()})
+        svc.crear(
+            _ctx(),
+            {"titulo": "X", "tipo": "otro", "descripcion": "d", "fecha_inicio": inicio.isoformat()},
+        )
     with pytest.raises(ReglaNegocioError):
         svc.crear(
             _ctx(),
@@ -141,7 +144,7 @@ def test_guardar_imagen_png():
 @pytest.mark.unit
 def test_interacciones_lote_fake(monkeypatch):
     store = FakeMongoStore()
-    monkeypatch.setattr(ix, "_store", store)
+    monkeypatch.setattr(ix, "_cache", [store])
     out = registrar_lote(
         id_usuario=None,
         eventos=[{"boton": "whatsapp_promo", "pantalla": "home", "id_promocion": 7}],
@@ -155,9 +158,16 @@ def test_interacciones_lote_fake(monkeypatch):
         def insert_many(self, collection, docs):
             raise RuntimeError("down")
 
-    monkeypatch.setattr(ix, "_store", Boom())
-    assert registrar_lote(id_usuario=1, eventos=[{"boton": "x", "pantalla": "y"}])["registrados"] == 0
-    assert registrar_lote(id_usuario=1, eventos=[{"boton": "z", "pantalla": "p", "id_promocion": "no"}])["registrados"] == 0
+    monkeypatch.setattr(ix, "_cache", [Boom()])
+    assert (
+        registrar_lote(id_usuario=1, eventos=[{"boton": "x", "pantalla": "y"}])["registrados"] == 0
+    )
+    assert (
+        registrar_lote(
+            id_usuario=1, eventos=[{"boton": "z", "pantalla": "p", "id_promocion": "no"}]
+        )["registrados"]
+        == 0
+    )
 
 
 @pytest.mark.unit
@@ -168,7 +178,12 @@ def test_listar_sin_coincidencias_y_jpeg():
     inicio = timezone.now()
     r = svc.crear(
         _ctx(),
-        {"titulo": "Jpg", "tipo": "promocion", "descripcion": "d", "fecha_inicio": inicio.isoformat()},
+        {
+            "titulo": "Jpg",
+            "tipo": "promocion",
+            "descripcion": "d",
+            "fecha_inicio": inicio.isoformat(),
+        },
     )
     buf = io.BytesIO()
     Image.new("RGB", (8, 8), color=(1, 2, 3)).save(buf, format="JPEG")

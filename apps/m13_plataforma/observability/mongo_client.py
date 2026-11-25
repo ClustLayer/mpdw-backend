@@ -23,7 +23,7 @@ class PyMongoStore:
     def __init__(self, uri: str, database: str) -> None:
         from pymongo import MongoClient
 
-        self._db = MongoClient(uri, serverSelectionTimeoutMS=3000)[database]
+        self._db: Any = MongoClient(uri, serverSelectionTimeoutMS=3000)[database]
 
     def insert_many(self, collection: str, docs: list[dict[str, Any]]) -> None:
         if docs:

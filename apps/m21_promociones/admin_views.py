@@ -78,7 +78,9 @@ class PromocionAdminListCreateView(APIView):
 
 class PromocionAdminDetailView(APIView):
     def get_permissions(self):
-        self.required_permission = PERM_EDITAR if self.request.method in {"PUT", "PATCH"} else PERM_VER
+        self.required_permission = (
+            PERM_EDITAR if self.request.method in {"PUT", "PATCH"} else PERM_VER
+        )
         return [IsAuthenticated(), HasDynamicPermission()]
 
     @extend_schema(operation_id="promociones_detalle")

@@ -52,7 +52,8 @@ def backup_rows(rows: list[Any]) -> int:
         store: Any = FakeMongoStore()
         store.insert_many(COLECCION_LOGS_GENERALES, docs)
         logger.warning(
-            "MONGODB_GENERAL_URI ausente: respaldo de %s filas en FakeMongoStore (solo trazas).", len(docs)
+            "MONGODB_GENERAL_URI ausente: respaldo de %s filas en FakeMongoStore (solo trazas).",
+            len(docs),
         )
         return len(docs)
     try:
@@ -64,8 +65,8 @@ def backup_rows(rows: list[Any]) -> int:
     except Exception:
         # No bloquear migrate si Atlas no es alcanzable (IP/SSL). Deja rastro local.
         logger.exception("Fallo respaldo Mongo Atlas; escribiendo JSONL local de contingencia.")
-        from pathlib import Path
         import json
+        from pathlib import Path
 
         out = Path("media") / "backups" / "auditoria_migracion_backup.jsonl"
         out.parent.mkdir(parents=True, exist_ok=True)

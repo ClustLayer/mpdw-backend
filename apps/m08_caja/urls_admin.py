@@ -32,13 +32,19 @@ urlpatterns = [
     path("conceptos/", ConceptosListCreateView.as_view(), name="caja-conceptos"),
     path("conceptos/<int:pk>/", ConceptoDetailView.as_view(), name="caja-concepto-detalle"),
     path("jornada/apertura/", JornadaAperturaView.as_view(), name="caja-jornada-apertura"),
-    path("jornada/base-inicial/", JornadaBaseInicialView.as_view(), name="caja-jornada-base-inicial"),
+    path(
+        "jornada/base-inicial/", JornadaBaseInicialView.as_view(), name="caja-jornada-base-inicial"
+    ),
     path("jornada/actual/", JornadaActualView.as_view(), name="caja-jornada-actual"),
     path("movimientos/gastos-ahorros/", GastosAhorrosView.as_view(), name="caja-gastos-ahorros"),
     path("movimientos/transferencias/", TransferenciasView.as_view(), name="caja-transferencias"),
     path("adiciones/", AdicionesView.as_view(), name="caja-adiciones"),
     path("entregas/", EntregasView.as_view(), name="caja-entregas"),
-    path("movimientos/<str:tipo>/<int:pk>/corregir/", CorregirMovimientoView.as_view(), name="caja-corregir-movimiento"),
+    path(
+        "movimientos/<str:tipo>/<int:pk>/corregir/",
+        CorregirMovimientoView.as_view(),
+        name="caja-corregir-movimiento",
+    ),
     path("adjuntos/", AdjuntosMovimientoView.as_view(), name="caja-adjuntos"),
     path("reporte/venta-registrada/", VentaRegistradaView.as_view(), name="caja-venta-registrada"),
     path("reporte/cuadre/", ReporteCuadreView.as_view(), name="caja-cuadre"),

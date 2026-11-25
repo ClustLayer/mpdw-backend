@@ -20,7 +20,9 @@ def _png() -> bytes:
 
 
 def _client_admin() -> APIClient:
-    rol, _ = Roles.objects.get_or_create(nombre="Administrador", defaults={"es_rol_base": True, "estado": True})
+    rol, _ = Roles.objects.get_or_create(
+        nombre="Administrador", defaults={"es_rol_base": True, "estado": True}
+    )
     user = Usuarios.objects.create_user(
         email="promo.api@test.local",
         password="Admin#2026demo",
@@ -90,24 +92,31 @@ def test_api_promociones_crud_y_publico():
     )
     assert lote.status_code == 200
     assert client.post("/api/v1/promociones/", {"titulo": ""}, format="json").status_code == 400
-    assert client.post(f"/api/v1/promociones/{pk}/imagen/", {}, format="multipart").status_code == 400
-    bad = APIClient().post("/api/v1/analitica/interacciones/", {"interacciones": "x"}, format="json")
+    assert (
+        client.post(f"/api/v1/promociones/{pk}/imagen/", {}, format="multipart").status_code == 400
+    )
+    bad = APIClient().post(
+        "/api/v1/analitica/interacciones/", {"interacciones": "x"}, format="json"
+    )
     assert bad.status_code == 400
     assert client.get(f"/api/v1/promociones/{pk}/").status_code == 200
-    assert client.put(
-        f"/api/v1/promociones/{pk}/",
-        {
-            "titulo": "API Promo",
-            "tipo": "promocion",
-            "descripcion": "Desc 3",
-            "hashtags": "#api",
-            "fecha_inicio": inicio.isoformat(),
-            "fecha_fin": (inicio + timezone.timedelta(days=2)).isoformat(),
-            "estado": "activa",
-            "version_fila": up.json()["promocion"]["version_fila"],
-        },
-        format="json",
-    ).status_code == 200
+    assert (
+        client.put(
+            f"/api/v1/promociones/{pk}/",
+            {
+                "titulo": "API Promo",
+                "tipo": "promocion",
+                "descripcion": "Desc 3",
+                "hashtags": "#api",
+                "fecha_inicio": inicio.isoformat(),
+                "fecha_fin": (inicio + timezone.timedelta(days=2)).isoformat(),
+                "estado": "activa",
+                "version_fila": up.json()["promocion"]["version_fila"],
+            },
+            format="json",
+        ).status_code
+        == 200
+    )
     assert client.get("/api/v1/promociones/999999/").status_code == 404
 
 

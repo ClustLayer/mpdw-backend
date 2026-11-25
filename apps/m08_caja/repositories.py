@@ -11,4 +11,3 @@ class CashAdapter(CashPort):
 
     def jornada_esta_abierta(self, id_sede: int) -> bool:
         return Reportes_diarios.objects.filter(id_sede_id=id_sede, estado="ABIERTO").exists()
-

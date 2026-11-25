@@ -10,20 +10,20 @@ from django.utils import timezone
 from apps.m13_plataforma.observability.constants import COLECCION_INTERACCIONES
 from apps.m13_plataforma.observability.mongo_client import MongoStore, build_store
 
-_store: MongoStore | None | bool = False
+_cache: list[MongoStore | None] = []
 
 
 def _store_interactions() -> MongoStore | None:
-    global _store
-    if _store is False:
-        _store = build_store("MONGODB_INTERACTIONS_URI") or build_store("MONGODB_GENERAL_URI")
-    return _store if _store is not False else None
+    if not _cache:
+        _cache.append(build_store("MONGODB_INTERACTIONS_URI") or build_store("MONGODB_GENERAL_URI"))
+    return _cache[0]
 
 
 def _normalizar_evento(ev: dict[str, Any]) -> dict[str, Any]:
     boton = str(ev.get("boton") or ev.get("elemento") or ev.get("target") or "")[:200]
     pantalla = str(ev.get("pantalla") or ev.get("ruta") or ev.get("path") or "")[:500]
-    meta = ev.get("metadata") if isinstance(ev.get("metadata"), dict) else {}
+    raw_meta = ev.get("metadata")
+    meta: dict[str, Any] = dict(raw_meta) if isinstance(raw_meta, dict) else {}
     promo = ev.get("id_promocion")
     if promo is not None and "id_promocion" not in meta:
         try:

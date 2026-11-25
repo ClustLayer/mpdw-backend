@@ -6,10 +6,11 @@ import gzip
 import hashlib
 import json
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from apps.m13_plataforma.observability.constants import (
     COLECCION_INTERACCIONES,
@@ -64,7 +65,9 @@ def _sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def _fetch_docs(uri_env: str, collection: str, inicio: datetime, fin: datetime) -> list[dict[str, Any]]:
+def _fetch_docs(
+    uri_env: str, collection: str, inicio: datetime, fin: datetime
+) -> list[dict[str, Any]]:
     store = build_store(uri_env)
     if store is None:
         logger.warning("Sin almacén para %s; colección %s omitida.", uri_env, collection)
@@ -126,7 +129,11 @@ def ejecutar_archivo(
     raiz.mkdir(parents=True, exist_ok=True)
 
     fuentes: list[tuple[str, str, list[dict[str, Any]]]] = [
-        ("general_logs", "MONGODB_GENERAL_URI", _fetch_docs("MONGODB_GENERAL_URI", COLECCION_LOGS_GENERALES, p.inicio, p.fin)),
+        (
+            "general_logs",
+            "MONGODB_GENERAL_URI",
+            _fetch_docs("MONGODB_GENERAL_URI", COLECCION_LOGS_GENERALES, p.inicio, p.fin),
+        ),
         (
             "interacciones",
             "MONGODB_INTERACTIONS_URI",

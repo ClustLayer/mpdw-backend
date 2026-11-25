@@ -22,7 +22,9 @@ def _limpiar_y_respaldar(apps, schema_editor):
         if filas:
             backup_rows(filas)
             no_seg.delete()
-        Auditoria.objects.filter(accion__iexact="CAMBIO_CONTRASENA").update(accion="CAMBIO_PASSWORD")
+        Auditoria.objects.filter(accion__iexact="CAMBIO_CONTRASENA").update(
+            accion="CAMBIO_PASSWORD"
+        )
     finally:
         if vendor == "postgresql":
             with connection.cursor() as cursor:

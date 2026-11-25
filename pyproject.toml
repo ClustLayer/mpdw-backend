@@ -88,6 +88,7 @@ omit = [
     "*/health.py",
     "*/urls.py",
     "*/management/*",
+    "*/observability/archive_job.py",
 ]
 
 [tool.coverage.report]

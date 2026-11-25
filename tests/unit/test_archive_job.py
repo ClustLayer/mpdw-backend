@@ -6,10 +6,14 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
+
 from apps.m13_plataforma.observability.archive_job import (
     ejecutar_archivo,
     periodo_cerrado_anterior,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def test_periodo_cerrado_marzo_archiva_ene_feb():
@@ -40,8 +44,12 @@ def test_ejecutar_archivo_idempotente(tmp_path: Path, monkeypatch):
         lambda *a, **k: [],
     )
     destino = tmp_path / "out"
-    m1 = ejecutar_archivo(destino_raiz=destino, periodo=periodo_cerrado_anterior(datetime(2026, 3, 2, tzinfo=UTC)))
+    m1 = ejecutar_archivo(
+        destino_raiz=destino, periodo=periodo_cerrado_anterior(datetime(2026, 3, 2, tzinfo=UTC))
+    )
     assert m1["estado"] == "VALIDADO"
     assert m1["total_registros"] >= 1
-    m2 = ejecutar_archivo(destino_raiz=destino, periodo=periodo_cerrado_anterior(datetime(2026, 3, 2, tzinfo=UTC)))
+    m2 = ejecutar_archivo(
+        destino_raiz=destino, periodo=periodo_cerrado_anterior(datetime(2026, 3, 2, tzinfo=UTC))
+    )
     assert any(a.get("reutilizado") for a in m2["archivos"])

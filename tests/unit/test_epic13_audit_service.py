@@ -2,8 +2,8 @@ import pytest
 
 from apps.m10_auditoria.models import Auditoria
 from apps.m10_auditoria.services import AuditService
-from apps.m13_plataforma.observability.fake_mongo_store import FakeMongoStore
 from apps.m13_plataforma.observability import general_log_writer as glw
+from apps.m13_plataforma.observability.fake_mongo_store import FakeMongoStore
 from contratos.dtos import AuditoriaDTO
 
 
@@ -52,8 +52,8 @@ def test_registrar_negocio_en_mongo_fake(monkeypatch):
 
 @pytest.mark.unit
 def test_fake_mongo_insert_one_y_build_store(monkeypatch):
-    from apps.m13_plataforma.observability.fake_mongo_store import FakeMongoStore
     from apps.m13_plataforma.observability import mongo_client as mc
+    from apps.m13_plataforma.observability.fake_mongo_store import FakeMongoStore
 
     store = FakeMongoStore()
     store.insert_one("c", {"a": 1})

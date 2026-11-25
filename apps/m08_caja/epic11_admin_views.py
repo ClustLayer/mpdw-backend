@@ -33,7 +33,9 @@ class CategoriasListCreateView(APIView):
 
     def post(self, request: Request) -> Response:
         try:
-            data = CajaEpic11Service().crear_categoria(_ctx(request), request.data if isinstance(request.data, dict) else {})
+            data = CajaEpic11Service().crear_categoria(
+                _ctx(request), request.data if isinstance(request.data, dict) else {}
+            )
         except ReglaNegocioError as exc:
             return _err(exc, request)
         return Response(data, status=status.HTTP_201_CREATED)
@@ -67,7 +69,9 @@ class ConceptosListCreateView(APIView):
 
     def post(self, request: Request) -> Response:
         try:
-            data = CajaEpic11Service().crear_concepto(_ctx(request), request.data if isinstance(request.data, dict) else {})
+            data = CajaEpic11Service().crear_concepto(
+                _ctx(request), request.data if isinstance(request.data, dict) else {}
+            )
         except ReglaNegocioError as exc:
             return _err(exc, request)
         return Response(data, status=status.HTTP_201_CREATED)
@@ -94,7 +98,9 @@ class JornadaAperturaView(APIView):
     def post(self, request: Request) -> Response:
         body = request.data if isinstance(request.data, dict) else {}
         try:
-            data = CajaEpic11Service().apertura_jornada(_ctx(request), int(body.get("id_sede") or 0))
+            data = CajaEpic11Service().apertura_jornada(
+                _ctx(request), int(body.get("id_sede") or 0)
+            )
         except ReglaNegocioError as exc:
             return _err(exc, request)
         return Response(data, status=status.HTTP_201_CREATED)
@@ -107,7 +113,9 @@ class JornadaBaseInicialView(APIView):
     def post(self, request: Request) -> Response:
         body = request.data if isinstance(request.data, dict) else {}
         try:
-            data = CajaEpic11Service().base_inicial_primera(_ctx(request), int(body.get("id_sede") or 0), body.get("monto"))
+            data = CajaEpic11Service().base_inicial_primera(
+                _ctx(request), int(body.get("id_sede") or 0), body.get("monto")
+            )
         except ReglaNegocioError as exc:
             return _err(exc, request)
         return Response(data, status=status.HTTP_201_CREATED)
@@ -173,7 +181,9 @@ class AdicionesView(APIView):
 
     def post(self, request: Request) -> Response:
         try:
-            data = CajaEpic11Service().registrar_adicion(_ctx(request), request.data if isinstance(request.data, dict) else {})
+            data = CajaEpic11Service().registrar_adicion(
+                _ctx(request), request.data if isinstance(request.data, dict) else {}
+            )
         except ReglaNegocioError as exc:
             return _err(exc, request)
         return Response(data, status=status.HTTP_201_CREATED)
@@ -185,7 +195,9 @@ class EntregasView(APIView):
 
     def post(self, request: Request) -> Response:
         try:
-            data = CajaEpic11Service().registrar_entrega(_ctx(request), request.data if isinstance(request.data, dict) else {})
+            data = CajaEpic11Service().registrar_entrega(
+                _ctx(request), request.data if isinstance(request.data, dict) else {}
+            )
         except ReglaNegocioError as exc:
             return _err(exc, request)
         return Response(data, status=status.HTTP_201_CREATED)
@@ -236,7 +248,11 @@ class ReporteCuadreView(APIView):
 
     def get(self, request: Request) -> Response:
         try:
-            return Response(CajaEpic11Service().cuadre_tiempo_real(_ctx(request), int(request.query_params.get("id_sede") or 0)))
+            return Response(
+                CajaEpic11Service().cuadre_tiempo_real(
+                    _ctx(request), int(request.query_params.get("id_sede") or 0)
+                )
+            )
         except ReglaNegocioError as exc:
             return _err(exc, request)
 
@@ -248,7 +264,9 @@ class ReporteCierreView(APIView):
     def post(self, request: Request) -> Response:
         body = request.data if isinstance(request.data, dict) else {}
         try:
-            data = CajaEpic11Service().cierre_jornada(_ctx(request), int(body.get("id_sede") or 0), body)
+            data = CajaEpic11Service().cierre_jornada(
+                _ctx(request), int(body.get("id_sede") or 0), body
+            )
         except ReglaNegocioError as exc:
             return _err(exc, request)
         return Response(data)
@@ -261,7 +279,9 @@ class ReporteReaperturaView(APIView):
     def post(self, request: Request) -> Response:
         body = request.data if isinstance(request.data, dict) else {}
         try:
-            data = CajaEpic11Service().reapertura_jornada(_ctx(request), int(body.get("id_sede") or 0), body)
+            data = CajaEpic11Service().reapertura_jornada(
+                _ctx(request), int(body.get("id_sede") or 0), body
+            )
         except ReglaNegocioError as exc:
             return _err(exc, request)
         return Response(data)

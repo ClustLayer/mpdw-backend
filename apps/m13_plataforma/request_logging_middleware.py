@@ -25,7 +25,7 @@ class RequestLoggingMiddleware:
         cid = getattr(request, "correlation_id", "")
         try:
             get_general_log_writer().log_http(
-                metodo=request.method,
+                metodo=request.method or "GET",
                 ruta=request.path[:500],
                 status=response.status_code,
                 correlation_id=str(cid),

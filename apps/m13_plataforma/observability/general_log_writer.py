@@ -41,9 +41,13 @@ class GeneralLogWriter:
         try:
             self._pending.put_nowait(payload)
         except queue.Full:  # pragma: no cover
-            logger.warning("Cola de logs generales llena; descartando evento %s", payload.get("accion"))
+            logger.warning(
+                "Cola de logs generales llena; descartando evento %s", payload.get("accion")
+            )
 
-    def log_http(self, *, metodo: str, ruta: str, status: int, correlation_id: str, ms: float) -> None:
+    def log_http(
+        self, *, metodo: str, ruta: str, status: int, correlation_id: str, ms: float
+    ) -> None:
         self.enqueue(
             {
                 "tipo": "http_request",

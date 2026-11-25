@@ -24,7 +24,9 @@ class Promociones(models.Model):
     imagen = models.CharField(max_length=500, blank=True, default="", db_column="imagen")
     fecha_inicio = models.DateTimeField(db_column="fecha_inicio")
     fecha_fin = models.DateTimeField(null=True, blank=True, db_column="fecha_fin")
-    estado = models.CharField(max_length=20, choices=ESTADOS, default=ESTADO_ACTIVA, db_column="estado")
+    estado = models.CharField(
+        max_length=20, choices=ESTADOS, default=ESTADO_ACTIVA, db_column="estado"
+    )
     version_fila = models.PositiveIntegerField(default=1, db_column="version_fila")
     fecha_registro = models.DateTimeField(auto_now_add=True, db_column="fecha_registro")
 

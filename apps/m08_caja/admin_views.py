@@ -31,7 +31,11 @@ def _err(exc: ReglaNegocioError, request: Request) -> Response:
     elif exc.codigo == "NO_ENCONTRADO":
         code = status.HTTP_404_NOT_FOUND
     return Response(
-        {"codigo": exc.codigo, "mensaje": exc.mensaje, "idCorrelacion": getattr(request, "correlation_id", "")},
+        {
+            "codigo": exc.codigo,
+            "mensaje": exc.mensaje,
+            "idCorrelacion": getattr(request, "correlation_id", ""),
+        },
         status=code,
     )
 
