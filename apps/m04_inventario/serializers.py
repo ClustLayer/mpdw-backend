@@ -22,8 +22,6 @@ class MovimientoInventarioSerializer(serializers.ModelSerializer):
             "id_inventario",
             "tipo_movimiento",
             "cantidad",
-            "cantidad_anterior",
-            "cantidad_nueva",
             "motivo",
             "fecha_hora",
         )

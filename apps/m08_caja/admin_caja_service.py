@@ -17,13 +17,21 @@ from contratos.excepciones import ReglaNegocioError
 TIPOS_VALIDOS = frozenset(TIPOS_CUENTA)
 
 
-def _serializar(c: Cuentas_bancarias) -> dict[str, Any]:
+def _enmascarar_numero(numero: str) -> str:
+    n = (numero or "").strip()
+    if len(n) <= 4:
+        return "****"
+    return ("*" * (len(n) - 4)) + n[-4:]
+
+
+def _serializar(c: Cuentas_bancarias, *, enmascarar: bool = False) -> dict[str, Any]:
+    numero = _enmascarar_numero(c.numero) if enmascarar else c.numero
     return {
         "id_cuenta_bancaria": c.id_cuenta_bancaria,
         "nombre": c.nombre,
         "tipo_cuenta": c.tipo_cuenta,
         "banco": c.banco,
-        "numero": c.numero,
+        "numero": numero,
         "estado": c.estado,
         "version_fila": c.version_fila,
         "etiqueta": f"{c.nombre} · {c.tipo_cuenta}",
@@ -66,7 +74,7 @@ class AdminCajaService:
             qs = qs.filter(estado=False)
         total = qs.count()
         start = (page - 1) * page_size
-        items = [_serializar(c) for c in qs[start : start + page_size]]
+        items = [_serializar(c, enmascarar=True) for c in qs[start : start + page_size]]
         return {"items": items, "total": total, "mensaje": msg.MSG_LISTADO.format(n=total)}
 
     def _validar_body(self, datos: dict[str, Any]) -> tuple[str, str, str]:

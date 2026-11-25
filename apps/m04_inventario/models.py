@@ -37,8 +37,6 @@ class Movimientos_inventario(models.Model):
     id_inventario = models.ForeignKey(Inventarios, on_delete=models.CASCADE, db_column="id_inventario", related_name="movimientos")
     tipo_movimiento = models.CharField(max_length=30, db_column="tipo_movimiento")
     cantidad = models.DecimalField(max_digits=14, decimal_places=2, db_column="cantidad")
-    cantidad_anterior = models.DecimalField(max_digits=14, decimal_places=2, db_column="cantidad_anterior")
-    cantidad_nueva = models.DecimalField(max_digits=14, decimal_places=2, db_column="cantidad_nueva")
     motivo = models.TextField(db_column="motivo")
     referencia = models.CharField(max_length=80, blank=True, default="", db_column="referencia")
     id_proveedor = models.ForeignKey(
@@ -72,5 +70,5 @@ class Movimientos_inventario(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"[{self.fecha_hora}] {self.tipo_movimiento} ({self.cantidad}) -> Nuevo: {self.cantidad_nueva}"
+        return f"[{self.fecha_hora}] {self.tipo_movimiento} ({self.cantidad})"
 

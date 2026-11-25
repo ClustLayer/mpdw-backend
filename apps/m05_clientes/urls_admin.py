@@ -5,11 +5,17 @@ from apps.m05_clientes.admin_views import (
     ClienteAdminListCreateView,
     ClienteHistorialView,
     ClienteTelefonoCheckView,
+    ExportarClientesView,
+    ImportarClientesView,
+    PlantillaClientesView,
     TipoClienteAdminView,
     TipoClienteDetalleView,
 )
 
 urlpatterns = [
+    path("exportar/", ExportarClientesView.as_view(), name="clientes-exportar"),
+    path("importar/", ImportarClientesView.as_view(), name="clientes-importar"),
+    path("plantilla/", PlantillaClientesView.as_view(), name="clientes-plantilla"),
     path("", ClienteAdminListCreateView.as_view(), name="clientes-admin"),
     path("verificar-telefono/", ClienteTelefonoCheckView.as_view(), name="clientes-verificar-telefono"),
     path("tipos/", TipoClienteAdminView.as_view(), name="tipos-cliente"),

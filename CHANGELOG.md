@@ -19,8 +19,16 @@ Versionado del producto: **MAJOR.SPRINT.EPIC_IN_SPRINT** (`1` = major del sistem
 | **1.3.2** | Sprint 3 · Épica 9 (domicilios y mensajería) |
 | **1.3.3** | Sprint 3 · Épica 10 (facturación electrónica externa — HU 59) |
 | **1.3.4** | Sprint 3 · Épica 16 (tienda pública y pedido WhatsApp — HU 88–93) |
+| **1.4.1** | Sprint 4 · Épica 11 (caja, reporte diario y movimientos — HU 60–79) |
 
 ---
+
+## 2026-11-21 — v1.4.1 Épica 11 (caja y reporte diario)
+
+- Modelos y API `/api/v1/caja/` para jornada, movimientos, cuadre, cierre, historial y exportación (HU 60–79).
+- Clientes: importar, exportar y plantilla XLSX alineada a productos.
+- Inventario kardex sin columnas anterior/nuevo; auditoría sin JSON de diff.
+- Semilla permisos `categorias_movimientos`; QA `docs/qa/epic-11.md`; OpenAPI sincronizado.
 
 ## 2026-11-20 — v1.3.4 Épica 16 (tienda pública WhatsApp)
 

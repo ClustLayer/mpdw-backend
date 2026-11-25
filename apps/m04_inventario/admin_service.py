@@ -7,6 +7,7 @@ from typing import Any
 
 from django.db import transaction
 from django.db.models import Q, Sum
+from django.utils import timezone
 
 from apps.m01_identidad.models import Usuarios
 from apps.m02_sedes.models import Sedes
@@ -123,14 +124,18 @@ class AdminInventarioService:
             qs = qs.filter(id_inventario__id_sede_id=int(filtros["id_sede"]))
         if filtros.get("tipo"):
             qs = qs.filter(tipo_movimiento=filtros["tipo"])
-        if filtros.get("desde"):
-            qs = qs.filter(fecha_hora__date__gte=filtros["desde"])
-        if filtros.get("hasta"):
-            qs = qs.filter(fecha_hora__date__lte=filtros["hasta"])
+        desde = (filtros.get("desde") or "").strip()
+        hasta = (filtros.get("hasta") or "").strip()
+        if desde:
+            qs = qs.filter(fecha_hora__date__gte=desde)
+        elif not hasta:
+            qs = qs.filter(fecha_hora__date=timezone.localdate())
+        if hasta:
+            qs = qs.filter(fecha_hora__date__lte=hasta)
         items = []
         for m in qs.order_by("-fecha_hora")[:200]:
             signo = SIGNOS.get(m.tipo_movimiento, Decimal("1"))
-            delta = float(m.cantidad * signo) if m.tipo_movimiento in SIGNOS else float(m.cantidad_nueva - m.cantidad_anterior)
+            delta = float(m.cantidad * signo) if m.tipo_movimiento in SIGNOS else float(m.cantidad)
             items.append(
                 {
                     "id_movimiento": m.id_movimiento,
@@ -140,8 +145,6 @@ class AdminInventarioService:
                     "tipo": m.tipo_movimiento,
                     "cantidad": float(m.cantidad),
                     "delta": delta,
-                    "anterior": float(m.cantidad_anterior),
-                    "nueva": float(m.cantidad_nueva),
                     "costo_unitario": str(m.costo_unitario) if m.costo_unitario is not None else None,
                     "motivo": m.motivo,
                     "referencia": m.referencia,
@@ -357,8 +360,6 @@ class AdminInventarioService:
                 id_inventario=inv,
                 tipo_movimiento=tipo,
                 cantidad=cantidad,
-                cantidad_anterior=anterior,
-                cantidad_nueva=nueva,
                 motivo=motivo,
                 referencia=str(datos.get("referencia") or "")[:80],
                 id_proveedor_id=pid,

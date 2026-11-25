@@ -16,8 +16,6 @@ class AuditoriaFilaSerializer(serializers.Serializer):
     id_entidad = serializers.IntegerField()
     ip_origen = serializers.CharField()
     resumen = serializers.CharField()
-    datos_anteriores = serializers.JSONField(allow_null=True)
-    datos_nuevos = serializers.JSONField(allow_null=True)
     motivo = serializers.CharField()
     resultado = serializers.CharField()
 
