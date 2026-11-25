@@ -62,6 +62,18 @@ Solo **Administrador** y **Analista de datos**. No publicar Loki ni Mongo al pú
 
 Plantilla opcional: `docs/observability/docker-compose.observability.yml` (Fluent Bit + Loki + Grafana). Sustituir por el stack del proveedor si ya existe un servicio de logs administrado.
 
+## Archivo bimestral (informe §3)
+
+```bash
+uv run python manage.py archivar_logs_bimestral --dry-run
+uv run python manage.py archivar_logs_bimestral
+```
+
+Salida: `media/backups/logs/<periodo>/` con `*.jsonl.gz` + `manifest.json` (SHA-256).  
+Regla: **exportar → verificar → solo entonces aplicar retención**. El comando no borra Mongo ni Loki.
+
+Si Atlas rechaza la conexión (Network Access / SSL), ampliar la IP del host en el cluster y reintentar. Mientras tanto, el respaldo de migración queda en `media/backups/auditoria_migracion_backup.jsonl` (contingencia local).
+
 ## Prueba de humo
 
 1. Login fallido → fila en `Auditoria` + evento en Grafana.

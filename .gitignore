@@ -49,6 +49,8 @@ test_*.json
 *.sqlite3
 *.log
 postgres_data/
+media/backups/
+media/
 
 # IDE
 .idea/

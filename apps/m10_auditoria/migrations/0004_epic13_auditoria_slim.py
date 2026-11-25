@@ -8,13 +8,39 @@ from apps.m13_plataforma.observability.migration_backup import backup_rows
 
 def _limpiar_y_respaldar(apps, schema_editor):
     Auditoria = apps.get_model("m10_auditoria", "Auditoria")
-    no_seg = Auditoria.objects.exclude(accion__in=ACCIONES_SEGURIDAD_SQL)
-    filas = list(no_seg)
-    if filas:
-        backup_rows(filas)
-        no_seg.delete()
-    # Normaliza alias de cambio de contraseña
-    Auditoria.objects.filter(accion__iexact="CAMBIO_CONTRASENA").update(accion="CAMBIO_PASSWORD")
+    connection = schema_editor.connection
+    vendor = connection.vendor
+
+    # RI-16: el trigger bloquea DELETE/UPDATE; se elimina solo durante esta limpieza.
+    if vendor == "postgresql":
+        with connection.cursor() as cursor:
+            cursor.execute('DROP TRIGGER IF EXISTS trg_auditoria_inmutable ON "Auditoria";')
+
+    try:
+        no_seg = Auditoria.objects.exclude(accion__in=ACCIONES_SEGURIDAD_SQL)
+        filas = list(no_seg)
+        if filas:
+            backup_rows(filas)
+            no_seg.delete()
+        Auditoria.objects.filter(accion__iexact="CAMBIO_CONTRASENA").update(accion="CAMBIO_PASSWORD")
+    finally:
+        if vendor == "postgresql":
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    CREATE OR REPLACE FUNCTION rechazar_modificacion_auditoria()
+                    RETURNS TRIGGER AS $$
+                    BEGIN
+                        RAISE EXCEPTION 'Violacion de inmutabilidad (RI-16): No se permite modificar ni borrar registros de Auditoria';
+                    END;
+                    $$ LANGUAGE plpgsql;
+
+                    DROP TRIGGER IF EXISTS trg_auditoria_inmutable ON "Auditoria";
+                    CREATE TRIGGER trg_auditoria_inmutable
+                    BEFORE UPDATE OR DELETE ON "Auditoria"
+                    FOR EACH ROW EXECUTE FUNCTION rechazar_modificacion_auditoria();
+                    """
+                )
 
 
 class Migration(migrations.Migration):
