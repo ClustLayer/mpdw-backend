@@ -4,6 +4,17 @@ info:
   version: 1.0.0
   description: API REST transaccional para la gestión comercial y multi-sede de MPDW
 paths:
+  /api/v1/analitica/interacciones/:
+    post:
+      operationId: analitica_interacciones_batch
+      description: Lote de clics (público + autenticado). Sin texto libre de formularios.
+      tags:
+      - analitica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
   /api/v1/auditoria/bitacora/:
     get:
       operationId: auditoria_bitacora_retrieve
@@ -1577,7 +1588,7 @@ paths:
       - name: page
         required: false
         in: query
-        description: A page number within the paginated result set.
+        description: Un número de página dentro del conjunto de resultados paginado.
         schema:
           type: integer
       - in: query
@@ -1588,7 +1599,7 @@ paths:
       - name: size
         required: false
         in: query
-        description: Number of results to return per page.
+        description: Número de resultados a devolver por página.
         schema:
           type: integer
       tags:
@@ -1699,6 +1710,87 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProductoResponse'
           description: ''
+  /api/v1/promociones/:
+    get:
+      operationId: promociones_listar
+      tags:
+      - promociones
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: promociones_crear
+      tags:
+      - promociones
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/promociones/{id}/:
+    get:
+      operationId: promociones_detalle
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - promociones
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: promociones_actualizar
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - promociones
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: promociones_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - promociones
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/promociones/{id}/imagen/:
+    post:
+      operationId: promociones_imagen
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - promociones
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/proveedores/:
     get:
       operationId: proveedores_listar
@@ -2186,6 +2278,17 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/tienda/promociones/:
+    get:
+      operationId: promociones_publicas
+      tags:
+      - tienda
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
   /api/v1/tienda/sedes/:
     get:
       operationId: tienda_sedes
@@ -2588,10 +2691,6 @@ components:
           $ref: '#/components/schemas/UsuarioBitacoraAnidado'
         accion:
           type: string
-        entidad:
-          type: string
-        id_entidad:
-          type: integer
         ip_origen:
           type: string
         resumen:
@@ -2602,10 +2701,8 @@ components:
           type: string
       required:
       - accion
-      - entidad
       - fecha_hora
       - id_auditoria
-      - id_entidad
       - ip_origen
       - motivo
       - resultado
