@@ -27,7 +27,7 @@ PANEL_MATRIZ_ORDEN: list[tuple[str, str, str]] = [
     ("conceptos", "gastos_frecuentes", "Conceptos de caja"),
     ("cierre", "cierre_jornada", "Cierre de jornada"),
     ("eventos", "eventos", "Eventos"),
-    ("promociones", "eventos", "Promociones y sorteos"),
+    ("promociones", "promociones", "Promociones y sorteos"),
     ("auditoria", "auditoria", "Auditoría"),
     ("analitica", "analitica", "Analítica"),
 ]

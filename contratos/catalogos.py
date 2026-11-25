@@ -113,8 +113,9 @@ MATRIZ_ANEXO_A = [
     (15, "gastos_frecuentes", "Gastos Frecuentes / Botones Rapidos (CRUD 2)", "—", "T", "T"),
     (16, "cierre_jornada", "Arqueo y Cierre de Jornada", "O", "T", "T"),
     (17, "eventos", "Eventos y Novedades", "—", "T", "T"),
-    (18, "analitica", "Modulo de Ciencia de Datos / Analitica", "—", "L", "T"),
-    (19, "auditoria", "Bitacora de Auditoria", "—", "L", "T"),
+    (18, "promociones", "Promociones y Sorteos", "—", "T", "T"),
+    (19, "analitica", "Modulo de Ciencia de Datos / Analitica", "—", "L", "T"),
+    (20, "auditoria", "Bitacora de Auditoria", "—", "L", "T"),
 ]
 
 

@@ -31,11 +31,11 @@ def test_audit_service_delega_en_repositorio():
 
     dto = AuditoriaDTO(
         id_usuario=1,
-        accion="PRUEBA",
-        entidad="Productos",
+        accion="LOGIN_EXITOSO",
+        entidad="Usuarios",
         id_entidad=10,
         datos_antes=None,
-        datos_despues={"test": "data"},
+        datos_despues=None,
         motivo="Prueba unitaria",
     )
     service.registrar(dto)

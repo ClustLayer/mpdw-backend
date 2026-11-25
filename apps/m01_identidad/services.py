@@ -244,6 +244,19 @@ class AuthService:
     def _registrar_fallo(self, usuario: Any, ip: str, user_agent: str, id_correlacion: str) -> None:
         if not usuario or not usuario.estado:
             return
+        self._auditar(
+            usuario,
+            "LOGIN_FALLIDO",
+            "Usuarios",
+            usuario.id_usuario,
+            None,
+            None,
+            "Intento de inicio de sesión con credenciales inválidas",
+            ip,
+            user_agent,
+            id_correlacion,
+            resultado="RECHAZADO",
+        )
         bloqueado = self._users.incrementar_intentos_fallidos(
             usuario,
             max_intentos=int(settings.MAX_INTENTOS_FALLIDOS),

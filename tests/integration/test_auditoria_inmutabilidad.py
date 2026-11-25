@@ -13,9 +13,7 @@ from apps.m10_auditoria.models import Auditoria
 def test_auditoria_debe_registrar_y_rechazar_modificacion_o_borrado():
     # Arrange
     auditoria = Auditoria.objects.create(
-        accion="PRUEBA_INMUTABILIDAD",
-        entidad="Productos",
-        id_entidad=10,
+        accion="LOGIN_EXITOSO",
         motivo="Prueba de trigger",
         resultado="EXITO",
     )

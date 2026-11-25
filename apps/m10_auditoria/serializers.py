@@ -12,8 +12,6 @@ class AuditoriaFilaSerializer(serializers.Serializer):
     fecha_hora = serializers.CharField(allow_null=True)
     usuario = UsuarioBitacoraAnidadoSerializer()
     accion = serializers.CharField()
-    entidad = serializers.CharField()
-    id_entidad = serializers.IntegerField()
     ip_origen = serializers.CharField()
     resumen = serializers.CharField()
     motivo = serializers.CharField()

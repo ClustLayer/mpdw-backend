@@ -143,7 +143,8 @@ def test_url_invalida_y_auditoria(ctx: AuthContext, factura_fe: tuple[Facturas, 
             "version_fila": fe.version_fila,
         },
     )
-    assert Auditoria.objects.filter(entidad="Facturas_gestion_externa").exists()
+    # Trazabilidad de negocio ya no persiste en Auditoria SQL (E13 → Mongo general_logs).
+    assert not Auditoria.objects.filter(accion__icontains="FACTURA").exists()
     with pytest.raises(ReglaNegocioError):
         svc.detalle(99999999)
 

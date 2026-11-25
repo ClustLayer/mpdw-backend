@@ -41,7 +41,7 @@ def _mask_tarjeta_o_cuenta(val: str) -> str:
 
 def _jsonable(val: Any) -> Any:
     """Tipos nativos antes de persistir JSON (time, datetime, Decimal, UUID)."""
-    if val is None or isinstance(val, (str, int, float, bool)):
+    if val is None or isinstance(val, str | int | float | bool):
         return val
     if isinstance(val, Decimal):
         return str(val)
@@ -53,11 +53,11 @@ def _jsonable(val: Any) -> Any:
         return val.isoformat()
     if isinstance(val, UUID):
         return str(val)
-    if isinstance(val, (bytes, bytearray)):
+    if isinstance(val, bytes | bytearray):
         return bytes(val).decode("utf-8", errors="replace")
     if isinstance(val, dict):
         return sanitize_auditoria_payload(val)
-    if isinstance(val, (list, tuple)):
+    if isinstance(val, list | tuple):
         return [
             sanitize_auditoria_payload(x) if isinstance(x, dict) else _jsonable(x) for x in val
         ]

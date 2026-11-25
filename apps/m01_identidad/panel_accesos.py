@@ -32,6 +32,7 @@ MODULO_A_PANEL: dict[str, str] = {
     "gastos_frecuentes": "conceptos",
     "cierre_jornada": "cierre",
     "eventos": "eventos",
+    "promociones": "promociones",
     "analitica": "analitica",
     "auditoria": "auditoria",
 }

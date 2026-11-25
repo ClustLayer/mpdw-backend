@@ -7,18 +7,18 @@ from contratos.dtos import AuditoriaDTO
 
 
 class AuditRepository:
-    """Acceso a persistencia para registrar filas inmutables en Auditoria."""
+    """Acceso a persistencia para registrar filas inmutables en Auditoria (seguridad)."""
 
     def insertar(self, dto: AuditoriaDTO) -> Auditoria:
+        motivo = (dto.motivo or "").strip()
+        if not motivo and (dto.datos_antes or dto.datos_despues):
+            motivo = f"{dto.accion} · {dto.entidad}#{dto.id_entidad}"
+        if not motivo:
+            motivo = str(dto.accion)
         return Auditoria.objects.create(
             id_usuario_id=dto.id_usuario,
             accion=str(dto.accion)[:50],
-            entidad=str(dto.entidad)[:100],
-            id_entidad=dto.id_entidad,
-            motivo=(dto.motivo or "").strip() or "—",
+            motivo=motivo[:4000],
             resultado=dto.resultado,
-            id_correlacion=dto.id_correlacion,
             ip=str(dto.ip or "127.0.0.1")[:45],
-            user_agent=dto.user_agent,
         )
-
