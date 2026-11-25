@@ -468,6 +468,121 @@ paths:
               schema:
                 $ref: '#/components/schemas/MensajeResponse'
           description: ''
+  /api/v1/caja/cuentas/:
+    get:
+      operationId: cuentas_listar
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: cuentas_crear
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/cuentas/{id_cuenta}/:
+    patch:
+      operationId: cuentas_actualizar
+      parameters:
+      - in: path
+        name: id_cuenta
+        schema:
+          type: integer
+        required: true
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/caja/cuentas/activas/:
+    get:
+      operationId: cuentas_activas
+      tags:
+      - caja
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/colores/:
+    get:
+      operationId: catalogo_colores_list
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: catalogo_colores_create
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/escaparates/:
+    get:
+      operationId: catalogo_escaparates_retrieve
+      tags:
+      - catalogo-escaparates
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: catalogo_escaparates_create
+      tags:
+      - catalogo-escaparates
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/escaparates/{id}/:
+    patch:
+      operationId: catalogo_escaparates_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - catalogo-escaparates
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalogo/escaparates/{id}/productos/:
+    post:
+      operationId: catalogo_escaparates_productos_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - catalogo-escaparates
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/catalogo/media/{ruta}/:
     get:
       operationId: catalogo_media_retrieve
@@ -654,6 +769,21 @@ paths:
       responses:
         '200':
           description: No response body
+    delete:
+      operationId: catalogo_productos_imagen_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - catalogo
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/catalogo/productos/exportar/:
     get:
       operationId: catalogo_productos_exportar_retrieve
@@ -790,6 +920,145 @@ paths:
       operationId: clientes_verificar_telefono
       tags:
       - clientes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/:
+    post:
+      operationId: domicilios_crear
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/{id_entrega}/:
+    get:
+      operationId: domicilios_detalle
+      parameters:
+      - in: path
+        name: id_entrega
+        schema:
+          type: integer
+        required: true
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/{id_entrega}/asignar/:
+    post:
+      operationId: domicilios_asignar_mensajero
+      parameters:
+      - in: path
+        name: id_entrega
+        schema:
+          type: integer
+        required: true
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/{id_entrega}/estado/:
+    post:
+      operationId: domicilios_cambiar_estado
+      parameters:
+      - in: path
+        name: id_entrega
+        schema:
+          type: integer
+        required: true
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/bandeja/:
+    get:
+      operationId: domicilios_bandeja
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/factura/{id_factura}/precarga/:
+    get:
+      operationId: domicilios_precarga_factura
+      parameters:
+      - in: path
+        name: id_factura
+        schema:
+          type: integer
+        required: true
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/historial/:
+    get:
+      operationId: domicilios_historial
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/mensajeros/:
+    get:
+      operationId: mensajeros_listar
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: mensajeros_crear
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/mensajeros/{id_mensajero}/:
+    patch:
+      operationId: mensajeros_actualizar
+      parameters:
+      - in: path
+        name: id_mensajero
+        schema:
+          type: integer
+        required: true
+      tags:
+      - domicilios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/domicilios/mensajeros/activos/:
+    get:
+      operationId: mensajeros_activos
+      tags:
+      - domicilios
       security:
       - jwtAuth: []
       responses:
@@ -1572,6 +1841,92 @@ paths:
               schema:
                 $ref: '#/components/schemas/MensajeResponse'
           description: ''
+  /api/v1/tienda/carrito/validar/:
+    post:
+      operationId: tienda_validar_carrito
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tienda/catalogo/:
+    get:
+      operationId: tienda_catalogo
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tienda/escaparates/:
+    get:
+      operationId: tienda_escaparates
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tienda/filtros/:
+    get:
+      operationId: tienda_filtros
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tienda/pedidos/preparar/:
+    post:
+      operationId: tienda_preparar_pedido
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tienda/productos/{slug}/:
+    get:
+      operationId: tienda_producto_detalle
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tienda/sedes/:
+    get:
+      operationId: tienda_sedes
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/tienda/whatsapp/contacto/:
+    post:
+      operationId: tienda_contacto_whatsapp
+      tags:
+      - tienda-publica
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
   /api/v1/usuarios/:
     get:
       operationId: usuarios_admin_list
@@ -1734,6 +2089,177 @@ paths:
               schema:
                 $ref: '#/components/schemas/RolesCatalogoResponse'
           description: ''
+  /api/v1/ventas/facturacion-externa/:
+    get:
+      operationId: facturacion_externa_bandeja
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/facturacion-externa/{id}/:
+    get:
+      operationId: facturacion_externa_detalle
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/facturacion-externa/{id}/estado/:
+    post:
+      operationId: facturacion_externa_estado
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/facturacion-externa/{id}/soporte/:
+    get:
+      operationId: facturacion_externa_soporte
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/facturas/:
+    get:
+      operationId: facturas_listar
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/facturas/{id}/:
+    get:
+      operationId: facturas_detalle
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: facturas_editar
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/facturas/{id}/anular/:
+    post:
+      operationId: facturas_anular
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/facturas/{id}/devolucion/:
+    post:
+      operationId: facturas_devolucion
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/facturas/estadisticas/:
+    get:
+      operationId: facturas_estadisticas_mes
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/pos/catalogos/:
+    get:
+      operationId: pos_catalogos
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/pos/emitir/:
+    post:
+      operationId: pos_emitir_factura
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ventas/pos/productos/:
+    get:
+      operationId: pos_buscar_productos
+      tags:
+      - ventas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
 components:
   schemas:
     AccesosPanelResponse:

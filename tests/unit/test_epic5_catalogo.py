@@ -210,3 +210,15 @@ def test_listado_pagina_en_sql(ctx, params):
     assert svc.listar("", {"stock": "bajo"}, 1, 20, "-nombre")["page_size"] == 20
     assert svc.listar("", {"stock": "agotado"}, 1, 20, "existencia")["total"] >= 0
     assert svc.listar("", {"stock": "con_stock"}, 1, 20, "categoria")["total"] >= 0
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_quitar_imagen_producto(ctx, params):
+    cat, marca, tipo = params
+    svc = AdminCatalogoService()
+    out, _ = svc.crear(ctx, _payload(cat, marca, tipo, codigo_producto="IMG-1"))
+    pid = out["id_producto"]
+    Productos.objects.filter(pk=pid).update(imagen_url="productos/x.webp")
+    svc.quitar_imagen(pid)
+    assert Productos.objects.get(pk=pid).imagen_url == ""
