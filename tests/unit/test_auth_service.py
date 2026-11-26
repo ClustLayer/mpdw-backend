@@ -110,15 +110,17 @@ def test_login_exitoso_emite_tokens_y_auditoria():
 @pytest.mark.unit
 def test_login_fallo_credenciales_invalidas_incrementa_intentos():
     user_repo = MagicMock()
+    audit_port = FakeAuditPort()
     usuario = FakeUser(id_usuario=2, email="user@diana.com")
     user_repo.buscar_por_email.return_value = usuario
 
-    auth_service = AuthService(user_repo=user_repo)
+    auth_service = AuthService(user_repo=user_repo, audit_port=audit_port)
 
     with pytest.raises(AutenticacionError, match="Credenciales no válidas"):
         auth_service.autenticar(email="user@diana.com", password="wrong_password")
 
     user_repo.incrementar_intentos_fallidos.assert_called_once()
+    assert any(e.accion == "LOGIN_FALLIDO" for e in audit_port.eventos)
 
 
 @pytest.mark.unit
@@ -277,9 +279,11 @@ def test_qa_06_bloqueo_cuenta_tras_5_intentos_fallidos():
 
     user_repo.incrementar_intentos_fallidos.assert_called_once()
     assert usuario.esta_bloqueado is True
-    assert len(audit_port.eventos) == 1
-    assert audit_port.eventos[0].accion == "BLOQUEO_POR_INTENTOS"
-    assert "password" not in (audit_port.eventos[0].datos_despues or {})
+    acciones = [e.accion for e in audit_port.eventos]
+    assert "LOGIN_FALLIDO" in acciones
+    assert "BLOQUEO_POR_INTENTOS" in acciones
+    bloqueo = next(e for e in audit_port.eventos if e.accion == "BLOQUEO_POR_INTENTOS")
+    assert "password" not in (bloqueo.datos_despues or {})
 
     with pytest.raises(AutenticacionError, match="Acceso temporalmente bloqueado"):
         auth_service.autenticar(email="cajero_bloqueo@mpdw.com", password="real_password")

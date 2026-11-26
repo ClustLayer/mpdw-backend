@@ -126,7 +126,7 @@ def test_panel_resumen_permisos(ctx, db):
     assert "facturas_electronicas_pendientes" in con_inv
     assert "inventario" in con_inv
     assert "bajo_stock_minimo" in con_inv["inventario"]
-    Auditoria.objects.create(accion="LOGIN", entidad="Usuarios", id_entidad=1, motivo="test", resultado="EXITO")
+    Auditoria.objects.create(accion="LOGIN_EXITOSO", motivo="test", resultado="EXITO")
     con_aud = construir_panel_resumen(ctx)
     assert "actividad_reciente" in con_aud
     assert con_aud["actividad_reciente"]

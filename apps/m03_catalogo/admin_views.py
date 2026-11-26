@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 
 from django.conf import settings
-from django.http import FileResponse, HttpResponse
+from django.http import FileResponse, HttpResponse, HttpResponseRedirect
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -66,7 +66,9 @@ class ProductoAdminListCreateView(APIView):
             page = max(1, int(params.get("page") or 1))
             page_size = min(100, max(1, int(params.get("page_size") or 20)))
         except (TypeError, ValueError):
-            return Response({"codigo": "PAGINACION_INVALIDA", "mensaje": "Paginación inválida."}, status=400)
+            return Response(
+                {"codigo": "PAGINACION_INVALIDA", "mensaje": "Paginación inválida."}, status=400
+            )
         try:
             body = _svc().listar(
                 q=params.get("q") or "",
@@ -106,7 +108,9 @@ class ProductoAdminDetailView(APIView):
         try:
             return Response(_svc().detalle(pk))
         except Productos.DoesNotExist:
-            return Response({"codigo": "NO_ENCONTRADO", "mensaje": "Producto no encontrado."}, status=404)
+            return Response(
+                {"codigo": "NO_ENCONTRADO", "mensaje": "Producto no encontrado."}, status=404
+            )
 
     def patch(self, request: Request, pk: int) -> Response:
         self.required_permission = PERM_EDITAR
@@ -115,7 +119,9 @@ class ProductoAdminDetailView(APIView):
             data, mensaje = _svc().editar(_ctx(request), pk, cuerpo)
             return Response({"mensaje": mensaje, "producto": data})
         except Productos.DoesNotExist:  # pragma: no cover
-            return Response({"codigo": "NO_ENCONTRADO", "mensaje": "Producto no encontrado."}, status=404)
+            return Response(
+                {"codigo": "NO_ENCONTRADO", "mensaje": "Producto no encontrado."}, status=404
+            )
         except (ReglaNegocioError, DominioError) as exc:
             return _err(exc, request)
 
@@ -130,7 +136,9 @@ class ProductoEstadoView(APIView):
             mensaje = _svc().cambiar_estado(_ctx(request), pk, bool(cuerpo.get("activo")))
             return Response({"mensaje": mensaje})
         except Productos.DoesNotExist:
-            return Response({"codigo": "NO_ENCONTRADO", "mensaje": "Producto no encontrado."}, status=404)
+            return Response(
+                {"codigo": "NO_ENCONTRADO", "mensaje": "Producto no encontrado."}, status=404
+            )
         except (ReglaNegocioError, DominioError) as exc:
             return _err(exc, request)
 
@@ -141,14 +149,24 @@ class HistorialPreciosView(APIView):
 
     def get(self, request: Request, pk: int) -> Response:
         try:
-            return Response(_svc().historial(pk, request.query_params.get("desde") or "", request.query_params.get("hasta") or ""))
+            return Response(
+                _svc().historial(
+                    pk,
+                    request.query_params.get("desde") or "",
+                    request.query_params.get("hasta") or "",
+                )
+            )
         except Productos.DoesNotExist:
-            return Response({"codigo": "NO_ENCONTRADO", "mensaje": "Producto no encontrado."}, status=404)
+            return Response(
+                {"codigo": "NO_ENCONTRADO", "mensaje": "Producto no encontrado."}, status=404
+            )
         except ReglaNegocioError as exc:
             return _err(exc, request)
         except Exception:  # pragma: no cover
             logger.exception("historial")
-            return Response({"codigo": "HISTORIAL_ERROR", "mensaje": MSG_HISTORIAL_ERROR}, status=500)
+            return Response(
+                {"codigo": "HISTORIAL_ERROR", "mensaje": MSG_HISTORIAL_ERROR}, status=500
+            )
 
 
 class CatalogoImagenView(APIView):
@@ -163,7 +181,9 @@ class CatalogoImagenView(APIView):
 
             return Response({"codigo": "ARCHIVO_INVALIDO", "mensaje": MSG_ARCHIVO}, status=400)
         try:
-            ruta = _svc().guardar_imagen(pk, archivo.name, archivo.read(), archivo.content_type or "")
+            ruta = _svc().guardar_imagen(
+                pk, archivo.name, archivo.read(), archivo.content_type or ""
+            )
             return Response({"imagen_url": ruta, "mensaje": "Imagen cargada."})  # pragma: no cover
         except (ReglaNegocioError, DominioError) as exc:
             return _err(exc, request)
@@ -193,7 +213,9 @@ class CatalogoParametrosView(APIView):
             return Response({"codigo": "TIPO", "mensaje": "Parámetro no válido."}, status=400)
         try:
             cuerpo = request.data if isinstance(request.data, dict) else {}
-            return Response({"mensaje": _svc().crear_param(_ctx(request), tipo, cuerpo)}, status=201)
+            return Response(
+                {"mensaje": _svc().crear_param(_ctx(request), tipo, cuerpo)}, status=201
+            )
         except (ReglaNegocioError, DominioError) as exc:
             return _err(exc, request)
 
@@ -209,7 +231,9 @@ class ParametroDetalleView(APIView):
         try:
             return Response({"mensaje": _svc().eliminar_param(_ctx(request), tipo, pk)})
         except modelos[tipo].DoesNotExist:  # type: ignore[attr-defined]
-            return Response({"codigo": "NO_ENCONTRADO", "mensaje": "Registro no encontrado."}, status=404)
+            return Response(
+                {"codigo": "NO_ENCONTRADO", "mensaje": "Registro no encontrado."}, status=404
+            )
         except (ReglaNegocioError, DominioError) as exc:
             return _err(exc, request)
 
@@ -221,7 +245,9 @@ class ParametroDetalleView(APIView):
             cuerpo = request.data if isinstance(request.data, dict) else {}
             return Response({"mensaje": _svc().editar_param(_ctx(request), tipo, pk, cuerpo)})
         except modelos[tipo].DoesNotExist:  # type: ignore[attr-defined]
-            return Response({"codigo": "NO_ENCONTRADO", "mensaje": "Registro no encontrado."}, status=404)
+            return Response(
+                {"codigo": "NO_ENCONTRADO", "mensaje": "Registro no encontrado."}, status=404
+            )
         except (ReglaNegocioError, DominioError) as exc:
             return _err(exc, request)
 
@@ -236,7 +262,9 @@ class ImportarProductosView(APIView):
         if not archivo:
             from apps.m03_catalogo.mensajes import MSG_IMPORT_FORMATO
 
-            return Response({"codigo": "FORMATO_ARCHIVO", "mensaje": MSG_IMPORT_FORMATO}, status=400)
+            return Response(
+                {"codigo": "FORMATO_ARCHIVO", "mensaje": MSG_IMPORT_FORMATO}, status=400
+            )
         try:
             return Response(_svc().importar(_ctx(request), archivo.name, archivo.read()))
         except (ReglaNegocioError, DominioError) as exc:
@@ -270,7 +298,9 @@ class ExportarProductosView(APIView):
             page = max(1, int(params.get("page") or 1))
             page_size = min(5000, max(1, int(params.get("page_size") or 10)))
         except (TypeError, ValueError):
-            return Response({"codigo": "PAGINACION_INVALIDA", "mensaje": "Paginación inválida."}, status=400)
+            return Response(
+                {"codigo": "PAGINACION_INVALIDA", "mensaje": "Paginación inválida."}, status=400
+            )
         try:
             nombre, contenido, mime = _svc().exportar(
                 params.get("q") or "",
@@ -317,9 +347,21 @@ class ProductoMediaView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
-    def get(self, request: Request, ruta: str) -> FileResponse | Response:
+    def get(self, request: Request, ruta: str) -> FileResponse | Response | HttpResponseRedirect:
+        # Si ya es una URL absoluta almacenada por error en el path, redirigir.
+        if ruta.startswith("http://") or ruta.startswith("https://"):
+            return HttpResponseRedirect(ruta)
         base = (Path(settings.BASE_DIR) / "media").resolve()
         objetivo = (base / ruta).resolve()
-        if not str(objetivo).startswith(str(base)) or not objetivo.is_file():
-            return Response(status=404)
-        return FileResponse(objetivo.open("rb"))  # pragma: no cover
+        if str(objetivo).startswith(str(base)) and objetivo.is_file():
+            return FileResponse(objetivo.open("rb"))  # pragma: no cover
+        # Fallback: objeto público en Supabase (despliegue sin filesystem local).
+        storage = (getattr(settings, "SUPABASE_STORAGE_URL", "") or "").rstrip("/")
+        bucket = getattr(settings, "SUPABASE_PUBLIC_BUCKET", "medios-publicos")
+        if storage:
+            if storage.endswith("/storage/v1"):
+                public = f"{storage}/object/public/{bucket}/{ruta.lstrip('/')}"
+            else:
+                public = f"{storage}/storage/v1/object/public/{bucket}/{ruta.lstrip('/')}"
+            return HttpResponseRedirect(public)
+        return Response(status=404)

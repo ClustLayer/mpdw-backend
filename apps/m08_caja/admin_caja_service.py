@@ -38,7 +38,14 @@ def _serializar(c: Cuentas_bancarias, *, enmascarar: bool = False) -> dict[str, 
     }
 
 
-def _auditar(ctx: AuthContext, accion: str, entidad_id: int, antes: dict | None, despues: dict | None, audit: AuditService) -> None:
+def _auditar(
+    ctx: AuthContext,
+    accion: str,
+    entidad_id: int,
+    antes: dict | None,
+    despues: dict | None,
+    audit: AuditService,
+) -> None:
     audit.registrar(
         AuditoriaDTO(
             id_usuario=ctx.id_usuario,
@@ -60,7 +67,9 @@ class AdminCajaService:
         self._audit = audit or AuditService()
 
     def listar_activas(self) -> dict[str, Any]:
-        items = [_serializar(c) for c in Cuentas_bancarias.objects.filter(estado=True).order_by("nombre")]
+        items = [
+            _serializar(c) for c in Cuentas_bancarias.objects.filter(estado=True).order_by("nombre")
+        ]
         return {"items": items}
 
     def listar(self, q: str, estado: str | None, page: int, page_size: int) -> dict[str, Any]:
@@ -129,5 +138,7 @@ class AdminCajaService:
     def cuenta_activa(self, id_cuenta: int) -> Cuentas_bancarias:
         c = Cuentas_bancarias.objects.filter(pk=id_cuenta, estado=True).first()
         if not c:
-            raise ReglaNegocioError("La cuenta de transferencia no es válida.", codigo="CUENTA_INVALIDA")
+            raise ReglaNegocioError(
+                "La cuenta de transferencia no es válida.", codigo="CUENTA_INVALIDA"
+            )
         return c

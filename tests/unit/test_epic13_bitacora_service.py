@@ -36,10 +36,8 @@ def test_rango_fecha_invalido():
 def test_una_fila_resumen():
     Auditoria.objects.create(
         id_usuario_id=None,
-        accion="LOGIN",
-        entidad="Auth",
-        id_entidad=1,
-        motivo="LOGIN",
+        accion="LOGIN_EXITOSO",
+        motivo="Inicio de sesión",
         ip="192.168.1.1",
     )
     svc = BitacoraAuditoriaService()
@@ -47,6 +45,7 @@ def test_una_fila_resumen():
     assert pag.total == 1
     assert "1 de 1" in pag.mensaje
     assert pag.items[0]["resumen"]
+    assert "entidad" not in pag.items[0]
 
 
 @pytest.mark.unit
@@ -70,20 +69,10 @@ def test_opciones_usuarios():
 
 @pytest.mark.unit
 @pytest.mark.django_db
-def test_id_entidad_invalido():
-    svc = BitacoraAuditoriaService()
-    with pytest.raises(DominioError):
-        svc.listar({"id_entidad": "abc"})
-
-
-@pytest.mark.unit
-@pytest.mark.django_db
 def test_resumen_sin_json():
     Auditoria.objects.create(
         id_usuario_id=None,
-        accion="X",
-        entidad="Y",
-        id_entidad=2,
+        accion="LOGIN_FALLIDO",
         motivo="—",
         ip="::1",
     )
@@ -96,9 +85,7 @@ def test_resumen_sin_json():
 def test_parse_fecha_iso_con_z():
     Auditoria.objects.create(
         id_usuario_id=None,
-        accion="Z",
-        entidad="E",
-        id_entidad=1,
+        accion="CAMBIO_PASSWORD",
         motivo="—",
         ip="127.0.0.1",
     )
@@ -121,9 +108,7 @@ def test_fecha_invalida():
 def test_resumen_desde_motivo():
     Auditoria.objects.create(
         id_usuario_id=None,
-        accion="M",
-        entidad="Ent",
-        id_entidad=4,
+        accion="LOGIN_EXITOSO",
         motivo="Ajuste manual de sede Norte",
         ip="10.0.0.1",
     )
@@ -133,7 +118,7 @@ def test_resumen_desde_motivo():
 
 @pytest.mark.unit
 @pytest.mark.django_db
-def test_filtros_accion_entidad_id_usuario_id_entidad():
+def test_filtros_accion_y_usuario():
     from apps.m01_identidad.models import Roles, Usuarios
 
     rol, _ = Roles.objects.get_or_create(
@@ -149,9 +134,7 @@ def test_filtros_accion_entidad_id_usuario_id_entidad():
     )
     Auditoria.objects.create(
         id_usuario=u,
-        accion="EDITAR_USUARIO",
-        entidad="Usuarios",
-        id_entidad=99,
+        accion="LOGIN_EXITOSO",
         motivo="—",
         ip="192.168.0.1",
     )
@@ -159,13 +142,23 @@ def test_filtros_accion_entidad_id_usuario_id_entidad():
     p = svc.listar(
         {
             "id_usuario": str(u.id_usuario),
-            "accion": "EDITAR_USUARIO",
-            "entidad": "Usuario",
-            "id_entidad": "99",
+            "accion": "LOGIN_EXITOSO",
         }
     )
     assert p.total == 1
     assert p.items[0]["usuario"]["nombre"]
+
+
+@pytest.mark.unit
+@pytest.mark.django_db
+def test_excluye_acciones_no_seguridad():
+    Auditoria.objects.create(
+        id_usuario_id=None,
+        accion="EDITAR_USUARIO",
+        motivo="—",
+        ip="10.0.0.2",
+    )
+    assert BitacoraAuditoriaService().listar({}).total == 0
 
 
 @pytest.mark.unit
@@ -195,17 +188,14 @@ def test_busqueda_libre_y_acciones():
     )
     Auditoria.objects.create(
         id_usuario=u,
-        accion="INACTIVAR_SEDE",
-        entidad="Sedes",
-        id_entidad=42,
-        motivo="—",
+        accion="LOGIN_FALLIDO",
+        motivo="Credenciales",
         ip="10.0.0.2",
     )
     svc = BitacoraAuditoriaService()
-    assert svc.listar({"q": "Sedes"}).total == 1
+    assert svc.listar({"q": "Credenciales"}).total == 1
     assert svc.listar({"q": "Libre"}).total == 1
-    assert svc.listar({"q": "42"}).total == 1
-    assert "INACTIVAR_SEDE" in svc.acciones()
+    assert "LOGIN_FALLIDO" in svc.acciones()
 
 
 @pytest.mark.unit

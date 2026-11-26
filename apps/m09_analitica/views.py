@@ -1,21 +1,30 @@
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from drf_spectacular.utils import extend_schema
+from rest_framework.permissions import AllowAny
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.m09_analitica.serializers import DashboardVentasSerializer
-from apps.m09_analitica.services import AnaliticaService
+from apps.m13_plataforma.observability.interactions_service import registrar_lote
+from contratos.dtos import AuthContext
 
 
-class DashboardVentasView(APIView):
-    permission_classes = [IsAuthenticated]
+class InteraccionesBatchView(APIView):
+    """Lote de clics (público + autenticado). Sin texto libre de formularios."""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._service = AnaliticaService()
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
-    def get(self, request):
-        datos = self._service.obtener_ventas()
-        serializer = DashboardVentasSerializer(datos, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+    @extend_schema(operation_id="analitica_interacciones_batch")
+    def post(self, request: Request) -> Response:
+        body = request.data if isinstance(request.data, dict) else {}
+        eventos = body.get("interacciones") or body.get("eventos") or body.get("items") or []
+        if not isinstance(eventos, list):
+            return Response({"mensaje": "Formato inválido.", "codigo": "PAYLOAD_INVALIDO"}, status=400)
+        ctx = getattr(request, "auth_context", None)
+        id_usuario = ctx.id_usuario if isinstance(ctx, AuthContext) else None
+        resultado = registrar_lote(
+            id_usuario=id_usuario,
+            eventos=eventos,
+            id_correlacion=str(getattr(request, "correlation_id", "") or body.get("id_correlacion") or ""),
+        )
+        return Response(resultado)

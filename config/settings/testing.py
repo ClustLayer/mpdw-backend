@@ -48,3 +48,5 @@ CACHES = {  # noqa: F405
         "LOCATION": "mpdw-tests",
     }
 }
+
+MPDW_OBSERVABILITY_FAKE_MONGO = True  # noqa: F405

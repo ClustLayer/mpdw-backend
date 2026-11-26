@@ -14,4 +14,3 @@ class ReporteDiarioListView(APIView):
         reportes = Reportes_diarios.objects.all().order_by("-fecha")[:30]
         serializer = ReporteDiarioSerializer(reportes, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-

@@ -1,0 +1,53 @@
+{
+  "title": "MPDW Sprint 4 — Seguridad, logs e interacciones",
+  "timezone": "America/Bogota",
+  "schemaVersion": 39,
+  "version": 1,
+  "time": { "from": "now-7d", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "LOGIN_FALLIDO (PostgreSQL Auditoria)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "description": "Intentos fallidos de acceso. Datasource PostgreSQL."
+    },
+    {
+      "id": 2,
+      "title": "CAMBIO_PASSWORD (PostgreSQL Auditoria)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "description": "Cambios de contraseña exitosos."
+    },
+    {
+      "id": 3,
+      "title": "general_logs por tipo (Mongo)",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "description": "Colección general_logs en MONGODB_GENERAL_URI."
+    },
+    {
+      "id": 4,
+      "title": "Interacciones por pantalla (Mongo)",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "description": "Colección interacciones; incluye whatsapp_promo."
+    },
+    {
+      "id": 5,
+      "title": "Errores stdout (Loki, opcional)",
+      "type": "logs",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "description": "Cuando Fluent Bit → Loki esté desplegado: {service=~\"backend|frontend\"} |= \"ERROR\"."
+    }
+  ],
+  "tags": ["mpdw", "sprint4", "e13"],
+  "annotations": {
+    "list": [
+      {
+        "name": "Acceso",
+        "text": "Solo Administrador y Analista de datos"
+      }
+    ]
+  }
+}

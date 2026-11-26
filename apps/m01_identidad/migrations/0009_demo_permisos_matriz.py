@@ -21,7 +21,7 @@ PANEL_A_DOMINIO = {
     "conceptos": "gastos_frecuentes",
     "cierre": "cierre_jornada",
     "eventos": "eventos",
-    "promociones": "eventos",
+    "promociones": "promociones",
     "auditoria": "auditoria",
     "analitica": "analitica",
 }

@@ -20,8 +20,16 @@ Versionado del producto: **MAJOR.SPRINT.EPIC_IN_SPRINT** (`1` = major del sistem
 | **1.3.3** | Sprint 3 · Épica 10 (facturación electrónica externa — HU 59) |
 | **1.3.4** | Sprint 3 · Épica 16 (tienda pública y pedido WhatsApp — HU 88–93) |
 | **1.4.1** | Sprint 4 · Épica 11 (caja, reporte diario y movimientos — HU 60–79) |
+| **1.4.2** | Sprint 4 · Épica 13 (auditoría/logs) + Épica 21 (promociones y sorteos) |
 
 ---
+
+## 2026-11-25 — v1.4.2 Épica 13 y 21 (auditoría, Mongo, promociones)
+
+- `Auditoria` SQL solo seguridad (`LOGIN_*`, `CAMBIO_PASSWORD`); resto a Mongo `general_logs` con cola asíncrona.
+- Interacciones UI en cluster Mongo separado; guía Grafana + Fluent Bit/Loki y archivo bimestral.
+- Módulo `m21_promociones` (CRUD + listado público vigente Bogotá); vitrinas con productos asignados (`0005`).
+- QA: `docs/qa/epic-13.md`, `docs/qa/epic-21.md`; OpenAPI sincronizado.
 
 ## 2026-11-21 — v1.4.1 Épica 11 (caja y reporte diario)
 

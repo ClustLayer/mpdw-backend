@@ -30,6 +30,12 @@ def _serializar_seccion(row: Escaparate_seccion, *, productos: list[dict[str, An
 class EscaparateService:
     def listar_publico(self, id_sede: int | None = None) -> dict[str, Any]:
         items: list[dict[str, Any]] = []
+        fallback = list(
+            Productos.objects.filter(estado=True)
+            .select_related("id_categoria", "id_marca")
+            .order_by("id_producto")[:32]
+        )
+        offset = 0
         for sec in Escaparate_seccion.objects.filter(estado=True).order_by("orden", "titulo"):
             ids = list(
                 Escaparate_producto.objects.filter(id_escaparate=sec)
@@ -41,6 +47,10 @@ class EscaparateService:
                 p = Productos.objects.filter(pk=pid, estado=True).select_related("id_categoria", "id_marca").first()
                 if p:
                     prods.append(_serializar_corto(p, id_sede))
+            if not prods and fallback:
+                slice_ = fallback[offset : offset + 8] or fallback[:8]
+                offset = (offset + 8) % max(len(fallback), 1)
+                prods = [_serializar_corto(p, id_sede) for p in slice_]
             if prods:
                 items.append(_serializar_seccion(sec, productos=prods))
         return {"items": items}

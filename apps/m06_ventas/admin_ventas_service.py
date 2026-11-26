@@ -116,13 +116,15 @@ class AdminVentasService:
         return f"POS-{base or 'GEN'}"
 
     def _jornada_abierta(self, id_sede: int, cuando: date | None = None) -> bool:
-        dia = cuando or timezone.localdate()
-        return Reportes_diarios.objects.filter(
-            id_sede_id=id_sede, fecha=dia, estado="ABIERTO"
-        ).exists()
+        """Hay a lo sumo un ABIERTO por sede (RI-10); no exige que la fecha sea hoy."""
+        qs = Reportes_diarios.objects.filter(id_sede_id=id_sede, estado="ABIERTO")
+        if cuando is not None:
+            qs = qs.filter(fecha=cuando)
+        return qs.exists()
 
     def _asegurar_jornada(self, ctx: AuthContext, id_sede: int) -> None:
-        if self._jornada_abierta(id_sede):
+        # Reutilizar cualquier jornada ABIERTO de la sede (puede ser de un día anterior).
+        if Reportes_diarios.objects.filter(id_sede_id=id_sede, estado="ABIERTO").exists():
             return
         Reportes_diarios.objects.create(
             id_sede_id=id_sede,
@@ -383,7 +385,9 @@ class AdminVentasService:
                     for dl in dev.lineas.select_related("id_detalle_factura__id_producto").all()
                 ],
             }
-            for dev in f.devoluciones.prefetch_related("lineas__id_detalle_factura__id_producto").all()
+            for dev in f.devoluciones.prefetch_related(
+                "lineas__id_detalle_factura__id_producto"
+            ).all()
         ]
         data["pagos"] = [
             {

@@ -67,12 +67,9 @@ def _colores_producto(pid: int) -> list[dict[str, str]]:
 
 
 def _imagen_url(prod: Productos) -> str:
-    url = (prod.imagen_url or "").strip()
-    if not url:
-        return ""
-    if url.startswith("http"):
-        return url
-    return f"/api/v1/catalogo/media/{url.lstrip('/')}/"
+    from apps.m13_plataforma.media_storage import url_publica_o_media
+
+    return url_publica_o_media(prod.imagen_url or "")
 
 
 def _serializar_corto(prod: Productos, id_sede: int | None) -> dict[str, Any]:
@@ -120,7 +117,10 @@ class TiendaCatalogoService:
             {"id": c.id_categoria, "nombre": c.nombre, "slug": slugify_nombre(c.nombre)}
             for c in Categorias_producto.objects.filter(estado=True).order_by("nombre")
         ]
-        marcas = [{"id": m.id_marca, "nombre": m.nombre} for m in Marcas.objects.filter(estado=True).order_by("nombre")]
+        marcas = [
+            {"id": m.id_marca, "nombre": m.nombre}
+            for m in Marcas.objects.filter(estado=True).order_by("nombre")
+        ]
         tipos = [
             {"id": t.id_tipo_producto, "nombre": t.nombre}
             for t in Tipos_producto.objects.filter(estado=True).order_by("nombre")
@@ -197,7 +197,9 @@ class TiendaCatalogoService:
         )
         if not prod:
             raise ReglaNegocioError(msg.MSG_PRODUCTO_NO, codigo="NO_ENCONTRADO")
-        impuesto = "Incluye IVA / Impoconsumo" if prod.iva_porcentaje else "Precio con impuestos incluidos"
+        impuesto = (
+            "Incluye IVA / Impoconsumo" if prod.iva_porcentaje else "Precio con impuestos incluidos"
+        )
         item = {
             **_serializar_corto(prod, id_sede),
             "descripcion": prod.descripcion or "",

@@ -1,5 +1,5 @@
 # ==============================================================================
-# Consulta de bitácora de auditoría (HU 82, solo lectura)
+# Consulta de bitácora de auditoría (HU 82, solo lectura — solo seguridad en SQL)
 # ==============================================================================
 from __future__ import annotations
 
@@ -12,7 +12,10 @@ from django.utils import timezone
 
 from apps.m01_identidad.models import Usuarios
 from apps.m10_auditoria.models import Auditoria
+from apps.m13_plataforma.observability.constants import ACCIONES_SEGURIDAD_SQL
 from contratos.excepciones import DominioError, ReglaNegocioError
+
+_ACCIONES_SEG_LISTA = sorted(ACCIONES_SEGURIDAD_SQL)
 
 
 @dataclass(frozen=True)
@@ -51,13 +54,12 @@ def _parse_dt(param: str | None, end_of_day: bool = False) -> datetime | None:
 
 
 def _resumen_motivo(motivo: str) -> str:
-    """Texto breve para la tabla a partir del motivo."""
     texto = (motivo or "").strip()
     return texto[:120] if texto else "—"
 
 
 class BitacoraAuditoriaService:
-    """Listado filtrado y paginado de la tabla Auditoria (append-only)."""
+    """Listado filtrado y paginado de la tabla Auditoria (solo acciones de seguridad)."""
 
     def listar(self, params: dict[str, str | None]) -> PaginaBitacora:
         page = _parse_int(params.get("page"), 1, min_v=1, max_v=10_000)
@@ -65,8 +67,6 @@ class BitacoraAuditoriaService:
 
         id_usuario = params.get("id_usuario")
         accion = (params.get("accion") or "").strip()[:50]
-        entidad = (params.get("entidad") or "").strip()[:100]
-        id_entidad_raw = params.get("id_entidad")
         fecha_desde = _parse_dt(params.get("fecha_desde"), end_of_day=False)
         fecha_hasta = _parse_dt(params.get("fecha_hasta"), end_of_day=True)
 
@@ -76,7 +76,9 @@ class BitacoraAuditoriaService:
                 codigo="RANGO_FECHAS_INVALIDO",
             )
 
-        qs: QuerySet[Auditoria] = Auditoria.objects.select_related("id_usuario").all()
+        qs: QuerySet[Auditoria] = Auditoria.objects.select_related("id_usuario").filter(
+            accion__in=_ACCIONES_SEG_LISTA
+        )
 
         if id_usuario and str(id_usuario).strip():
             try:
@@ -87,29 +89,17 @@ class BitacoraAuditoriaService:
 
         if accion:
             qs = qs.filter(accion__iexact=accion)
-        if entidad:
-            qs = qs.filter(entidad__icontains=entidad)
 
         q_libre = (params.get("q") or "").strip()[:100]
         if q_libre:
             libre = (
-                Q(entidad__icontains=q_libre)
-                | Q(id_usuario__nombre__icontains=q_libre)
+                Q(id_usuario__nombre__icontains=q_libre)
                 | Q(id_usuario__apellido__icontains=q_libre)
                 | Q(id_usuario__email__icontains=q_libre)
+                | Q(motivo__icontains=q_libre)
+                | Q(accion__icontains=q_libre)
             )
-            if q_libre.isdigit():
-                libre |= Q(id_entidad=int(q_libre))
             qs = qs.filter(libre)
-
-        if id_entidad_raw and str(id_entidad_raw).strip():
-            try:
-                id_ent = int(id_entidad_raw)
-            except (TypeError, ValueError) as exc:
-                raise DominioError(
-                    "Identificador de entidad inválido.", codigo="FILTRO_INVALIDO"
-                ) from exc
-            qs = qs.filter(id_entidad=id_ent)
 
         if fecha_desde:
             qs = qs.filter(fecha_hora__gte=fecha_desde)
@@ -131,7 +121,6 @@ class BitacoraAuditoriaService:
         )
 
     def opciones_usuarios(self, q: str, limit: int = 30) -> list[dict[str, Any]]:
-        """Lista compacta para filtro con búsqueda (CA 2.1)."""
         limit = min(max(limit, 1), 100)
         texto = (q or "").strip()[:80]
         query = Usuarios.objects.filter(estado=True).select_related("id_rol")
@@ -155,10 +144,7 @@ class BitacoraAuditoriaService:
         return out
 
     def acciones(self) -> list[str]:
-        """Valores distintos de Auditoria.accion para el combobox del visor."""
-        return list(
-            Auditoria.objects.order_by("accion").values_list("accion", flat=True).distinct()
-        )
+        return _ACCIONES_SEG_LISTA.copy()
 
 
 def _fila(r: Auditoria) -> dict[str, Any]:
@@ -176,8 +162,6 @@ def _fila(r: Auditoria) -> dict[str, Any]:
             "email": u.email if u else None,
         },
         "accion": r.accion,
-        "entidad": r.entidad,
-        "id_entidad": r.id_entidad,
         "ip_origen": ip_val,
         "resumen": _resumen_motivo(r.motivo),
         "motivo": r.motivo,

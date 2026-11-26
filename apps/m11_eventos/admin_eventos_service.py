@@ -5,10 +5,8 @@ from __future__ import annotations
 import io
 import uuid
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 
-from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -147,7 +145,13 @@ class AdminEventosService:
             qs = qs.filter(estado=False)
         total = qs.count()
         if total == 0 and texto:
-            return {"items": [], "total": 0, "mensaje": MSG_SIN_COINCIDENCIAS, "page": page, "page_size": page_size}
+            return {
+                "items": [],
+                "total": 0,
+                "mensaje": MSG_SIN_COINCIDENCIAS,
+                "page": page,
+                "page_size": page_size,
+            }
         offset = max(0, (max(1, page) - 1) * page_size)
         filas = [_serializar(e) for e in qs.order_by("-fecha_inicio")[offset : offset + page_size]]
         return {
@@ -250,7 +254,11 @@ class AdminEventosService:
             raise ReglaNegocioError(MSG_ACTUALIZAR_ERROR, codigo="ERROR_INTERNO") from exc
         return {"mensaje": MSG_ACTUALIZADO, "evento": _serializar(e)}
 
-    def guardar_imagen_evento(self, id_evento: int, nombre: str, contenido: bytes, mime: str) -> str:
+    def guardar_imagen_evento(
+        self, id_evento: int, nombre: str, contenido: bytes, mime: str
+    ) -> str:
+        from apps.m13_plataforma.media_storage import guardar_bytes_publicos
+
         if mime not in MIME_OK or len(contenido) > MAX_IMAGEN or len(contenido) == 0:
             raise ReglaNegocioError(MSG_ARCHIVO, codigo="ARCHIVO_INVALIDO")
         if not Eventos_novedades.objects.filter(pk=id_evento).exists():
@@ -261,11 +269,10 @@ class AdminEventosService:
             rgb = Image.open(io.BytesIO(contenido)).convert("RGB")
         except Exception:  # pragma: no cover
             raise ReglaNegocioError(MSG_ARCHIVO, codigo="ARCHIVO_INVALIDO") from None
-        base = Path(settings.BASE_DIR) / "media" / "eventos"
-        base.mkdir(parents=True, exist_ok=True)
         stem = f"{id_evento}-{uuid.uuid4().hex[:8]}"
-        principal = base / f"{stem}.webp"
-        rgb.save(principal, format="WEBP", quality=82)
-        rel = f"eventos/{principal.name}"
-        Eventos_novedades.objects.filter(pk=id_evento).update(imagen_url=rel)
-        return rel
+        buf = io.BytesIO()
+        rgb.save(buf, format="WEBP", quality=82)
+        rel = f"eventos/{stem}.webp"
+        url = guardar_bytes_publicos(rel, buf.getvalue(), "image/webp")
+        Eventos_novedades.objects.filter(pk=id_evento).update(imagen_url=url)
+        return url
